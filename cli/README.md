@@ -2,85 +2,221 @@
 
 ## Overview
 
-`flowup` is a command-line interface (CLI) tool designed to streamline the development of custom nodes and plugins for Node-RED within this monorepo. It provides commands for building assets and scaffolding new components.
+`flowup` is a command-line interface (CLI) for building, scaffolding, and bundling **Node-RED custom nodes and editor plugins** in a pnpm monorepo.
 
-## Usage
+It ships:
 
-The CLI is intended to be used via `pnpm` scripts from the root of the monorepo.
+- A Vite-based build pipeline that compiles `runtime/` (server-side CJS) and `client/` (browser single-file HTML) for each node, plus copies Node-RED resource conventions (`icons/`, `resources/`, `locales/`, `public/`, `README.md`, `LICENSE`) into `dist/`.
+- A `@clack/prompts`-powered generator that scaffolds a fresh node or plugin in seconds — fully non-interactive when all flags are provided.
+- A monorepo bundler that scans `pnpm-workspace.yaml`, builds every node-red package, and assembles a single meta package under `dist/commonNodes/node-red-tp-built-in/` ready to drop into Node-RED.
 
-```bash
-# Example of running a command via pnpm
-pnpm flowup <command> [options]
+## Quickstart
+
+In a pnpm workspace with a `flowup.config.ts` (optional) and a node package with this structure:
+
+```
+my-node/
+├── package.json          # { "node-red": { "scope": "my-node", "nodes": {...} } }
+├── vite.config.ts        # exports defineConfig({ scope: 'my-node' })
+├── runtime/index.ts      # NodeInitializer (server)
+├── client/index.ts       # EditorRED register (browser)
+├── client/editor.html    # template script
+├── locales/<lang>/       # i18n help files (optional)
+├── icons/                # palette icons (optional)
+└── resources/            # static assets (optional)
 ```
 
-Alternatively, you can define scripts in your `package.json` for convenience.
+Build a single node:
+
+```bash
+flowup build
+```
+
+Scaffold a new node:
+
+```bash
+flowup gen --name my-special-node --type node --outputDir ./packages/nodes
+```
+
+Build every node-red package in the workspace:
+
+```bash
+flowup build --all
+```
+
+Build and immediately bundle into a meta package:
+
+```bash
+flowup build --all --bundle
+```
+
+Bundle only (skip the per-package build step):
+
+```bash
+flowup bundle --skip-build
+```
 
 ## Commands
 
-### `build`
+### `flowup build`
 
-This command compiles the TypeScript source code for both the runtime (backend) and the client (editor panel) and prepares them for use in Node-RED.
+Build one or many node-red packages.
 
-**Usage:**
+| Flag                     | Description                                                           |
+| ------------------------ | --------------------------------------------------------------------- |
+| `--cwd <path>`           | Working directory (default: `process.cwd()`)                          |
+| `--config <path>`        | Explicit path to `vite.config.ts` (overrides findup)                  |
+| `--all`                  | Build every node-red package in the pnpm workspace                    |
+| `--pkg <name...>`        | Restrict `--all` to packages whose `name` matches (repeatable)        |
+| `--watch`                | Vite watch mode for a single-package dev loop                         |
+| `--bundle`               | After building, also assemble a meta package                          |
+| `--bundle-output <path>` | Bundle output path (default: `dist/commonNodes/node-red-tp-built-in`) |
+| `--bundle-name <name>`   | Bundle meta package name (default: `flowup-bundle`)                   |
+| `--bundle-install`       | Run `pnpm install` in the bundle output after bundling                |
 
-```bash
-pnpm flowup build
+`flowup build` automatically findups the nearest `vite.config.ts` from the cwd, so it works in monorepo sub-packages without `cd`.
+
+### `flowup gen`
+
+Scaffold a new Node-RED node or editor plugin.
+
+| Flag                    | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| `--name <kebab-case>`   | Required (or via interactive prompt).                          |
+| `--type <node\|plugin>` | Required (or via prompt).                                      |
+| `--outputDir <path>`    | Where to put the new package (default: `.`).                   |
+| `--locales <csv>`       | Comma-separated locales, e.g. `en-US,zh-CN`.                   |
+| `--non-interactive`     | Throw if any required option is missing, instead of prompting. |
+
+When **all** required options are provided, `flowup gen` writes the scaffold directly with no prompts — safe for CI.
+
+Interactive mode uses `@clack/prompts`.
+
+### `flowup bundle`
+
+Scan the workspace, build every node-red package, and assemble a meta package.
+
+| Flag                  | Description                                                      |
+| --------------------- | ---------------------------------------------------------------- |
+| `--cwd <path>`        | Working directory (default: `process.cwd()`)                     |
+| `--output <path>`     | Bundle output (default: `dist/commonNodes/node-red-tp-built-in`) |
+| `--name <name>`       | Meta package name (default: `flowup-bundle`)                     |
+| `--version <version>` | Meta package version (default: `1.0.0`)                          |
+| `--no-clean`          | Do not clear the output directory before bundling                |
+| `--install`           | Run `pnpm install` in the bundle output after bundling           |
+| `--skip-build`        | Use existing `dist/` (don't rebuild)                             |
+
+Output structure:
+
+```
+dist/commonNodes/node-red-tp-built-in/
+├── package.json                          # { "node-red": { "nodes": ..., "plugins": ... } }
+├── README.md
+├── .gitignore
+├── simple-node/
+│   ├── simple-node.js
+│   ├── simple-node.html
+│   ├── package.json                      # filtered
+│   ├── locales/...
+│   └── icons/...
+└── simple-plugin/
+    ├── simple-plugin.js
+    ├── simple-plugin.html
+    ├── package.json
+    └── locales/...
 ```
 
-This will generate the necessary JavaScript and HTML files in the `dist` directory.
+## `flowup.config.ts`
 
----
+Optional. Drop a `flowup.config.ts` (or `.js` / `.mjs` / `.cjs`) anywhere up the directory tree from where you run `flowup`. The CLI auto-discovers it via findup.
 
-### `gen`
+```ts
+import { defineConfig } from '@wry-smile/flowup'
 
-This command launches an interactive generator (using Plop) to scaffold the boilerplate for a new Node-RED node or plugin. It helps ensure consistency and reduces manual setup.
+export default defineConfig({
+  // Monorepo root (default: the dir containing flowup.config.ts)
+  root: '.',
 
-#### Interactive Mode
+  // Per-package package.json filtering
+  packageJson: {
+    include: ['name', 'version', 'type', 'node-red', 'description'],
+    omit: ['scripts', 'devDependencies', 'dependencies'],
+  },
 
-To run the generator in interactive mode, where it will ask you a series of questions, simply run the command without any arguments:
+  // Disable specific Node-RED resource conventions globally
+  // (you can override per-package in that package's vite.config.ts)
+  resources: {
+    icons: true,
+    resources: true,
+    locales: true,
+    public: true,
+    readme: true,
+    license: true,
+  },
 
-**Usage:**
-
-```bash
-pnpm flowup gen
+  bundle: {
+    output: 'dist/commonNodes/node-red-tp-built-in',
+    name: 'my-org-nodes',
+    version: '1.0.0',
+    description: 'My organization\'s Node-RED nodes',
+    author: 'Acme',
+    license: 'MIT',
+    install: false,
+  },
+})
 ```
 
-#### With Arguments
+## Resource conventions
 
-You can also provide arguments directly on the command line to pre-fill the answers and bypass the interactive prompts. This is useful for scripting and automation.
+For every node-red package, `flowup build` automatically copies these into `dist/`:
 
-**Example:**
+| Source                    | Destination         | Toggle                       |
+| ------------------------- | ------------------- | ---------------------------- |
+| `package.json` (filtered) | `dist/package.json` | always                       |
+| `icons/`                  | `dist/icons/`       | `resources.icons: false`     |
+| `resources/`              | `dist/resources/`   | `resources.resources: false` |
+| `locales/`                | `dist/locales/`     | `resources.locales: false`   |
+| `public/`                 | `dist/public/`      | `resources.public: false`    |
+| `README.md`               | `dist/README.md`    | `resources.readme: false`    |
+| `LICENSE`, `LICENSE.md`   | `dist/LICENSE`      | `resources.license: false`   |
 
-```bash
-# Generate a new node named 'my-special-node' in the 'packages/nodes' directory
-pnpm flowup gen --name my-special-node --type node --outputDir ./packages/nodes
+You can also pass `copyTask: [{ from, to }]` in `defineConfig()` to add custom copies (e.g. `node-red.png` for the catalog icon).
+
+## Package.json filtering
+
+`flowup build` writes a **filtered** `dist/package.json`. Default include set:
+
+```
+name, version, type, node-red, description, author, license, keywords,
+engines, main, files
 ```
 
-# Example of package.json
+Default omit set (always removed):
 
-```json
-{
-  "scripts": {
-    "gen:nodes": "flowup gen --outputDir ./packages/nodes --type node",
-    "gen:plugin": "flowup gen --outputDir ./packages/plugins --type plugin"
-  }
-}
+```
+scripts, devDependencies, dependencies, peerDependencies, peerDependenciesMeta, optionalDependencies
 ```
 
-#### Available Arguments
+Override in `flowup.config.ts`:
 
-- `--outputDir <path>`
-  - **Description**: The output directory for the generated files, relative to the project root.
-  - **Default**: `.` (the current directory)
+```ts
+defineConfig({
+  packageJson: {
+    include: ['name', 'version', 'node-red', 'dependencies'], // keep dependencies
+  },
+})
+```
 
-- `--type <type>`
-  - **Description**: The type of component to generate.
-  - **Options**: `node`, `plugin`
+## SDK usage
 
-- `--name <name>`
-  - **Description**: The name of the node or plugin (e.g., `my-node`).
+`@wry-smile/flowup` can be used as a TypeScript SDK too:
 
-- `--locales <locales>`
-  - **Description**: A comma-separated list of locales to generate for internationalization.
-  - **Default**: `en-US,zh-CN`
-  - **Example**: `--locales en-US,de,fr`
+```ts
+import { buildEntry, bundleMonorepo, defineConfig, runGenerator } from '@wry-smile/flowup'
+
+await buildEntry({ cwd: '/path/to/my-node' })
+```
+
+## License
+
+MIT
