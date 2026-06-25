@@ -6,7 +6,7 @@ import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
-import { createContext } from './context'
+import { createContext, isInMonorepo } from './context'
 import { DEFAULT_LOCALES, SUPPORTED_LOCALES } from './locale'
 import { nodeTemplate } from './templates/node'
 import { pluginTemplate } from './templates/plugin'
@@ -243,10 +243,12 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
 
 async function doGenerate(opts: GenResolved): Promise<void> {
   const flowupVersion = resolveFlowupVersion()
+  const inMonorepo = isInMonorepo()
   const ctx = createContext({
     name: opts.name,
     locales: opts.locales,
     flowupVersion,
+    inMonorepo,
     vue: opts.vue,
     tailwind: opts.tailwind,
   })
