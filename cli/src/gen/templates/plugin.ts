@@ -66,7 +66,7 @@ function renderPackageJson(ctx: TemplateContext): string {
     extraDevDeps.push(`    "@tailwindcss/vite": "^${ctx.tailwindVersion}"`)
   const devDepsBlock = [
     `    "@types/node-red": "^1.3.5"`,
-    `    "@wry-smile/flowup": "^${ctx.flowupVersion}"`,
+    `    "@wry-smile/flowup": "${ctx.flowupSpecifier}"`,
     `    "typescript": "^6.0.3"`,
     ...extraDevDeps,
   ].join(',\n')
