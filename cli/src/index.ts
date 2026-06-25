@@ -1,7 +1,3 @@
-export { buildEntry } from './build/build'
-
-export type { BuildEntryOptions } from './build/build'
-
 export {
   defineConfig,
 } from './build/define-config'
@@ -9,9 +5,13 @@ export {
 export type {
   DefineConfigOptions,
 } from './build/define-config'
+
+export { buildEntry } from './build/index'
+
+export type { BuildEntryOptions } from './build/index'
 export type {
   CopyTask,
-} from './build/plugins/copy-file.plugin'
+} from './build/plugins/copy-file'
 
 export { bundleMonorepo } from './bundle'
 export type { BundleOptions, BundleResult } from './bundle'

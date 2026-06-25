@@ -83,7 +83,7 @@ export async function bundleMonorepo(rawOptions: BundleOptions = {}): Promise<Bu
 
   // 2. 跑 build(每个子包)—— 默认跑,除非 skipBuild
   if (!opts.skipBuild) {
-    const { buildEntry } = await import('../build/build')
+    const { buildEntry } = await import('../build/index')
     for (const pkg of packages) {
       const distDir = join(pkg.absPath, 'dist')
       if (!existsSync(distDir)) {

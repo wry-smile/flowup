@@ -1,17 +1,17 @@
 import type { PluginOption, UserConfig } from 'vite'
 import type { ResourceDefaults } from '../config/types'
-import type { CopyTask } from './plugins/copy-file.plugin'
+import type { CopyTask } from './plugins/copy-file'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
-import { viteConventionCopyPlugin } from './plugins/copy-file.plugin'
-import { viteSingleFile } from './plugins/single-file.plugin'
+import { viteConventionCopyPlugin } from './plugins/copy-file'
+import { viteSingleFile } from './plugins/single-file'
 
 export interface ClientConfigOptions {
   scope: string
   copyTask?: CopyTask[]
-  vuePlugin?: boolean | import('./types/plugin').VuePluginOptions
-  singleFilePlugin?: boolean | import('./types/plugin').SingleFilePluginOptions
-  tailwindcssPlugin?: boolean | import('./types/plugin').TailwindcssPluginOptions
+  vuePlugin?: boolean | import('./types').VuePluginOptions
+  singleFilePlugin?: boolean | import('./types').SingleFilePluginOptions
+  tailwindcssPlugin?: boolean | import('./types').TailwindcssPluginOptions
   resources?: ResourceDefaults
 }
 
