@@ -5,10 +5,10 @@ export interface TemplateContext {
   properName: string // PascalCase, e.g. "MySpecialNode"
   locales: LocaleCode[]
   /**
-   * @wry-smile/flowup 的版本字符串,模板渲染 package.json 时用。
-   * monorepo 内 → "workspace:*";发布场景 → "^x.y.z"
+   * @wry-smile/flowup 的精确版本号(无 ^ 前缀),模板渲染 package.json 时用。
+   * 所有场景(monorepo / 单包)都用这个版本,保证调试行为和发布行为完全一致。
    */
-  flowupDep: string
+  flowupVersion: string
 }
 
 export type FileMap = Record<string, string>
@@ -27,12 +27,12 @@ export function toProperCase(input: string): string {
 export function createContext(
   name: string,
   locales: LocaleCode[],
-  flowupDep: string,
+  flowupVersion: string,
 ): TemplateContext {
   return {
     name,
     properName: toProperCase(name),
     locales,
-    flowupDep,
+    flowupVersion,
   }
 }

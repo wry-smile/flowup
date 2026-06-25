@@ -2,7 +2,7 @@ import type { FileMap } from './context'
 import type { LocaleCode } from './locale'
 import { existsSync, readFileSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
@@ -177,8 +177,8 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
 }
 
 async function doGenerate(opts: GenResolved): Promise<void> {
-  const flowupDep = resolveFlowupDep(process.cwd())
-  const ctx = createContext(opts.name, opts.locales, flowupDep)
+  const flowupVersion = resolveFlowupVersion()
+  const ctx = createContext(opts.name, opts.locales, flowupVersion)
   const files: FileMap = opts.type === 'node' ? nodeTemplate(ctx) : pluginTemplate(ctx)
 
   const baseDir = resolve(process.cwd(), opts.name)
@@ -204,24 +204,14 @@ async function doGenerate(opts: GenResolved): Promise<void> {
 }
 
 /**
- * 向上找 pnpm-workspace.yaml,定位 monorepo 根。
- * 没找到返回 null(说明不在 monorepo 里,脚手架要按发布版本来)。
- */
-export function detectWorkspaceRoot(startDir: string): string | null {
-  let dir = startDir
-  while (true) {
-    if (existsSync(join(dir, 'pnpm-workspace.yaml')))
-      return dir
-    const parent = dirname(dir)
-    if (parent === dir)
-      return null
-    dir = parent
-  }
-}
-
-/**
- * 读 cli/package.json 的 version,用 "^x.y.z" 形式返回。
+ * 读 cli/package.json 的 version,用精确版本号 "x.y.z" 形式返回。
  * 用 cli 包自身的位置向上找(tsx 跑源码时 = cli/,编译产物 = dist/../)。
+ *
+ * 为什么不用 workspace:* 或 ^x.y.z:
+ * - workspace:* 让 monorepo 内的脚手架链接到本地 cli 源码,
+ *   调试看到的行为可能跟用户装的发布版不一样,出现「我这能 work 你那边不行」的玄学 bug。
+ * - ^x.y.z 允许自动 patch 升级,行为不完全可控。
+ * - 精确版本号 x.y.z 保证 gen 出来的脚手架装的 cli 跟你测试时装的完全一致。
  */
 export function resolveFlowupVersion(): string {
   const here = dirname(fileURLToPath(import.meta.url))
@@ -235,20 +225,11 @@ export function resolveFlowupVersion(): string {
     try {
       const pkg = JSON.parse(readFileSync(p, 'utf-8')) as { name?: string, version?: string }
       if (pkg.name === '@wry-smile/flowup' && pkg.version)
-        return `^${pkg.version}`
+        return pkg.version
     }
     catch {
       // 解析失败就跳过,继续找下一个候选
     }
   }
-  return 'latest'
-}
-
-/**
- * 决定 @wry-smile/flowup 在脚手架 package.json 里的版本写法:
- * - 在 monorepo 内 → "workspace:*"(走 pnpm workspace 协议,链接本地 cli 包)
- * - 不在 monorepo → "^x.y.z"(发布场景,从 npm 装)
- */
-export function resolveFlowupDep(cwd: string): string {
-  return detectWorkspaceRoot(cwd) ? 'workspace:*' : resolveFlowupVersion()
+  return '0.0.0'
 }
