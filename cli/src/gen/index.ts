@@ -14,7 +14,6 @@ export type GenType = 'node' | 'plugin'
 
 export interface GenOptions {
   /** 已显式提供的字段,全部提供时直接走非交互模式 */
-  outputDir?: string
   type?: GenType
   name?: string
   locales?: LocaleCode[]
@@ -48,22 +47,6 @@ function kebabCase(input: string): string {
  */
 async function collectMissing(options: GenOptions): Promise<GenResolved> {
   const answers: Partial<GenResolved> = {}
-
-  if (options.outputDir === undefined) {
-    const ans = await p.text({
-      message: 'Output directory (relative to project root)?',
-      defaultValue: '.',
-      placeholder: '.',
-    })
-    if (p.isCancel(ans)) {
-      p.cancel('Cancelled by user.')
-      process.exit(0)
-    }
-    answers.outputDir = ans
-  }
-  else {
-    answers.outputDir = options.outputDir
-  }
 
   if (options.type === undefined) {
     const ans = await p.select({
@@ -136,7 +119,6 @@ async function collectMissing(options: GenOptions): Promise<GenResolved> {
  */
 export function readOptionsFromEnv(): Partial<GenOptions> {
   return {
-    outputDir: process.env.FLOWUP_GEN_OUTPUTDIR,
     type: process.env.FLOWUP_GEN_TYPE as GenType | undefined,
     name: process.env.FLOWUP_GEN_NAME,
     locales: parseLocalesString(process.env.FLOWUP_GEN_LOCALES),
@@ -147,7 +129,6 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
   // 合并 env + 显式参数
   const envOpts = readOptionsFromEnv()
   const options: GenOptions = {
-    outputDir: rawOptions.outputDir ?? envOpts.outputDir,
     type: rawOptions.type ?? envOpts.type,
     name: rawOptions.name ?? envOpts.name,
     locales: rawOptions.locales ?? envOpts.locales,
@@ -173,7 +154,7 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
   }
 
   // 全部提供 → 直接走非交互(这是修复原 P0 #1 的关键)
-  const allProvided = !!options.outputDir && !!options.type && !!options.name && !!options.locales
+  const allProvided = !!options.type && !!options.name && !!options.locales
   if (allProvided) {
     await doGenerate(options as GenResolved)
     return
@@ -181,8 +162,6 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
 
   if (options.nonInteractive) {
     const missing: string[] = []
-    if (!options.outputDir)
-      missing.push('--outputDir')
     if (!options.type)
       missing.push('--type')
     if (!options.name)
@@ -200,7 +179,7 @@ async function doGenerate(opts: GenResolved): Promise<void> {
   const ctx = createContext(opts.name, opts.locales)
   const files: FileMap = opts.type === 'node' ? nodeTemplate(ctx) : pluginTemplate(ctx)
 
-  const baseDir = resolve(process.cwd(), opts.outputDir, opts.name)
+  const baseDir = resolve(process.cwd(), opts.name)
   if (existsSync(baseDir)) {
     throw new Error(`Target directory already exists: ${baseDir}`)
   }
@@ -217,7 +196,7 @@ async function doGenerate(opts: GenResolved): Promise<void> {
   spinner.stop(`Generated ${Object.keys(files).length} files in ${baseDir}`)
 
   p.log.step('Next steps:')
-  p.log.info(`  cd ${opts.outputDir}/${opts.name}`)
+  p.log.info(`  cd ${opts.name}`)
   p.log.info('  pnpm install')
   p.log.info('  pnpm build')
 }

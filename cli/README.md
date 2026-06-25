@@ -35,7 +35,8 @@ flowup build
 Scaffold a new node:
 
 ```bash
-flowup gen --name my-special-node --type node --outputDir ./packages/nodes
+cd packages/nodes
+flowup gen --name my-special-node --type node
 ```
 
 Build every node-red package in the workspace:
@@ -78,15 +79,25 @@ Build one or many node-red packages.
 
 ### `flowup gen`
 
-Scaffold a new Node-RED node or editor plugin.
+Scaffold a new Node-RED node or editor plugin in the **current directory** — `cd` into the target dir first, just like `npm create vite` and `nest g`.
 
 | Flag                    | Description                                                    |
 | ----------------------- | -------------------------------------------------------------- |
 | `--name <kebab-case>`   | Required (or via interactive prompt).                          |
 | `--type <node\|plugin>` | Required (or via prompt).                                      |
-| `--outputDir <path>`    | Where to put the new package (default: `.`).                   |
 | `--locales <csv>`       | Comma-separated locales, e.g. `en-US,zh-CN`.                   |
 | `--non-interactive`     | Throw if any required option is missing, instead of prompting. |
+
+For monorepos, put a script in the root `package.json` to wrap the `cd`:
+
+```json
+{
+  "scripts": {
+    "gen:node": "cd packages/nodes && flowup gen --type node",
+    "gen:plugin": "cd packages/plugins && flowup gen --type plugin"
+  }
+}
+```
 
 When **all** required options are provided, `flowup gen` writes the scaffold directly with no prompts — safe for CI.
 
