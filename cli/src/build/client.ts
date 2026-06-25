@@ -1,25 +1,22 @@
 import type { PluginOption, UserConfig } from 'vite'
 import type { ResourceDefaults } from '../config/types'
 import type { CopyTask } from './plugins/copy-file'
-import tailwindcss from '@tailwindcss/vite'
-import vue from '@vitejs/plugin-vue'
 import { viteConventionCopyPlugin } from './plugins/copy-file'
-import { viteSingleFile } from './plugins/single-file'
 
 export interface ClientConfigOptions {
   scope: string
+  /**
+   * 已加载好的 vite plugin 列表(由 defineConfig 在动态 import 之后传入)。
+   * 这里只接受「plugin 实例」,不再接受 options —— 避免 client 层需要 import 三个可选包。
+   */
+  plugins?: PluginOption[]
   copyTask?: CopyTask[]
-  vuePlugin?: boolean | import('./types').VuePluginOptions
-  singleFilePlugin?: boolean | import('./types').SingleFilePluginOptions
-  tailwindcssPlugin?: boolean | import('./types').TailwindcssPluginOptions
   resources?: ResourceDefaults
 }
 
 export function defineClientConfig(options: ClientConfigOptions): UserConfig {
   const {
-    vuePlugin = true,
-    singleFilePlugin = true,
-    tailwindcssPlugin = true,
+    plugins: externalPlugins = [],
     copyTask = [],
     resources = {},
   } = options
@@ -27,23 +24,8 @@ export function defineClientConfig(options: ClientConfigOptions): UserConfig {
   // 资源约定扫描推迟到 vite plugin buildStart 阶段,那时 process.cwd() 已经是子包根
   const plugins: PluginOption[] = [
     viteConventionCopyPlugin({ tasks: copyTask, resources }),
+    ...externalPlugins,
   ]
-
-  if (vuePlugin) {
-    plugins.push(vue(typeof vuePlugin === 'boolean' ? undefined : vuePlugin))
-  }
-  if (tailwindcssPlugin) {
-    plugins.push(tailwindcss(typeof tailwindcssPlugin === 'boolean' ? undefined : tailwindcssPlugin))
-  }
-  if (singleFilePlugin) {
-    plugins.push(viteSingleFile(
-      {
-        removeViteModuleLoader: true,
-        removeModuleType: true,
-        ...(typeof singleFilePlugin === 'boolean' ? undefined : singleFilePlugin),
-      },
-    ))
-  }
 
   return {
     plugins,

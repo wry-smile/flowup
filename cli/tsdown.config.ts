@@ -8,16 +8,16 @@ export default defineConfig([
     format: ['esm'],
     deps: {
       neverBundle: [
+        // cli 自身的运行时依赖 —— 必须 external(用户装 cli 时已经带上)
         'vite',
-        '@tailwindcss/vite',
-        '@vitejs/plugin-vue',
-        'vite-plugin-singlefile',
         '@clack/prompts',
         'commander',
-        'plop',
         'micromatch',
         'find-up',
         'js-yaml',
+        // cli 的 peer (optional) 依赖 —— 用户在子包按需装,cli 不 bundle
+        '@tailwindcss/vite',
+        '@vitejs/plugin-vue',
       ],
     },
     dts: true,

@@ -267,10 +267,36 @@ pnpm build
 Produces:
 
 - \`dist/${ctx.name}.js\` — runtime (server-side) bundle
-- \`dist/${ctx.name}.html\` — editor (browser) bundle, inlined single-file
+- \`dist/${ctx.name}.html\` — editor (browser) bundle
 - \`dist/locales/\` — i18n help catalogs
 - \`dist/icons/\` — palette icons (if any files are present)
 - \`dist/resources/\` — node-level static resources (if any files are present)
+
+> 默认走「多 chunk」产物。如果你想要把所有 JS/CSS 内联成单个 .html(常见于
+> Node-RED editor 部署),在 vite.config.ts 里把 \`singleFilePlugin: true\` 加上,
+> 该插件是 cli 内置的 Rollup hook 实现,无需安装任何额外依赖。
+
+## 可选:Vue / Tailwindcss
+
+cli 自身**不**安装 \`@vitejs/plugin-vue\` / \`@tailwindcss/vite\`,由子包按需装:
+
+\`\`\`bash
+pnpm add -D @vitejs/plugin-vue @tailwindcss/vite
+\`\`\`
+
+然后在 \`vite.config.ts\` 里手动注入 plugin(不要用 \`vuePlugin: true\` 这种
+flag,cli 不替你处理):
+
+\`\`\`ts
+import { defineConfig } from '@wry-smile/flowup'
+import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  scope: '${ctx.name}',
+  client: { plugins: [vue(), tailwindcss()] },
+})
+\`\`\`
 
 ## Conventions
 
