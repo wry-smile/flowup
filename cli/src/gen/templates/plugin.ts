@@ -9,12 +9,53 @@ export function pluginTemplate(ctx: TemplateContext): FileMap {
     'client/index.ts': renderClient(ctx),
     'client/editor.html': renderEditorHtml(ctx),
     'client/help.html': renderHelpHtml(ctx),
+    // 资源目录(Node-RED 约定):icons 给 palette,resources 由 Node-RED editor 暴露
+    'icons/.gitkeep': renderGitkeep('Palette icons for the plugin UI.'),
+    'icons/README.md': renderIconsReadme(ctx),
+    'resources/.gitkeep': renderGitkeep('Static resources served by Node-RED editor at /resources/<module>/<file>.'),
+    'resources/README.md': renderResourcesReadme(ctx),
     ...ctx.locales.reduce<FileMap>((acc, locale) => {
       acc[`locales/${locale}/${ctx.name}.json`] = renderLocaleJson(ctx, locale)
       return acc
     }, {}),
     'README.md': renderReadme(ctx),
   }
+}
+
+function renderGitkeep(hint: string): string {
+  return `# ${hint}\n# Drop your files into this directory and re-run \`flowup build\`.\n`
+}
+
+function renderIconsReadme(_ctx: TemplateContext): string {
+  return `# icons
+
+Palette icons for this plugin. flowup build copies this directory into
+\`dist/icons/\` automatically.
+
+Reference icons from \`client/index.ts\` or \`client/editor.html\` using
+\`icons/\` (relative path).
+`
+}
+
+function renderResourcesReadme(_ctx: TemplateContext): string {
+  return `# resources
+
+Node-RED (since 1.3) serves any file in this directory under
+\`/resources/<module-name>/<file>\` so the editor can load it.
+
+For a scoped module (\`@scope/foo\`), the path becomes
+\`/resources/@scope/foo/<file>\`.
+
+Reference from your \`client/editor.html\` / \`client/help.html\` with
+**relative** URLs (no leading \`/\`):
+
+\`\`\`html
+<img src="resources/<module-name>/banner.png" />
+<script src="resources/<module-name>/library.js"></script>
+\`\`\`
+
+See https://nodered.org/docs/creating-nodes/resources
+`
 }
 
 function renderPackageJson(ctx: TemplateContext): string {
@@ -118,10 +159,40 @@ function renderReadme(ctx: TemplateContext): string {
 
 A Node-RED editor plugin scaffolded with [flowup](https://github.com/wry-smile/flowup).
 
+## Layout
+
+\`\`\`
+${ctx.name}/
+├── package.json
+├── vite.config.ts
+├── runtime/        # Plugin runtime registration (NodeAPI)
+├── client/         # Editor-side plugin code
+├── types/          # shared TS types
+├── locales/        # i18n catalogs
+├── icons/          # palette icons (optional)
+└── resources/      # static assets served by Node-RED editor
+\`\`\`
+
 ## Build
 
 \`\`\`bash
 pnpm build
 \`\`\`
+
+Produces \`dist/${ctx.name}.js\` (runtime) + \`dist/${ctx.name}.html\` (editor),
+plus copied \`dist/locales/\`, \`dist/icons/\`, \`dist/resources/\` if those
+directories contain files.
+
+## resources/ convention
+
+Drop any asset into \`resources/\`; Node-RED serves it at
+\`/resources/<module-name>/<path>\`. Reference with **relative** URLs from
+\`client/editor.html\` / \`client/help.html\`:
+
+\`\`\`html
+<img src="resources/<module-name>/banner.png" />
+\`\`\`
+
+See \`resources/README.md\` and <https://nodered.org/docs/creating-nodes/resources>.
 `
 }
