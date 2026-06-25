@@ -18,11 +18,24 @@ export interface GenOptions {
   type?: GenType
   name?: string
   locales?: LocaleCode[]
+  /**
+   * 启用 Vue 客户端(@vitejs/plugin-vue)。
+   * true 时脚手架自动装 @vitejs/plugin-vue 并注入 vite plugin。
+   */
+  vue?: boolean
+  /**
+   * 启用 Tailwindcss(@tailwindcss/vite)。
+   * true 时脚手架自动装 @tailwindcss/vite 并注入 vite plugin。
+   */
+  tailwind?: boolean
   /** 强制走非交互,缺参就报错而不是弹 prompt */
   nonInteractive?: boolean
 }
 
-export interface GenResolved extends Required<Omit<GenOptions, 'nonInteractive'>> {}
+export interface GenResolved extends Required<Omit<GenOptions, 'nonInteractive' | 'vue' | 'tailwind'>> {
+  vue: boolean
+  tailwind: boolean
+}
 
 function parseLocalesString(input: string | undefined): LocaleCode[] | undefined {
   if (!input)
@@ -111,6 +124,37 @@ async function collectMissing(options: GenOptions): Promise<GenResolved> {
     answers.locales = options.locales
   }
 
+  // vue / tailwind 默认 false(opt-in)。用户即使不选,脚手架也能跑(纯 HTML/TS)。
+  if (options.vue === undefined) {
+    const ans = await p.confirm({
+      message: 'Use Vue (single-file components) for the client UI?',
+      initialValue: false,
+    })
+    if (p.isCancel(ans)) {
+      p.cancel('Cancelled by user.')
+      process.exit(0)
+    }
+    answers.vue = ans
+  }
+  else {
+    answers.vue = options.vue
+  }
+
+  if (options.tailwind === undefined) {
+    const ans = await p.confirm({
+      message: 'Use Tailwindcss for styling?',
+      initialValue: false,
+    })
+    if (p.isCancel(ans)) {
+      p.cancel('Cancelled by user.')
+      process.exit(0)
+    }
+    answers.tailwind = ans
+  }
+  else {
+    answers.tailwind = options.tailwind
+  }
+
   return answers as GenResolved
 }
 
@@ -123,7 +167,20 @@ export function readOptionsFromEnv(): Partial<GenOptions> {
     type: process.env.FLOWUP_GEN_TYPE as GenType | undefined,
     name: process.env.FLOWUP_GEN_NAME,
     locales: parseLocalesString(process.env.FLOWUP_GEN_LOCALES),
+    vue: parseBool(process.env.FLOWUP_GEN_VUE),
+    tailwind: parseBool(process.env.FLOWUP_GEN_TAILWIND),
   }
+}
+
+function parseBool(input: string | undefined): boolean | undefined {
+  if (input === undefined)
+    return undefined
+  const v = input.trim().toLowerCase()
+  if (v === 'true' || v === '1' || v === 'yes')
+    return true
+  if (v === 'false' || v === '0' || v === 'no')
+    return false
+  return undefined
 }
 
 export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
@@ -133,6 +190,8 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
     type: rawOptions.type ?? envOpts.type,
     name: rawOptions.name ?? envOpts.name,
     locales: rawOptions.locales ?? envOpts.locales,
+    vue: rawOptions.vue ?? envOpts.vue,
+    tailwind: rawOptions.tailwind ?? envOpts.tailwind,
     nonInteractive: rawOptions.nonInteractive,
   }
 
@@ -155,7 +214,9 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
   }
 
   // 全部提供 → 直接走非交互(这是修复原 P0 #1 的关键)
+  // vue / tailwind 是布尔选项,undefined 等同 false,不需要在 missing 列表里报。
   const allProvided = !!options.type && !!options.name && !!options.locales
+    && options.vue !== undefined && options.tailwind !== undefined
   if (allProvided) {
     await doGenerate(options as GenResolved)
     return
@@ -169,6 +230,10 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
       missing.push('--name')
     if (!options.locales)
       missing.push('--locales')
+    if (options.vue === undefined)
+      missing.push('--vue')
+    if (options.tailwind === undefined)
+      missing.push('--tailwind')
     throw new Error(`Non-interactive mode requires: ${missing.join(', ')}`)
   }
 
@@ -178,7 +243,13 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
 
 async function doGenerate(opts: GenResolved): Promise<void> {
   const flowupVersion = resolveFlowupVersion()
-  const ctx = createContext(opts.name, opts.locales, flowupVersion)
+  const ctx = createContext({
+    name: opts.name,
+    locales: opts.locales,
+    flowupVersion,
+    vue: opts.vue,
+    tailwind: opts.tailwind,
+  })
   const files: FileMap = opts.type === 'node' ? nodeTemplate(ctx) : pluginTemplate(ctx)
 
   const baseDir = resolve(process.cwd(), opts.name)

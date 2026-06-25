@@ -28,6 +28,20 @@ export function nodeTemplate(ctx: TemplateContext): FileMap {
 }
 
 function renderPackageJson(ctx: TemplateContext): string {
+  // 按 ctx.vue / ctx.tailwind 把可选 vite 插件加进 devDependencies。
+  // 注意:版本号走精确版本号(无 ^),跟 catalog 同步,在 cli/src/gen/context.ts 里 hardcode。
+  const extraDevDeps: string[] = []
+  if (ctx.vue)
+    extraDevDeps.push(`    "@vitejs/plugin-vue": "${ctx.vueVersion}"`)
+  if (ctx.tailwind)
+    extraDevDeps.push(`    "@tailwindcss/vite": "${ctx.tailwindVersion}"`)
+  const devDepsBlock = [
+    `    "@types/node-red": "^1.3.5"`,
+    `    "@wry-smile/flowup": "^${ctx.flowupVersion}"`,
+    `    "typescript": "^6.0.3"`,
+    ...extraDevDeps,
+  ].join(',\n')
+
   return `{
   "name": "flowup-${ctx.name}",
   "type": "module",
@@ -43,9 +57,7 @@ function renderPackageJson(ctx: TemplateContext): string {
     "node-red": "^5.0.0"
   },
   "devDependencies": {
-    "@types/node-red": "^1.3.5",
-    "@wry-smile/flowup": "^${ctx.flowupVersion}",
-    "typescript": "^6.0.3"
+${devDepsBlock}
   },
   "node-red": {
     "scope": "${ctx.name}",
@@ -116,10 +128,33 @@ See https://nodered.org/docs/creating-nodes/resources
 }
 
 function renderViteConfig(ctx: TemplateContext): string {
-  return `import { defineConfig } from '@wry-smile/flowup'
+  // 按 ctx.vue / ctx.tailwind 自动 import + 注入 plugin。
+  // flowup cli 自身不依赖这两个包(由子包 devDependencies 装),但会通过
+  // client.plugins 暴露口子让用户手动接入。这里模板把这种手动接入自动化。
+  const imports: string[] = []
+  const plugins: string[] = []
+
+  if (ctx.vue) {
+    imports.push(`import vue from '@vitejs/plugin-vue'`)
+    plugins.push('vue()')
+  }
+  if (ctx.tailwind) {
+    imports.push(`import tailwindcss from '@tailwindcss/vite'`)
+    plugins.push('tailwindcss()')
+  }
+
+  const importBlock = imports.length ? `${imports.join('\n')}\n\n` : ''
+  // 没有可选插件时,client config 就是空对象(走纯 HTML/TS 默认)
+  // 有可选插件时,client.plugins 数组塞进去
+  const clientLine = plugins.length
+    ? `  client: { plugins: [${plugins.join(', ')}] },`
+    : ''
+
+  return `${importBlock}import { defineConfig } from '@wry-smile/flowup'
 
 export default defineConfig({
   scope: '${ctx.name}',
+${clientLine}
 })
 `
 }
@@ -240,9 +275,48 @@ function renderLocaleJson(_ctx: TemplateContext, _locale: string): string {
 }
 
 function renderReadme(ctx: TemplateContext): string {
+  const uiStackLines: string[] = []
+  if (ctx.vue)
+    uiStackLines.push('- **Vue** (SFC, .vue files)')
+  if (ctx.tailwind)
+    uiStackLines.push('- **Tailwindcss** (utility-first CSS)')
+  if (uiStackLines.length === 0)
+    uiStackLines.push('- Plain HTML + TypeScript (no UI framework)')
+
+  const addOnSection = (ctx.vue || ctx.tailwind)
+    ? ''
+    : `
+
+## 可选:Vue / Tailwindcss
+
+本脚手架默认是纯 HTML + TypeScript,不依赖任何 UI 框架。
+
+如果你之后想加 Vue 或 Tailwindcss:
+
+\`\`\`bash
+pnpm add -D @vitejs/plugin-vue @tailwindcss/vite
+\`\`\`
+
+然后在 \`vite.config.ts\` 里手动 import + 注入 plugin:
+
+\`\`\`ts
+import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  scope: '${ctx.name}',
+  client: { plugins: [vue(), tailwindcss()] },
+})
+\`\`\`
+`
+
   return `# ${ctx.name}
 
 A Node-RED custom node scaffolded with [flowup](https://github.com/wry-smile/flowup).
+
+## UI Stack
+
+${uiStackLines.join('\n')}
 
 ## Layout
 
@@ -261,6 +335,7 @@ ${ctx.name}/
 ## Build
 
 \`\`\`bash
+pnpm install
 pnpm build
 \`\`\`
 
@@ -274,29 +349,7 @@ Produces:
 
 > 默认走「多 chunk」产物。如果你想要把所有 JS/CSS 内联成单个 .html(常见于
 > Node-RED editor 部署),在 vite.config.ts 里把 \`singleFilePlugin: true\` 加上,
-> 该插件是 cli 内置的 Rollup hook 实现,无需安装任何额外依赖。
-
-## 可选:Vue / Tailwindcss
-
-cli 自身**不**安装 \`@vitejs/plugin-vue\` / \`@tailwindcss/vite\`,由子包按需装:
-
-\`\`\`bash
-pnpm add -D @vitejs/plugin-vue @tailwindcss/vite
-\`\`\`
-
-然后在 \`vite.config.ts\` 里手动注入 plugin(不要用 \`vuePlugin: true\` 这种
-flag,cli 不替你处理):
-
-\`\`\`ts
-import { defineConfig } from '@wry-smile/flowup'
-import vue from '@vitejs/plugin-vue'
-import tailwindcss from '@tailwindcss/vite'
-
-export default defineConfig({
-  scope: '${ctx.name}',
-  client: { plugins: [vue(), tailwindcss()] },
-})
-\`\`\`
+> 该插件是 cli 内置的 Rollup hook 实现,无需安装任何额外依赖。${addOnSection}
 
 ## Conventions
 
