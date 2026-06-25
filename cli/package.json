@@ -36,20 +36,32 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@clack/prompts": "catalog:",
+  "peerDependencies": {
     "@tailwindcss/vite": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
+    "vite": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@tailwindcss/vite": {
+      "optional": true
+    },
+    "@vitejs/plugin-vue": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@clack/prompts": "catalog:",
     "commander": "catalog:",
     "find-up": "catalog:",
     "js-yaml": "catalog:",
     "micromatch": "catalog:",
-    "vite": "catalog:",
-    "vite-plugin-singlefile": "catalog:"
+    "vite": "catalog:"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
     "@types/js-yaml": "catalog:",
     "@types/micromatch": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
     "bumpp": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:"

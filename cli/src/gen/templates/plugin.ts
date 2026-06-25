@@ -187,6 +187,28 @@ Produces \`dist/${ctx.name}.js\` (runtime) + \`dist/${ctx.name}.html\` (editor),
 plus copied \`dist/locales/\`, \`dist/icons/\`, \`dist/resources/\` if those
 directories contain files.
 
+> 默认走「多 chunk」产物。如果要 inline 成单个 .html,在 vite.config.ts 里
+> 把 \`singleFilePlugin: true\` 加上(cli 内置 Rollup 插件,无需额外依赖)。
+
+## 可选:Vue / Tailwindcss
+
+cli 自身**不**安装 \`@vitejs/plugin-vue\` / \`@tailwindcss/vite\`,需要时手动装 + 注入:
+
+\`\`\`bash
+pnpm add -D @vitejs/plugin-vue @tailwindcss/vite
+\`\`\`
+
+\`\`\`ts
+import { defineConfig } from '@wry-smile/flowup'
+import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  scope: '${ctx.name}',
+  client: { plugins: [vue(), tailwindcss()] },
+})
+\`\`\`
+
 ## resources/ convention
 
 Drop any asset into \`resources/\`; Node-RED serves it at
