@@ -1,5 +1,8 @@
 #!/usr/bin/env node
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { Command } from 'commander'
 import {
   buildEntry,
@@ -11,12 +14,33 @@ import {
   scanMonorepoPackages,
 } from '../src/index.js'
 
+// 解析 cli/package.json 的 version(tsx 跑源码时 = cli/,编译产物跑时 = dist/../)
+function readCliVersion(): string {
+  const here = dirname(fileURLToPath(import.meta.url))
+  const candidates = [
+    resolve(here, '..', 'package.json'),
+    resolve(here, '..', '..', 'package.json'),
+  ]
+  for (const p of candidates) {
+    if (existsSync(p)) {
+      try {
+        const pkg = JSON.parse(readFileSync(p, 'utf-8')) as { version?: string }
+        return pkg.version ?? '0.0.0'
+      }
+      catch {
+        return '0.0.0'
+      }
+    }
+  }
+  return '0.0.0'
+}
+
 const program = new Command()
 
 program
   .name('flowup')
   .description('CLI tool for building, generating, and bundling Node-RED custom nodes.')
-  .version('1.0.0')
+  .version(readCliVersion())
 
 // ============================================================
 // build
