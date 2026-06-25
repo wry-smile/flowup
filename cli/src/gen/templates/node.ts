@@ -29,12 +29,13 @@ export function nodeTemplate(ctx: TemplateContext): FileMap {
 
 function renderPackageJson(ctx: TemplateContext): string {
   // 按 ctx.vue / ctx.tailwind 把可选 vite 插件加进 devDependencies。
-  // 注意:版本号走精确版本号(无 ^),跟 catalog 同步,在 cli/src/gen/context.ts 里 hardcode。
+  // 所有 devDependencies 都用 ^x.y.z 形式,允许自动升 patch/minor,
+  // 版本号与 pnpm-workspace.yaml catalog 同步。
   const extraDevDeps: string[] = []
   if (ctx.vue)
-    extraDevDeps.push(`    "@vitejs/plugin-vue": "${ctx.vueVersion}"`)
+    extraDevDeps.push(`    "@vitejs/plugin-vue": "^${ctx.vueVersion}"`)
   if (ctx.tailwind)
-    extraDevDeps.push(`    "@tailwindcss/vite": "${ctx.tailwindVersion}"`)
+    extraDevDeps.push(`    "@tailwindcss/vite": "^${ctx.tailwindVersion}"`)
   const devDepsBlock = [
     `    "@types/node-red": "^1.3.5"`,
     `    "@wry-smile/flowup": "^${ctx.flowupVersion}"`,
@@ -42,6 +43,8 @@ function renderPackageJson(ctx: TemplateContext): string {
     ...extraDevDeps,
   ].join(',\n')
 
+  // 不放 runtime dependencies:生成代码里所有 node-red 引用都是 `import type`,
+  // 编译时擦除。运行时由宿主 Node-RED 实例提供,不需要自带。
   return `{
   "name": "flowup-${ctx.name}",
   "type": "module",
@@ -52,9 +55,6 @@ function renderPackageJson(ctx: TemplateContext): string {
   "keywords": [],
   "scripts": {
     "build": "flowup build"
-  },
-  "dependencies": {
-    "node-red": "^5.0.0"
   },
   "devDependencies": {
 ${devDepsBlock}
