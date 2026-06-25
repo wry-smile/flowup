@@ -8,7 +8,7 @@ import process from 'node:process'
 import { build, loadConfigFromFile } from 'vite'
 import { filterPackageJson } from '../config/package-json'
 import { findViteConfig } from '../monorepo'
-import { runResourceCopy } from './resource-runner'
+import { runResourceCopy } from './resource'
 
 export interface BuildEntryOptions {
   /** 显式指定 vite.config 路径,优先于 findup */
