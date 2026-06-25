@@ -59,6 +59,18 @@ See https://nodered.org/docs/creating-nodes/resources
 }
 
 function renderPackageJson(ctx: TemplateContext): string {
+  const extraDevDeps: string[] = []
+  if (ctx.vue)
+    extraDevDeps.push(`    "@vitejs/plugin-vue": "${ctx.vueVersion}"`)
+  if (ctx.tailwind)
+    extraDevDeps.push(`    "@tailwindcss/vite": "${ctx.tailwindVersion}"`)
+  const devDepsBlock = [
+    `    "@types/node-red": "^1.3.5"`,
+    `    "@wry-smile/flowup": "^${ctx.flowupVersion}"`,
+    `    "typescript": "^6.0.3"`,
+    ...extraDevDeps,
+  ].join(',\n')
+
   return `{
   "name": "flowup-${ctx.name}",
   "type": "module",
@@ -74,9 +86,7 @@ function renderPackageJson(ctx: TemplateContext): string {
     "node-red": "^5.0.0"
   },
   "devDependencies": {
-    "@types/node-red": "^1.3.5",
-    "@wry-smile/flowup": "^${ctx.flowupVersion}",
-    "typescript": "^6.0.3"
+${devDepsBlock}
   },
   "node-red": {
     "scope": "${ctx.name}",
@@ -89,10 +99,26 @@ function renderPackageJson(ctx: TemplateContext): string {
 }
 
 function renderViteConfig(ctx: TemplateContext): string {
-  return `import { defineConfig } from '@wry-smile/flowup'
+  const imports: string[] = []
+  const plugins: string[] = []
+  if (ctx.vue) {
+    imports.push(`import vue from '@vitejs/plugin-vue'`)
+    plugins.push('vue()')
+  }
+  if (ctx.tailwind) {
+    imports.push(`import tailwindcss from '@tailwindcss/vite'`)
+    plugins.push('tailwindcss()')
+  }
+  const importBlock = imports.length ? `${imports.join('\n')}\n\n` : ''
+  const clientLine = plugins.length
+    ? `  client: { plugins: [${plugins.join(', ')}] },`
+    : ''
+
+  return `${importBlock}import { defineConfig } from '@wry-smile/flowup'
 
 export default defineConfig({
   scope: '${ctx.name}',
+${clientLine}
 })
 `
 }
@@ -159,9 +185,46 @@ function renderLocaleJson(_ctx: TemplateContext, _locale: string): string {
 }
 
 function renderReadme(ctx: TemplateContext): string {
+  const uiStackLines: string[] = []
+  if (ctx.vue)
+    uiStackLines.push('- **Vue** (SFC, .vue files)')
+  if (ctx.tailwind)
+    uiStackLines.push('- **Tailwindcss** (utility-first CSS)')
+  if (uiStackLines.length === 0)
+    uiStackLines.push('- Plain HTML + TypeScript (no UI framework)')
+
+  const addOnSection = (ctx.vue || ctx.tailwind)
+    ? ''
+    : `
+
+## 可选:Vue / Tailwindcss
+
+本脚手架默认是纯 HTML + TypeScript,不依赖任何 UI 框架。
+
+如果之后想加 Vue 或 Tailwindcss:
+
+\`\`\`bash
+pnpm add -D @vitejs/plugin-vue @tailwindcss/vite
+\`\`\`
+
+\`\`\`ts
+import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  scope: '${ctx.name}',
+  client: { plugins: [vue(), tailwindcss()] },
+})
+\`\`\`
+`
+
   return `# ${ctx.name}
 
 A Node-RED editor plugin scaffolded with [flowup](https://github.com/wry-smile/flowup).
+
+## UI Stack
+
+${uiStackLines.join('\n')}
 
 ## Layout
 
@@ -180,6 +243,7 @@ ${ctx.name}/
 ## Build
 
 \`\`\`bash
+pnpm install
 pnpm build
 \`\`\`
 
@@ -188,26 +252,7 @@ plus copied \`dist/locales/\`, \`dist/icons/\`, \`dist/resources/\` if those
 directories contain files.
 
 > 默认走「多 chunk」产物。如果要 inline 成单个 .html,在 vite.config.ts 里
-> 把 \`singleFilePlugin: true\` 加上(cli 内置 Rollup 插件,无需额外依赖)。
-
-## 可选:Vue / Tailwindcss
-
-cli 自身**不**安装 \`@vitejs/plugin-vue\` / \`@tailwindcss/vite\`,需要时手动装 + 注入:
-
-\`\`\`bash
-pnpm add -D @vitejs/plugin-vue @tailwindcss/vite
-\`\`\`
-
-\`\`\`ts
-import { defineConfig } from '@wry-smile/flowup'
-import vue from '@vitejs/plugin-vue'
-import tailwindcss from '@tailwindcss/vite'
-
-export default defineConfig({
-  scope: '${ctx.name}',
-  client: { plugins: [vue(), tailwindcss()] },
-})
-\`\`\`
+> 把 \`singleFilePlugin: true\` 加上(cli 内置 Rollup 插件,无需额外依赖)。${addOnSection}
 
 ## resources/ convention
 

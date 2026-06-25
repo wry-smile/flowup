@@ -134,17 +134,24 @@ program
   })
   .option('--name <name>', 'Name of the node or plugin (kebab-case)')
   .option('--locales <locales>', 'Comma-separated list of locales (e.g., en-US,zh-CN)')
+  .option('--vue [bool]', 'Enable Vue (SFC) for the client UI (adds @vitejs/plugin-vue). Pass --vue=false to disable.', v => v !== 'false' && v !== 'no' && v !== '0')
+  .option('--tailwind [bool]', 'Enable Tailwindcss (adds @tailwindcss/vite). Pass --tailwind=false to disable.', v => v !== 'false' && v !== 'no' && v !== '0')
   .option('--non-interactive', 'Error if any required option is missing instead of prompting', false)
   .action(async (options) => {
     try {
       // commander 的 option 不会传 undefined,只在 .action 里拿;但 .option() 默认 '.'
-      // 这里把没传 --xxx 的情况变回 undefined,让 gen 决定是否走交互
-      const opts = {
-        type: process.argv.includes('--type') ? options.type : undefined,
-        name: process.argv.includes('--name') ? options.name : undefined,
-        locales: process.argv.includes('--locales')
-          ? options.locales.split(',').map((s: string) => s.trim()).filter(Boolean)
+      // 这里把没传 --xxx 的情况变回 undefined,让 gen 决定是否走交互。
+      // hasArg 要兼顾 `--flag` 和 `--flag=value` 两种写法(commander 15 都允许)。
+      const hasArg = (flag: string) => process.argv.some(a => a === flag || a.startsWith(`${flag}=`))
+      const stripQuotes = (s: unknown) => typeof s === 'string' ? s.replace(/^['"]|['"]$/g, '') : s
+      const opts: import('../src/gen/index.js').GenOptions = {
+        type: hasArg('--type') ? stripQuotes(options.type) as 'node' | 'plugin' : undefined,
+        name: hasArg('--name') ? stripQuotes(options.name) as string : undefined,
+        locales: hasArg('--locales')
+          ? (typeof options.locales === 'string' ? options.locales : '').split(',').map((s: string) => s.trim()).filter(Boolean) as 'en-US'[] // LocaleCode[] 详细 cast 见 gen/locale.ts
           : undefined,
+        vue: hasArg('--vue') ? !!options.vue : undefined,
+        tailwind: hasArg('--tailwind') ? !!options.tailwind : undefined,
         nonInteractive: !!options.nonInteractive,
       }
       await runGenerator(opts)
