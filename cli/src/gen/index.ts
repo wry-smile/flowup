@@ -1,9 +1,10 @@
 import type { FileMap } from './context'
 import type { LocaleCode } from './locale'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
 import { createContext } from './context'
 import { DEFAULT_LOCALES, SUPPORTED_LOCALES } from './locale'
@@ -176,7 +177,8 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
 }
 
 async function doGenerate(opts: GenResolved): Promise<void> {
-  const ctx = createContext(opts.name, opts.locales)
+  const flowupDep = resolveFlowupDep(process.cwd())
+  const ctx = createContext(opts.name, opts.locales, flowupDep)
   const files: FileMap = opts.type === 'node' ? nodeTemplate(ctx) : pluginTemplate(ctx)
 
   const baseDir = resolve(process.cwd(), opts.name)
@@ -199,4 +201,54 @@ async function doGenerate(opts: GenResolved): Promise<void> {
   p.log.info(`  cd ${opts.name}`)
   p.log.info('  pnpm install')
   p.log.info('  pnpm build')
+}
+
+/**
+ * 向上找 pnpm-workspace.yaml,定位 monorepo 根。
+ * 没找到返回 null(说明不在 monorepo 里,脚手架要按发布版本来)。
+ */
+export function detectWorkspaceRoot(startDir: string): string | null {
+  let dir = startDir
+  while (true) {
+    if (existsSync(join(dir, 'pnpm-workspace.yaml')))
+      return dir
+    const parent = dirname(dir)
+    if (parent === dir)
+      return null
+    dir = parent
+  }
+}
+
+/**
+ * 读 cli/package.json 的 version,用 "^x.y.z" 形式返回。
+ * 用 cli 包自身的位置向上找(tsx 跑源码时 = cli/,编译产物 = dist/../)。
+ */
+export function resolveFlowupVersion(): string {
+  const here = dirname(fileURLToPath(import.meta.url))
+  const candidates = [
+    resolve(here, '..', 'package.json'),
+    resolve(here, '..', '..', 'package.json'),
+  ]
+  for (const p of candidates) {
+    if (!existsSync(p))
+      continue
+    try {
+      const pkg = JSON.parse(readFileSync(p, 'utf-8')) as { name?: string, version?: string }
+      if (pkg.name === '@wry-smile/flowup' && pkg.version)
+        return `^${pkg.version}`
+    }
+    catch {
+      // 解析失败就跳过,继续找下一个候选
+    }
+  }
+  return 'latest'
+}
+
+/**
+ * 决定 @wry-smile/flowup 在脚手架 package.json 里的版本写法:
+ * - 在 monorepo 内 → "workspace:*"(走 pnpm workspace 协议,链接本地 cli 包)
+ * - 不在 monorepo → "^x.y.z"(发布场景,从 npm 装)
+ */
+export function resolveFlowupDep(cwd: string): string {
+  return detectWorkspaceRoot(cwd) ? 'workspace:*' : resolveFlowupVersion()
 }
