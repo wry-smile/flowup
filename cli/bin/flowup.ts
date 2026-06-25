@@ -10,6 +10,8 @@ import {
   findPnpmWorkspace,
   findViteConfig,
   loadFlowupConfig,
+  runBuildWatch,
+  runDev,
   runGenerator,
   scanMonorepoPackages,
 } from '../src/index.js'
@@ -43,14 +45,15 @@ program
   .version(readCliVersion())
 
 // ============================================================
+// ============================================================
 // build
 // ============================================================
 program
   .command('build')
-  .description('Build a single node/plugin package (runtime + client + resources).')
+  .description('Build a single node/plugin package (runtime + client + resources). Use --watch to rebuild on file changes.')
   .option('--cwd <path>', 'Working directory, default process.cwd()')
   .option('--config <path>', 'Path to vite.config.ts, default findup from cwd')
-  .option('--watch', 'Enable Vite watch mode', false)
+  .option('--watch', 'Watch runtime/ + client/ + icons/ + resources/ + locales/ for changes and rebuild', false)
   .option('--all', 'Build all node-red packages in the monorepo (pnpm workspace)', false)
   .option('--pkg <name...>', 'Build only the named package(s), repeatable')
   .option('--bundle', 'After build, also produce a meta package under dist/commonNodes/...', false)
@@ -59,6 +62,17 @@ program
   .option('--bundle-install', 'Run pnpm install in the bundle output after bundling', false)
   .action(async (options) => {
     try {
+      // --watch 模式:单包 watch(目前 --watch + --all 组合不支持)
+      if (options.watch && !options.all) {
+        await runBuildWatch({
+          cwd: options.cwd,
+          configPath: options.config
+            ? resolve(options.cwd ?? process.cwd(), options.config)
+            : undefined,
+        })
+        return
+      }
+
       // 加载 flowup.config
       const { config: flowupConfig } = await loadFlowupConfig(options.cwd ?? process.cwd())
 
@@ -89,11 +103,7 @@ program
       else {
         // 单包 build
         const configPath = options.config
-          ? await (async () => {
-            // 用户给的是相对路径的话,基于 cwd 解析
-              const { resolve } = await import('node:path')
-              return resolve(options.cwd ?? process.cwd(), options.config)
-            })()
+          ? resolve(options.cwd ?? process.cwd(), options.config)
           : await findViteConfig(options.cwd ?? process.cwd())
         console.log(`Building with config: ${configPath}`)
         await buildEntry({
@@ -117,6 +127,31 @@ program
     }
     catch (err) {
       console.error('Build failed:', err)
+      process.exit(1)
+    }
+  })
+
+// ============================================================
+// dev
+// ============================================================
+program
+  .command('dev')
+  .description('Dev mode: build + watch + auto-restart Node-RED on file changes. Use for active node/plugin development.')
+  .option('--cwd <path>', 'Working directory, default process.cwd()')
+  .option('--node-red-port <port>', 'Port for node-red, default 1880', v => parseInt(v, 10))
+  .option('--node-red-user-dir <path>', 'node-red user dir (settings/flows/credentials), default <cwd>/node-red-dev')
+  .option('--node-red-bin <path>', 'node-red binary path, default lookup from PATH')
+  .action(async (options) => {
+    try {
+      await runDev({
+        cwd: options.cwd,
+        nodeRedPort: options.nodeRedPort,
+        nodeRedUserDir: options.nodeRedUserDir,
+        nodeRedBin: options.nodeRedBin,
+      })
+    }
+    catch (err) {
+      console.error('Dev failed:', err)
       process.exit(1)
     }
   })
