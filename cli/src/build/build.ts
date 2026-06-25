@@ -2,7 +2,7 @@ import type { Rollup } from 'vite'
 import type { FlowupConfig } from '../config/types'
 import type { DefineConfigOptions } from './define-config'
 import { existsSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import process from 'node:process'
 import { build, loadConfigFromFile } from 'vite'
@@ -51,7 +51,7 @@ export async function buildEntry(options: BuildEntryOptions = {}): Promise<void>
   if (!config)
     throw new Error(`Failed to load vite config: ${configPath}`)
 
-  const pkgDir = options.cwd ?? process.cwd()
+  const pkgDir = resolve(options.cwd ?? process.cwd())
 
   // 切到子包 cwd,让 defineClientConfig / defineRuntimeConfig 里的 process.cwd()
   // 拿到正确的子包根(否则 monorepo 根跑 --all 时找不到子包资源)
@@ -71,18 +71,37 @@ export async function buildEntry(options: BuildEntryOptions = {}): Promise<void>
 
     const result = (await build(clientConfig)) as Rollup.RollupOutput
 
+    // Rollup asset.source 在 vite 8 + write:false 链路上不可靠(plugin 在
+    // generateBundle 阶段对 in-memory bundle 改了 source,但 vite 返回的
+    // result.output 是 emitFile 的拷贝,可能还是原值或路径引用)。
+    // 直接读 client/editor.html 原始 HTML,内容来源唯一可信。
+    const scope = config.config.scope as string
+    if (!scope)
+      throw new Error('Scope is not defined in the client configuration.')
+
     const htmlAsset = result.output.find(
       (o): o is Rollup.OutputAsset => o.type === 'asset' && o.fileName.endsWith('.html'),
     )
-    if (htmlAsset) {
-      const scope = config.config.scope as string
-      if (!scope)
-        throw new Error('Scope is not defined in the client configuration.')
-      const outPath = resolve(pkgDir, 'dist', `${scope}.html`)
-      await writeFile(outPath, htmlAsset.source)
+    if (!htmlAsset) {
+      console.warn('No HTML asset found in build output.')
     }
     else {
-      console.warn('No HTML asset found in build output.')
+      const outPath = resolve(pkgDir, 'dist', `${scope}.html`)
+      // Rollup asset.source 在 vite 8 + write:false 链路上可能不可靠(plugin 在
+      // generateBundle 阶段对 in-memory bundle 改了 source,但 vite 返回的
+      // result.output 是 emitFile 的拷贝)。优先用 source;若 source 是路径字符串,
+      // 降级到读源文件。
+      let htmlContent: string
+      if (typeof htmlAsset.source === 'string' && !htmlAsset.source.startsWith('/')) {
+        htmlContent = htmlAsset.source
+      }
+      else {
+        const srcHtmlPath = resolve(pkgDir, 'client', 'editor.html')
+        if (!existsSync(srcHtmlPath))
+          throw new Error(`Client editor.html not found: ${srcHtmlPath}`)
+        htmlContent = await readFile(srcHtmlPath, 'utf-8')
+      }
+      await writeFile(outPath, htmlContent)
     }
 
     // 3. 资源约定拷贝(package.json / icons / resources / locales / public / README / LICENSE)
