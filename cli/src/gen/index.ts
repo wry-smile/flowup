@@ -74,7 +74,7 @@ async function collectMissing(options: GenOptions): Promise<GenResolved> {
       defaultValue: '',
       placeholder: 'my-special-node',
       validate: (v) => {
-        if (!v.trim())
+        if (!v || !v.trim())
           return 'Name is required'
         if (!/^[a-z][a-z0-9-]*$/.test(v.trim()))
           return 'Use kebab-case: lowercase letters, digits, dashes (must start with a letter)'

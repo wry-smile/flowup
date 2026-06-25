@@ -1,8 +1,8 @@
 import type { FlowupConfig } from './types'
 import { existsSync } from 'node:fs'
 import process from 'node:process'
-// find-up v5 是 CJS,default export = findUp 函数本身
-import findUp from 'find-up'
+// find-up v6+ 是 ESM + named export
+import { findUp } from 'find-up'
 
 const CANDIDATE_NAMES = [
   'flowup.config.ts',

@@ -2,8 +2,9 @@ import { existsSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
-import findUp from 'find-up'
-import yaml from 'js-yaml'
+import { findUp } from 'find-up'
+// js-yaml v5 改成 named exports only,不再有 default export
+import * as yaml from 'js-yaml'
 
 export interface WorkspacePackage {
   /** 相对 monorepo 根 */
