@@ -71,12 +71,12 @@ function renderPackageJson(ctx: TemplateContext): string {
     "build": "flowup build"
   },
   "dependencies": {
-    "node-red": "^5.0.0"
+    "node-red": "5.0.0"
   },
   "devDependencies": {
-    "@types/node-red": "^1.3.5",
-    "@wry-smile/flowup": "${ctx.flowupDep}",
-    "typescript": "^6.0.3"
+    "@types/node-red": "1.3.5",
+    "@wry-smile/flowup": "${ctx.flowupVersion}",
+    "typescript": "6.0.3"
   },
   "node-red": {
     "scope": "${ctx.name}",
