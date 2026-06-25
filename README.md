@@ -23,8 +23,8 @@
 pnpm install
 
 # 2. scaffold a new node
-pnpm gen:nodes
-#  → flowup gen --outputDir ./packages/nodes --type node --locales en-US,zh-CN
+pnpm gen:node
+#  → cd packages/nodes && flowup gen --type node --locales en-US,zh-CN
 
 # 3. scaffold a new editor plugin
 pnpm gen:plugin
@@ -99,7 +99,7 @@ dist/commonNodes/node-red-tp-built-in/
 | Command | What it does |
 |---|---|
 | `pnpm build` | Build the CLI itself (tsdown → `cli/dist/`) |
-| `pnpm gen:nodes` | Scaffold a new node (interactive) |
+| `pnpm gen:node` | Scaffold a new node (interactive) |
 | `pnpm gen:plugin` | Scaffold a new plugin (interactive) |
 | `flowup build` (in a sub-package) | Build that single sub-package |
 | `flowup build --all` (in repo root) | Build every node-red sub-package |

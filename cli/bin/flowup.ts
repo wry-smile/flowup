@@ -126,8 +126,7 @@ program
 // ============================================================
 program
   .command('gen')
-  .description('Scaffold a new Node-RED node or plugin.')
-  .option('--outputDir <path>', 'Output directory relative to project root', '.')
+  .description('Scaffold a new Node-RED node or plugin in the current directory (cd into target dir first).')
   .option('--type <type>', 'Type to generate: node or plugin', (v) => {
     if (v !== 'node' && v !== 'plugin')
       throw new Error(`--type must be "node" or "plugin", got "${v}"`)
@@ -141,9 +140,6 @@ program
       // commander 的 option 不会传 undefined,只在 .action 里拿;但 .option() 默认 '.'
       // 这里把没传 --xxx 的情况变回 undefined,让 gen 决定是否走交互
       const opts = {
-        outputDir: options.outputDir === '.' && !process.argv.includes('--outputDir')
-          ? undefined
-          : options.outputDir,
         type: process.argv.includes('--type') ? options.type : undefined,
         name: process.argv.includes('--name') ? options.name : undefined,
         locales: process.argv.includes('--locales')
