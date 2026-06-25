@@ -61,9 +61,9 @@ See https://nodered.org/docs/creating-nodes/resources
 function renderPackageJson(ctx: TemplateContext): string {
   const extraDevDeps: string[] = []
   if (ctx.vue)
-    extraDevDeps.push(`    "@vitejs/plugin-vue": "${ctx.vueVersion}"`)
+    extraDevDeps.push(`    "@vitejs/plugin-vue": "^${ctx.vueVersion}"`)
   if (ctx.tailwind)
-    extraDevDeps.push(`    "@tailwindcss/vite": "${ctx.tailwindVersion}"`)
+    extraDevDeps.push(`    "@tailwindcss/vite": "^${ctx.tailwindVersion}"`)
   const devDepsBlock = [
     `    "@types/node-red": "^1.3.5"`,
     `    "@wry-smile/flowup": "^${ctx.flowupVersion}"`,
@@ -71,6 +71,8 @@ function renderPackageJson(ctx: TemplateContext): string {
     ...extraDevDeps,
   ].join(',\n')
 
+  // 不放 runtime dependencies:生成代码里所有 node-red 引用都是 `import type`,
+  // 编译时擦除。运行时由宿主 Node-RED 实例提供,不需要自带。
   return `{
   "name": "flowup-${ctx.name}",
   "type": "module",
@@ -81,9 +83,6 @@ function renderPackageJson(ctx: TemplateContext): string {
   "keywords": [],
   "scripts": {
     "build": "flowup build"
-  },
-  "dependencies": {
-    "node-red": "^5.0.0"
   },
   "devDependencies": {
 ${devDepsBlock}
