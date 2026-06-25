@@ -19,8 +19,8 @@
   "scripts": {
     "release": "pnpm -F @wry-smile/flowup release",
     "build": "pnpm -F @wry-smile/flowup build",
-    "gen:node": "cd packages/nodes && flowup gen --type node --locales en-US,zh-CN",
-    "gen:plugin": "cd packages/plugins && flowup gen --type plugin --locales en-US,zh-CN"
+    "gen:node": "cd packages/nodes && flowup gen",
+    "gen:plugin": "cd packages/plugins && flowup gen"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:",
