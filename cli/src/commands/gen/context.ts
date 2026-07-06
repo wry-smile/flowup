@@ -1,19 +1,22 @@
+/**
+ * 模板渲染上下文 + 上下文构造 + monorepo 探测。
+ *
+ * 关键设计:
+ * - flowupVersion 只用于模板渲染时插入到 src/package.json,实际取值
+ *   从 share/cli-pkg.ts:resolveCliVersion() 拿。
+ * - flowupSpecifier 由 createContext 根据 inMonorepo 自动选 workspace:* vs ^x.y.z。
+ * - vueVersion / tailwindVersion 是 hardcode 版本号常量,跟 pnpm catalog 同步。
+ *   为什么不从 pnpm-workspace.yaml 读?因为发布到 npm 的 cli 包内不含
+ *   pnpm-workspace.yaml,而 peer optional 的 @vitejs/plugin-vue /
+ *   @tailwindcss/vite 在用户子包可能根本没装,无法从它们的 package.json 读。
+ */
+
 import type { LocaleCode } from './locale'
-import { existsSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
-import process from 'node:process'
+import { toProperCase } from '../../share/paths'
 
 /**
  * 可选 vite 插件的版本号常量 —— 跟 catalog 保持一致。
- *
- * 为什么 hardcode 而不是从 pnpm-workspace.yaml / cli/package.json 读:
- * 1. cli 发布到 npm 后,包内不会有 pnpm-workspace.yaml(它是 monorepo 配置)。
- * 2. cli 把 @vitejs/plugin-vue / @tailwindcss/vite 标为 peer optional,
- *    用户的 node_modules 里可能根本不存在这两个包,无法从它们的 package.json 读。
- * 3. 升级 catalog 时同步改这两个常量,跟 ctx.flowupVersion 思路一致 —— 由 cli 升级
- *    commit 统一管理,gen 出来的脚手架版本行为完全可预测。
- *
- * 当前值与 pnpm-workspace.yaml catalog 同步。catalog 改了这里也要改。
+ * catalog 升了这里也要同步改(由 cli 升级 commit 统一管理)。
  */
 export const VITE_PLUGIN_VUE_VERSION = '6.0.7'
 export const TAILWINDCSS_VITE_VERSION = '4.3.1'
@@ -54,17 +57,6 @@ export interface TemplateContext {
 
 export type FileMap = Record<string, string>
 
-/**
- * 把任意字符串转成 PascalCase,用于 TS 类型/类名
- */
-export function toProperCase(input: string): string {
-  return input
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
-    .join('')
-}
-
 export interface CreateContextOptions {
   name: string
   locales: LocaleCode[]
@@ -94,28 +86,4 @@ export function createContext(opts: CreateContextOptions): TemplateContext {
     vueVersion: VITE_PLUGIN_VUE_VERSION,
     tailwindVersion: TAILWINDCSS_VITE_VERSION,
   }
-}
-
-/**
- * 探测当前 gen 调用上下文是不是在 monorepo 里 —— 从 startDir 向上找
- * pnpm-workspace.yaml,找到就认为是在 monorepo 内。
- *
- * 为什么不查 cli 自身的位置:
- * cli 可能被 `pnpm -F @wry-smile/flowup gen` 从 monorepo 根调,
- * 也可能被用户 `flowup gen` 从 /tmp 调 —— 关键不在 cli 在哪,在用户 cwd 在哪。
- *
- * 为什么不用 require('node:fs'):cli 是 ESM-only,require 在 ESM 下不可用。
- * 用顶层 import + 函数调用即可。
- */
-export function isInMonorepo(startDir: string = process.cwd()): boolean {
-  let dir = resolve(startDir)
-  for (let i = 0; i < 6; i++) {
-    if (existsSync(resolve(dir, 'pnpm-workspace.yaml')))
-      return true
-    const parent = dirname(dir)
-    if (parent === dir)
-      break
-    dir = parent
-  }
-  return false
 }

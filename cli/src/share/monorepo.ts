@@ -1,3 +1,10 @@
+/**
+ * Monorepo / workspace 探测工具 —— 合并了原 src/monorepo/index.ts + gen/context.ts:isInMonorepo。
+ *
+ * 因为这两件事语义上同族(都是「pnpm-workspace.yaml 在哪」「我处在 monorepo 哪一层」),
+ * 之前跨目录放反而让人找半天。统一到 share/monorepo.ts。
+ */
+
 import { existsSync } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
@@ -30,9 +37,18 @@ export async function findPnpmWorkspace(startDir: string = process.cwd()): Promi
 }
 
 /**
- * 读取 pnpm-workspace.yaml 的 packages 列表。
- * 不引入额外的 yaml 解析依赖,直接手撸 yaml 简化版解析。
- * (我们只用 packages 字段,且都是字符串数组 / 嵌套数组)
+ * 从 startDir 向上探测当前 cwd 是不是在 monorepo 里。
+ * 取代原 gen/context.ts:isInMonorepo(自己手写 6 层循环),更简单。
+ *
+ * 注意:cli 是从 monorepo 根被 `pnpm -F @wry-smile/flowup gen` 调的,
+ * 还是在用户任意 cwd 调的,我们更关心的是 **用户的 cwd** 处不处在 monorepo 内。
+ */
+export async function isInMonorepo(startDir: string = process.cwd()): Promise<boolean> {
+  return (await findPnpmWorkspace(startDir)) !== null
+}
+
+/**
+ * 读取 pnpm-workspace.yaml 的 packages 列表(交给 js-yaml,不自己手撸)。
  */
 async function readPnpmWorkspace(filePath: string): Promise<string[]> {
   const raw = await readFile(filePath, 'utf-8')
@@ -56,9 +72,6 @@ async function expandGlob(rootDir: string, pattern: string): Promise<string[]> {
   if (!isGlob(pattern))
     return existsSync(join(rootDir, pattern)) ? [pattern] : []
 
-  // 拿 glob 模式里最后一个 `/**` 或 `/*` 之前的固定前缀作为 walk 起点
-  // 例如 packages/nodes/** → 起点 packages/nodes
-  // 例如 packages/*     → 起点 packages
   const parts = pattern.split('/')
   const prefixParts: string[] = []
   for (const p of parts) {
@@ -86,7 +99,6 @@ async function expandGlob(rootDir: string, pattern: string): Promise<string[]> {
         out.push(...await walk(abs, rel))
       }
     }
-    // 当前目录里如果有 package.json,就当作候选
     if (existsSync(join(dir, 'package.json'))) {
       out.push(base)
     }
@@ -141,7 +153,6 @@ export async function scanMonorepoPackages(
   for (const pattern of globs) {
     const relPaths = await expandGlob(rootDir, pattern)
     for (const rel of relPaths) {
-      // 过滤掉 build 产物 / node_modules 等目录
       const segments = rel.split('/')
       if (segments.some(s => IGNORED_DIRS.has(s)))
         continue
@@ -150,7 +161,6 @@ export async function scanMonorepoPackages(
       const pkg = await readPackageJson(abs)
       if (!pkg)
         continue
-      // 只挑带 node-red 字段的(也就是 node / plugin 子包)
       if (!pkg['node-red'])
         continue
       out.push({
@@ -165,8 +175,8 @@ export async function scanMonorepoPackages(
 }
 
 /**
- * 向上找最近的 vite.config.ts(js|mjs) 文件,支持 monorepo 子包 build。
- * 找不到就 fallback 到 cwd 拼路径(保留原行为)。
+ * 向上找最近的 vite.config.ts(js|mjs|cjs) 文件。
+ * 找不到就 fallback 到 startDir 拼路径(保留原行为,buildEntry 期望一定拿到一个 path)。
  */
 export async function findViteConfig(startDir: string = process.cwd()): Promise<string> {
   const candidates = [
@@ -180,6 +190,5 @@ export async function findViteConfig(startDir: string = process.cwd()): Promise<
     if (found)
       return found
   }
-  // fallback: 拼 cwd
   return resolve(startDir, 'vite.config.ts')
 }

@@ -1,4 +1,4 @@
-import type { FileMap, TemplateContext } from '../context'
+import type { FileMap, TemplateContext } from '../commands/gen/context'
 
 export function pluginTemplate(ctx: TemplateContext): FileMap {
   return {

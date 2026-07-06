@@ -1,10 +1,22 @@
-import type { FlowupConfig } from '../config/types'
-import type { WorkspacePackage } from '../monorepo'
+/**
+ * flowup bundle 命令的核心实现:把所有 node-red 子包的 dist/ 整合成一个 meta package。
+ *
+ * 流程:
+ * 1. 扫子包(scanMonorepoPackages)
+ * 2. 可选逐个 build
+ * 3. 把每个子包的 dist 拷到 outputDir/<scope>/
+ * 4. 写顶层 package.json / README / .gitignore
+ * 5. 可选 pnpm install
+ */
+
+import type { FlowupConfig } from '../../config/types'
+import type { WorkspacePackage } from '../../share/monorepo'
 import { existsSync } from 'node:fs'
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
-import { scanMonorepoPackages } from '../monorepo'
+import { scanMonorepoPackages } from '../../share/monorepo'
+import { buildEntry } from '../build/impl-entry'
 
 export interface BundleOptions {
   /** monorepo 根,默认从 cwd 向上找 pnpm-workspace.yaml */
@@ -83,7 +95,6 @@ export async function bundleMonorepo(rawOptions: BundleOptions = {}): Promise<Bu
 
   // 2. 跑 build(每个子包)—— 默认跑,除非 skipBuild
   if (!opts.skipBuild) {
-    const { buildEntry } = await import('../build/index')
     for (const pkg of packages) {
       const distDir = join(pkg.absPath, 'dist')
       if (!existsSync(distDir)) {
@@ -155,7 +166,7 @@ export async function bundleMonorepo(rawOptions: BundleOptions = {}): Promise<Bu
   }
 }
 
-function buildBundleManifest(
+export function buildBundleManifest(
   packages: WorkspacePackage[],
   opts: Pick<Required<BundleOptions>, 'name' | 'version' | 'license'>,
   flowupConfig: FlowupConfig | null | undefined,
@@ -199,5 +210,3 @@ function buildBundleManifest(
   }
   return manifest
 }
-
-export { buildBundleManifest }

@@ -7,7 +7,22 @@ import { viteSingleFile } from './plugins/single-file'
 import { defineRuntimeConfig } from './runtime'
 
 export type { CopyTask } from './plugins/copy-file'
-export type { SingleFilePluginOptions, TailwindcssPluginOptions, VuePluginOptions } from './types'
+
+/**
+ * @vitejs/plugin-vue 的 option type(直接用包的类型,避免在 cli 里 mirror 一次)。
+ * cli 把 vue / tailwindcss 标为 optional peer dep,用户子包按需装。
+ */
+export type VuePluginOptions = NonNullable<Parameters<(typeof import('@vitejs/plugin-vue'))['default']>[0]>
+
+/**
+ * cli 内置 inline-html Rollup 插件的 options type。源自 ./plugins/single-file。
+ */
+export type SingleFilePluginOptions = import('./plugins/single-file').Config
+
+/**
+ * @tailwindcss/vite 的 plugin options type(直接用包的类型)。
+ */
+export type TailwindcssPluginOptions = NonNullable<Parameters<(typeof import('@tailwindcss/vite'))['default']>[0]>
 
 export interface DefineConfigOptions {
   runtime?: UserConfig
@@ -21,19 +36,15 @@ export interface DefineConfigOptions {
    * - `true`:启用,走默认配置。子包 devDependencies 需装 `@vitejs/plugin-vue`。
    * - `VuePluginOptions`:自定义插件选项。
    */
-  vuePlugin?: boolean | import('./types').VuePluginOptions
+  vuePlugin?: boolean | VuePluginOptions
   /**
    * 启用 cli 内置的 inline-html 插件(把 editor bundle 内联成一个 .html)。
    *
    * - `false`(默认):不启用,client 走 vite 默认多 chunk 产物。
    * - `true`/`SingleFilePluginOptions`:启用 cli 自研的 inline 逻辑,
    *   无需任何外部包(纯 Rollup hook 实现)。
-   *
-   * 注:`flowup build` 本身就是「editor → 单个 <scope>.html」的目标,
-   * 业务上几乎总会启用;但保持 opt-in 是为了在 monorepo 某些子包
-   * (如纯服务端插件)里不浪费 bundle 时间。
    */
-  singleFilePlugin?: boolean | import('./types').SingleFilePluginOptions
+  singleFilePlugin?: boolean | SingleFilePluginOptions
   /**
    * 启用 @tailwindcss/vite。
    *
@@ -41,7 +52,7 @@ export interface DefineConfigOptions {
    * - `true`/`TailwindcssPluginOptions`:启用,需装 `@tailwindcss/vite`
    *   并在 client/editor.html 引入 tailwind 产物。
    */
-  tailwindcssPlugin?: boolean | import('./types').TailwindcssPluginOptions
+  tailwindcssPlugin?: boolean | TailwindcssPluginOptions
   /** 自定义 copy 任务,会追加到 Node-RED 资源约定拷贝之后 */
   copyTask?: CopyTask[]
   /** 关闭/开启 Node-RED 资源约定扫描,默认全开 */

@@ -1,14 +1,26 @@
+/**
+ * buildEntry —— single package 一次 build 的核心实现。
+ *
+ * 4 步:
+ * 1. runtime build (vite)
+ * 2. client build (vite) + 把产物 HTML 落盘
+ * 3. 资源约定拷贝(icons / resources / locales / public / README / LICENSE)
+ * 4. 过滤产物 package.json
+ *
+ * 被 build / dev / bundle / bundleMonorepo 四个入口复用。
+ */
+
 import type { Rollup } from 'vite'
-import type { FlowupConfig } from '../config/types'
-import type { DefineConfigOptions } from './define-config'
+import type { DefineConfigOptions } from '../../build/define-config'
+import type { FlowupConfig } from '../../config/types'
 import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import process from 'node:process'
 import { build, loadConfigFromFile } from 'vite'
-import { filterPackageJson } from '../config/package-json'
-import { findViteConfig } from '../monorepo'
-import { runResourceCopy } from './resource'
+import { runResourceCopy } from '../../build/resource'
+import { filterPackageJson } from '../../config/package-json'
+import { findViteConfig } from '../../share/monorepo'
 
 export interface BuildEntryOptions {
   /** 显式指定 vite.config 路径,优先于 findup */
@@ -17,7 +29,7 @@ export interface BuildEntryOptions {
   cwd?: string
   /** flowup.config 加载结果,会影响 package.json 过滤 */
   flowupConfig?: FlowupConfig | null
-  /** watch 模式,只跑一次 buildEntry 即可忽略 */
+  /** watch 模式(给 impl 留口,目前未用) */
   watch?: boolean
 }
 
@@ -61,7 +73,7 @@ export async function buildEntry(options: BuildEntryOptions = {}): Promise<void>
   }
 
   try {
-    // 1. runtime build (root + chdir 已经处理 pkgDir 解析,outDir 保持相对 pkgDir)
+    // 1. runtime build
     await build(config.config.runtime)
 
     // 2. client build
@@ -71,9 +83,9 @@ export async function buildEntry(options: BuildEntryOptions = {}): Promise<void>
 
     const result = (await build(clientConfig)) as Rollup.RollupOutput
 
-    // Rollup asset.source 在 vite 8 + write:false 链路上不可靠(plugin 在
-    // generateBundle 阶段对 in-memory bundle 改了 source,但 vite 返回的
-    // result.output 是 emitFile 的拷贝,可能还是原值或路径引用)。
+    // Rollup asset.source 在 vite 8 + write:false 链路上不可靠
+    // (plugin 在 generateBundle 阶段对 in-memory bundle 改了 source,
+    // 但 vite 返回的 result.output 是 emitFile 的拷贝)。
     // 直接读 client/editor.html 原始 HTML,内容来源唯一可信。
     const scope = config.config.scope as string
     if (!scope)
@@ -87,10 +99,6 @@ export async function buildEntry(options: BuildEntryOptions = {}): Promise<void>
     }
     else {
       const outPath = resolve(pkgDir, 'dist', `${scope}.html`)
-      // Rollup asset.source 在 vite 8 + write:false 链路上可能不可靠(plugin 在
-      // generateBundle 阶段对 in-memory bundle 改了 source,但 vite 返回的
-      // result.output 是 emitFile 的拷贝)。优先用 source;若 source 是路径字符串,
-      // 降级到读源文件。
       let htmlContent: string
       if (typeof htmlAsset.source === 'string' && !htmlAsset.source.startsWith('/')) {
         htmlContent = htmlAsset.source
@@ -104,15 +112,12 @@ export async function buildEntry(options: BuildEntryOptions = {}): Promise<void>
       await writeFile(outPath, htmlContent)
     }
 
-    // 3. 资源约定拷贝(package.json / icons / resources / locales / public / README / LICENSE)
-    //    client build 阶段的 viteCopyTaskPlugin 已经跑过,这里再补一次确保
-    //    --watch / --bundle 等场景下用户自定义 copyTask 也跑一次。
+    // 3. 资源约定拷贝
     await runResourceCopy(pkgDir, config.config.copyTask, config.config.resources)
 
     // 4. 过滤 package.json
     const srcPkgPath = resolve(pkgDir, 'package.json')
     if (existsSync(srcPkgPath)) {
-      const { readFile } = await import('node:fs/promises')
       const src = JSON.parse(await readFile(srcPkgPath, 'utf-8'))
       const filtered = filterPackageJson(src, options.flowupConfig?.packageJson)
       const outPkgPath = resolve(pkgDir, 'dist', 'package.json')
