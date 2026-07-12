@@ -1,12 +1,5 @@
-/**
- * 走 @clack/prompts 收集缺失字段。预先把 default 都用 env 来的值填好。
- *
- * 之前散在 gen/index.ts:collectMissing(308 行里占了 ~100 行)。抽出来是因为：
- * 1. 主体 impl.ts 只关心「参数齐了 → 跑 / 没齐 → 报错」,collect 是交互细节。
- * 2. collect 里 5 处 `isCancel → exit(0)` 现在统一在 share/prompts.ts 包装。
- */
-
 import type { GenOptions, GenResolved, GenType } from './impl'
+import type { ClientFramework } from './context'
 import type { LocaleCode } from './locale'
 import { kebabCase } from '../../share/paths'
 import { confirmOrExit, multiselectOrExit, selectOrExit, textOrExit } from '../../share/prompts'
@@ -34,10 +27,10 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
       message: `Enter the ${answers.type} name (kebab-case)?`,
       defaultValue: '',
       placeholder: 'my-special-node',
-      validate: (v) => {
-        if (!v || !v.trim())
+      validate: (value) => {
+        if (!value || !value.trim())
           return 'Name is required'
-        if (!/^[a-z][a-z0-9-]*$/.test(v.trim()))
+        if (!/^[a-z][a-z0-9-]*$/.test(value.trim()))
           return 'Use kebab-case: lowercase letters, digits, dashes (must start with a letter)'
         return undefined
       },
@@ -63,17 +56,25 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
     answers.locales = options.locales
   }
 
-  if (options.vue === undefined) {
-    answers.vue = await confirmOrExit({
-      message: 'Use Vue (single-file components) for the client UI?',
-      initialValue: false,
+  if (options.framework === undefined) {
+    answers.framework = await selectOrExit<ClientFramework>({
+      message: 'Select client framework?',
+      options: [
+        { value: 'vanilla', label: 'Vanilla' },
+        { value: 'svelte', label: 'Svelte' },
+        { value: 'vue', label: 'Vue' },
+      ],
+      initialValue: 'vanilla',
     })
   }
   else {
-    answers.vue = options.vue
+    answers.framework = options.framework
   }
 
-  if (options.tailwind === undefined) {
+  if (answers.framework === 'vanilla') {
+    answers.tailwind = false
+  }
+  else if (options.tailwind === undefined) {
     answers.tailwind = await confirmOrExit({
       message: 'Use Tailwindcss for styling?',
       initialValue: false,
