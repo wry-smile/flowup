@@ -1,21 +1,37 @@
 import type { FileMap, TemplateContext } from '../commands/gen/context'
+import {
+  getFrameworkDevDependencies,
+  getFrameworkVitePluginSetup,
+  isSvelteFramework,
+  isVueFramework,
+  renderFrameworkEditorContent,
+  renderFrameworkReadmeLines,
+} from './client-framework'
+import { getBaseTemplateDevDependencies } from './dependency-versions'
+import { renderSveltePluginClient, renderSveltePluginFiles } from './plugin-frameworks/svelte'
+import { renderVanillaPluginClient } from './plugin-frameworks/vanilla'
+import { renderVuePluginClient, renderVuePluginFiles } from './plugin-frameworks/vue'
 
 export function pluginTemplate(ctx: TemplateContext): FileMap {
   return {
     'package.json': renderPackageJson(ctx),
-    'vite.config.ts': renderViteConfig(ctx),
+    'flowup.config.ts': renderViteConfig(ctx),
+    'tsconfig.json': renderTsconfigRoot(),
+    'tsconfig.app.json': renderTsconfigApp(ctx),
+    'tsconfig.node.json': renderTsconfigNode(),
+    'constant/index.ts': renderConstants(ctx),
     'types/index.ts': renderTypes(ctx),
     'runtime/index.ts': renderRuntime(ctx),
-    'client/index.ts': renderClient(ctx),
+    'client/index.ts': renderClientEntry(ctx),
     'client/editor.html': renderEditorHtml(ctx),
-    'client/help.html': renderHelpHtml(ctx),
-    // 资源目录(Node-RED 约定):icons 给 palette,resources 由 Node-RED editor 暴露
+    'types/globals.d.ts': renderClientGlobals(),
+    ...renderFrameworkFiles(ctx),
     'icons/.gitkeep': renderGitkeep('Palette icons for the plugin UI.'),
-    'icons/README.md': renderIconsReadme(ctx),
+    'icons/README.md': renderIconsReadme(),
     'resources/.gitkeep': renderGitkeep('Static resources served by Node-RED editor at /resources/<module>/<file>.'),
-    'resources/README.md': renderResourcesReadme(ctx),
+    'resources/README.md': renderResourcesReadme(),
     ...ctx.locales.reduce<FileMap>((acc, locale) => {
-      acc[`locales/${locale}/${ctx.name}.json`] = renderLocaleJson(ctx, locale)
+      acc[`locales/${locale}/${ctx.name}.json`] = renderLocaleJson()
       return acc
     }, {}),
     'README.md': renderReadme(ctx),
@@ -26,7 +42,7 @@ function renderGitkeep(hint: string): string {
   return `# ${hint}\n# Drop your files into this directory and re-run \`flowup build\`.\n`
 }
 
-function renderIconsReadme(_ctx: TemplateContext): string {
+function renderIconsReadme(): string {
   return `# icons
 
 Palette icons for this plugin. flowup build copies this directory into
@@ -37,7 +53,7 @@ Reference icons from \`client/index.ts\` or \`client/editor.html\` using
 `
 }
 
-function renderResourcesReadme(_ctx: TemplateContext): string {
+function renderResourcesReadme(): string {
   return `# resources
 
 Node-RED (since 1.3) serves any file in this directory under
@@ -59,20 +75,11 @@ See https://nodered.org/docs/creating-nodes/resources
 }
 
 function renderPackageJson(ctx: TemplateContext): string {
-  const extraDevDeps: string[] = []
-  if (ctx.vue)
-    extraDevDeps.push(`    "@vitejs/plugin-vue": "^${ctx.vueVersion}"`)
-  if (ctx.tailwind)
-    extraDevDeps.push(`    "@tailwindcss/vite": "^${ctx.tailwindVersion}"`)
-  const devDepsBlock = [
-    `    "@types/node-red": "^1.3.5"`,
-    `    "@wry-smile/flowup": "${ctx.flowupSpecifier}"`,
-    `    "typescript": "^6.0.3"`,
-    ...extraDevDeps,
+  const devDependencies = [
+    ...getBaseTemplateDevDependencies(ctx.flowupSpecifier),
+    ...getFrameworkDevDependencies(ctx),
   ].join(',\n')
 
-  // 不放 runtime dependencies:生成代码里所有 node-red 引用都是 `import type`,
-  // 编译时擦除。运行时由宿主 Node-RED 实例提供,不需要自带。
   return `{
   "name": "flowup-${ctx.name}",
   "type": "module",
@@ -85,7 +92,7 @@ function renderPackageJson(ctx: TemplateContext): string {
     "build": "flowup build"
   },
   "devDependencies": {
-${devDepsBlock}
+${devDependencies}
   },
   "node-red": {
     "scope": "${ctx.name}",
@@ -98,85 +105,197 @@ ${devDepsBlock}
 }
 
 function renderViteConfig(ctx: TemplateContext): string {
-  const imports: string[] = []
-  const plugins: string[] = []
-  if (ctx.vue) {
-    imports.push(`import vue from '@vitejs/plugin-vue'`)
-    plugins.push('vue()')
-  }
-  if (ctx.tailwind) {
-    imports.push(`import tailwindcss from '@tailwindcss/vite'`)
-    plugins.push('tailwindcss()')
-  }
+  const { imports, plugins } = getFrameworkVitePluginSetup(ctx)
+
   const importBlock = imports.length ? `${imports.join('\n')}\n\n` : ''
-  const clientLine = plugins.length
-    ? `  client: { plugins: [${plugins.join(', ')}] },`
+  const clientBlock = plugins.length
+    ? `  client: {\n    plugins: [${plugins.join(', ')}],\n  },`
     : ''
 
   return `${importBlock}import { defineConfig } from '@wry-smile/flowup'
 
 export default defineConfig({
   scope: '${ctx.name}',
-${clientLine}
+  type: 'plugins',
+${clientBlock}
 })
 `
 }
 
-function renderTypes(ctx: TemplateContext): string {
-  return `export interface ${ctx.properName}Options {
+function renderTsconfigRoot(): string {
+  return `{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }
+`
+}
+
+function renderTsconfigApp(ctx: TemplateContext): string {
+  if (isVueFramework(ctx) || isSvelteFramework(ctx)) {
+    return `{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "isolatedModules": true,
+    "types": [
+      "vite/client",
+      "jquery"
+    ],
+    "allowArbitraryExtensions": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "client/**/*.ts",
+    "client/**/*.tsx",
+    "client/**/*.vue",
+    "client/**/*.svelte",
+    "client/**/*.d.ts",
+    "constant/**/*.ts",
+    "types/**/*.ts",
+    "types/**/*.d.ts"
+  ]
+}
+`
+  }
+
+  return `{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": [
+      "vite/client",
+      "jquery"
+    ],
+    "strict": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "client/**/*.ts",
+    "client/**/*.tsx",
+    "client/**/*.d.ts",
+    "constant/**/*.ts",
+    "types/**/*.ts",
+    "types/**/*.d.ts"
+  ]
+}
+`
+}
+
+function renderTsconfigNode(): string {
+  return `{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "flowup.config.ts",
+    "runtime/**/*.ts",
+    "constant/**/*.ts",
+    "types/**/*.ts",
+    "types/**/*.d.ts"
+  ]
+}
+`
+}
+
+function renderConstants(ctx: TemplateContext): string {
+  return `export const PLUGIN_NAME = "${ctx.name}";
+export const PLUGIN_TAG_NAME = "flowup-${ctx.name}-plugin";
+export const PLUGIN_DISPLAY_NAME = "${ctx.properName}";
+`
+}
+
+function renderTypes(ctx: TemplateContext): string {
+  return `declare global {
+  interface ${ctx.properName}Properties {
+    name?: string;
+  }
+}
+
+export {};
 `
 }
 
 function renderRuntime(ctx: TemplateContext): string {
   return `import type { NodeAPI } from "node-red";
+import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME } from "../constant/index.js";
 
-const pluginInit = (RED: NodeAPI): void => {
-  RED.plugins.registerPlugin("${ctx.name}", {
-    type: "${ctx.properName}",
+export default function pluginInit(RED: NodeAPI): void {
+  RED.plugins.registerPlugin(PLUGIN_NAME, {
+    type: PLUGIN_DISPLAY_NAME,
     onadd() {
-      // 客户端加载完成时回调
     },
   });
-};
-
-export default pluginInit;
+}
 `
 }
 
-function renderClient(ctx: TemplateContext): string {
-  return `import type { EditorRED } from "node-red";
+function renderClientEntry(ctx: TemplateContext): string {
+  if (isVueFramework(ctx))
+    return renderVuePluginClient()
 
-declare const RED: EditorRED;
+  if (isSvelteFramework(ctx))
+    return renderSveltePluginClient()
 
-RED.plugins.registerPlugin("plugin-${ctx.name}", {
-  onadd() {
-    // 客户端插件挂载逻辑
-  },
-});
-`
+  return renderVanillaPluginClient()
+}
+
+function renderFrameworkFiles(ctx: TemplateContext): FileMap {
+  if (isVueFramework(ctx))
+    return renderVuePluginFiles(ctx)
+
+  if (isSvelteFramework(ctx))
+    return renderSveltePluginFiles(ctx)
+
+  return {}
 }
 
 function renderEditorHtml(ctx: TemplateContext): string {
+  const content = renderFrameworkEditorContent(ctx, `flowup-${ctx.name}-plugin`)
+
   return `<script type="text/html" data-template-name="${ctx.name}">
-  <div class="form-row">
-    <label for="node-input-name"><i class="icon-tag"></i> Name</label>
-    <input type="text" id="node-input-name" placeholder="Name">
-  </div>
-</script>
-
-<script type="module" src="./index.ts"></script>
-`
-}
-
-function renderHelpHtml(ctx: TemplateContext): string {
-  return `<script type="text/html" data-help-name="${ctx.name}">
-  <p>Plugin description goes here.</p>
+${content}
 </script>
 `
 }
 
-function renderLocaleJson(_ctx: TemplateContext, _locale: string): string {
+function renderClientGlobals(): string {
+  return `/// <reference types="jquery" />
+
+import type { EditorRED } from "node-red";
+
+declare global {
+  const RED: EditorRED;
+  const jQuery: JQueryStatic;
+  const $: JQueryStatic;
+}
+
+export {};
+`
+}
+
+function renderLocaleJson(): string {
   return `{
 
 }
@@ -185,37 +304,14 @@ function renderLocaleJson(_ctx: TemplateContext, _locale: string): string {
 
 function renderReadme(ctx: TemplateContext): string {
   const uiStackLines: string[] = []
-  if (ctx.vue)
+  if (isVueFramework(ctx))
     uiStackLines.push('- **Vue** (SFC, .vue files)')
+  if (isSvelteFramework(ctx))
+    uiStackLines.push('- **Svelte** (.svelte files)')
   if (ctx.tailwind)
     uiStackLines.push('- **Tailwindcss** (utility-first CSS)')
   if (uiStackLines.length === 0)
     uiStackLines.push('- Plain HTML + TypeScript (no UI framework)')
-
-  const addOnSection = (ctx.vue || ctx.tailwind)
-    ? ''
-    : `
-
-## 可选:Vue / Tailwindcss
-
-本脚手架默认是纯 HTML + TypeScript,不依赖任何 UI 框架。
-
-如果之后想加 Vue 或 Tailwindcss:
-
-\`\`\`bash
-pnpm add -D @vitejs/plugin-vue @tailwindcss/vite
-\`\`\`
-
-\`\`\`ts
-import vue from '@vitejs/plugin-vue'
-import tailwindcss from '@tailwindcss/vite'
-
-export default defineConfig({
-  scope: '${ctx.name}',
-  client: { plugins: [vue(), tailwindcss()] },
-})
-\`\`\`
-`
 
   return `# ${ctx.name}
 
@@ -225,44 +321,23 @@ A Node-RED editor plugin scaffolded with [flowup](https://github.com/wry-smile/f
 
 ${uiStackLines.join('\n')}
 
+## Client Helpers
+
+${renderFrameworkReadmeLines(ctx).join('\n')}
+
 ## Layout
 
 \`\`\`
 ${ctx.name}/
 ├── package.json
-├── vite.config.ts
-├── runtime/        # Plugin runtime registration (NodeAPI)
-├── client/         # Editor-side plugin code
-├── types/          # shared TS types
-├── locales/        # i18n catalogs
-├── icons/          # palette icons (optional)
-└── resources/      # static assets served by Node-RED editor
+├── flowup.config.ts
+├── constant/
+├── runtime/
+├── client/
+├── types/
+├── locales/
+├── icons/
+└── resources/
 \`\`\`
-
-## Build
-
-\`\`\`bash
-pnpm install
-pnpm build
-\`\`\`
-
-Produces \`dist/${ctx.name}.js\` (runtime) + \`dist/${ctx.name}.html\` (editor),
-plus copied \`dist/locales/\`, \`dist/icons/\`, \`dist/resources/\` if those
-directories contain files.
-
-> 默认走「多 chunk」产物。如果要 inline 成单个 .html,在 vite.config.ts 里
-> 把 \`singleFilePlugin: true\` 加上(cli 内置 Rollup 插件,无需额外依赖)。${addOnSection}
-
-## resources/ convention
-
-Drop any asset into \`resources/\`; Node-RED serves it at
-\`/resources/<module-name>/<path>\`. Reference with **relative** URLs from
-\`client/editor.html\` / \`client/help.html\`:
-
-\`\`\`html
-<img src="resources/<module-name>/banner.png" />
-\`\`\`
-
-See \`resources/README.md\` and <https://nodered.org/docs/creating-nodes/resources>.
 `
 }

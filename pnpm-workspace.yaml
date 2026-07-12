@@ -1,3 +1,6 @@
+minimumReleaseAgeExclude:
+  - '@types/node@26.0.1'
+
 shellEmulator: true
 
 trustPolicy: no-downgrade
@@ -6,6 +9,9 @@ packages:
   - cli
   - packages/nodes/**
   - packages/plugins/**
+
+overrides:
+  '@wry-smile/flowup': link:./cli
 
 catalog:
   '@antfu/eslint-config': ^9.1.0
@@ -29,5 +35,5 @@ catalog:
   typescript: ^6.0.3
   vite: ^8.1.0
 
-minimumReleaseAgeExclude:
-  - '@types/node@26.0.1'
+allowBuilds:
+  esbuild: false

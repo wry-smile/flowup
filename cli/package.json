@@ -2,8 +2,7 @@
   "name": "@wry-smile/flowup",
   "type": "module",
   "version": "2.0.0",
-  "packageManager": "pnpm@10.28.2",
-  "description": "Node-RED TypeScript Node Starter CLI",
+  "description": "Flowup CLI refactor workspace package",
   "author": "@wry-smile",
   "publishConfig": {
     "access": "public"
@@ -12,15 +11,18 @@
   "keywords": [
     "Node-RED",
     "TypeScript",
-    "Node",
-    "Starter",
+    "Scaffold",
     "CLI",
-    "Monorepo"
+    "Vite"
   ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
     }
   },
   "main": "./dist/index.js",
@@ -36,32 +38,22 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
-  "peerDependencies": {
-    "@tailwindcss/vite": "catalog:",
-    "@vitejs/plugin-vue": "catalog:",
-    "vite": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "@tailwindcss/vite": {
-      "optional": true
-    },
-    "@vitejs/plugin-vue": {
-      "optional": true
-    }
-  },
   "dependencies": {
     "@clack/prompts": "catalog:",
     "commander": "catalog:",
     "find-up": "catalog:",
     "js-yaml": "catalog:",
-    "micromatch": "catalog:",
     "vite": "catalog:"
   },
+  "peerDependencies": {
+    "vue": ">=3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "vue": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "@tailwindcss/vite": "catalog:",
-    "@types/js-yaml": "catalog:",
-    "@types/micromatch": "catalog:",
-    "@vitejs/plugin-vue": "catalog:",
     "bumpp": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:"

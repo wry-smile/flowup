@@ -1,11 +1,3 @@
-/**
- * @clack/prompts 的轻量包装。
- *
- * 唯一目的:把「用户按 Ctrl+C / Esc 时 exit(0)」这套收尾逻辑集中到一个地方。
- * 当前 gen 命令有 5 处重复 `if (p.isCancel(ans)) p.cancel + process.exit(0)`,
- * 抽到 promptOrExit() / confirmOrExit() / textOrExit() / selectOrExit() / multiselectOrExit()。
- */
-
 import process from 'node:process'
 import * as p from '@clack/prompts'
 
