@@ -1,9 +1,6 @@
-import type { EditorRED } from "node-red";
+import { PLUGIN_NAME } from "../constant";
 
-declare const RED: EditorRED;
-
-RED.plugins.registerPlugin("plugin-simple-plugin", {
+RED.plugins.registerPlugin(PLUGIN_NAME, {
   onadd() {
-
-  }
-})
+  },
+});

@@ -1,3 +1,6 @@
+minimumReleaseAgeExclude:
+  - '@types/node@26.0.1'
+
 shellEmulator: true
 
 trustPolicy: no-downgrade
@@ -8,24 +11,29 @@ packages:
   - packages/plugins/**
 
 overrides:
-  vite: 'npm:rolldown-vite@7.2.5'
+  '@wry-smile/flowup': link:./cli
 
 catalog:
-  '@antfu/eslint-config': ^7.2.0
-  '@tailwindcss/vite': ^4.1.18
+  '@antfu/eslint-config': ^9.1.0
+  '@clack/prompts': ^1.6.0
+  '@tailwindcss/vite': ^4.3.1
+  '@types/js-yaml': ^4.0.9
   '@types/micromatch': ^4.0.10
-  '@types/node': ^25.0.10
+  '@types/node': ^26.0.1
   '@types/node-red': ^1.3.5
-  '@vitejs/plugin-vue': ^6.0.3
-  '@wry-smile/utils': ^1.1.2
-  bumpp: ^10.4.0
-  commander: ^14.0.2
-  eslint: ^9.39.2
-  eslint-plugin-format: ^1.3.1
+  '@vitejs/plugin-vue': ^6.0.7
+  '@wry-smile/utils': ^1.1.3
+  bumpp: ^11.1.0
+  commander: ^15.0.0
+  eslint: ^10.5.0
+  eslint-plugin-format: ^2.0.1
+  find-up: ^8.0.0
+  js-yaml: ^5.1.0
   micromatch: ^4.0.8
-  node-red: ^4.1.3
-  plop: ^4.0.5
-  tsdown: ^0.20.1
-  typescript: ^5.9.3
-  vite: 'npm:rolldown-vite@7.2.5'
-  vite-plugin-singlefile: ^2.3.0
+  node-red: ^5.0.0
+  tsdown: ^0.22.3
+  typescript: ^6.0.3
+  vite: ^8.1.0
+
+allowBuilds:
+  esbuild: false

@@ -1,86 +1,135 @@
 # Flowup CLI
 
-## Overview
+Flowup is a CLI for scaffolding, building, and assembling Node-RED nodes and plugins with a Vite-based workflow.
 
-`flowup` is a command-line interface (CLI) tool designed to streamline the development of custom nodes and plugins for Node-RED within this monorepo. It provides commands for building assets and scaffolding new components.
-
-## Usage
-
-The CLI is intended to be used via `pnpm` scripts from the root of the monorepo.
-
-```bash
-# Example of running a command via pnpm
-pnpm flowup <command> [options]
-```
-
-Alternatively, you can define scripts in your `package.json` for convenience.
+Chinese documentation: [README.zh-CN.md](./README.zh-CN.md)
 
 ## Commands
 
-### `build`
+### `flowup gen`
 
-This command compiles the TypeScript source code for both the runtime (backend) and the client (editor panel) and prepares them for use in Node-RED.
-
-**Usage:**
+Generate a new Node-RED node or plugin template in the current directory.
 
 ```bash
-pnpm flowup build
+flowup gen --type node --name my-special-node
 ```
 
-This will generate the necessary JavaScript and HTML files in the `dist` directory.
+Options:
 
----
+- `--type <node|plugin>`
+- `--name <kebab-case>`
+- `--locales <csv>`
+- `--framework <vanilla|svelte|vue>`
+- `--vue [bool]`
+  Compatibility option. Prefer `--framework`.
+- `--tailwind [bool]`
+- `--non-interactive`
 
-### `gen`
+If required options are missing, Flowup switches to interactive prompts.
 
-This command launches an interactive generator (using Plop) to scaffold the boilerplate for a new Node-RED node or plugin. It helps ensure consistency and reduces manual setup.
+### `flowup build`
 
-#### Interactive Mode
-
-To run the generator in interactive mode, where it will ask you a series of questions, simply run the command without any arguments:
-
-**Usage:**
+Build the current Node-RED package from `flowup.config.ts` or `vite.config.ts`.
 
 ```bash
-pnpm flowup gen
+flowup build
 ```
 
-#### With Arguments
-
-You can also provide arguments directly on the command line to pre-fill the answers and bypass the interactive prompts. This is useful for scripting and automation.
-
-**Example:**
+Equivalent to running:
 
 ```bash
-# Generate a new node named 'my-special-node' in the 'packages/nodes' directory
-pnpm flowup gen --name my-special-node --type node --outputDir ./packages/nodes
+vite build --mode runtime
+vite build --mode editor
 ```
 
-# Example of package.json
+Options:
 
-```json
-{
-  "scripts": {
-    "gen:nodes": "flowup gen --outputDir ./packages/nodes --type node",
-    "gen:plugin": "flowup gen --outputDir ./packages/plugins --type plugin"
-  }
-}
+- `--cwd <path>`
+- `--config <path>`
+- `--mode <all|runtime|editor>`
+
+### `flowup assemble`
+
+Assemble all Flowup-built Node-RED nodes and plugins into one distributable package.
+
+- In a monorepo, Flowup scans from the workspace root.
+- Outside a monorepo, Flowup scans from the current working directory.
+
+```bash
+flowup assemble
 ```
 
-#### Available Arguments
+Flowup loads assemble configuration from `flowup.config.ts` by default.
 
-- `--outputDir <path>`
-  - **Description**: The output directory for the generated files, relative to the project root.
-  - **Default**: `.` (the current directory)
+Recommended configuration:
 
-- `--type <type>`
-  - **Description**: The type of component to generate.
-  - **Options**: `node`, `plugin`
+```ts
+import { defineConfig } from '@wry-smile/flowup'
 
+export default defineConfig({
+  assemble: {
+    output: 'dist/node-red-assemble',
+    name: 'node-red-my-assemble',
+    version: '1.0.0',
+    packages: ['packages/nodes/foo', 'packages/plugins/bar'],
+    skipBuild: false,
+  },
+})
+```
+
+Options:
+
+- `--cwd <path>`
+- `--config <path>`
+- `--output <path>`
 - `--name <name>`
-  - **Description**: The name of the node or plugin (e.g., `my-node`).
+- `--version <version>`
+- `--description <text>`
+- `--author <author>`
+- `--license <license>`
+- `--packages <csv>`
+- `--no-clean`
+- `--skip-build`
 
-- `--locales <locales>`
-  - **Description**: A comma-separated list of locales to generate for internationalization.
-  - **Default**: `en-US,zh-CN`
-  - **Example**: `--locales en-US,de,fr`
+## Configuration
+
+`flowup.config.ts` is the shared entry for build-time and assemble-time behavior.
+
+Typical package config:
+
+```ts
+import { defineConfig } from '@wry-smile/flowup'
+
+export default defineConfig({
+  scope: 'my-node',
+  type: 'nodes',
+})
+```
+
+Typical plugin config:
+
+```ts
+import { defineConfig } from '@wry-smile/flowup'
+
+export default defineConfig({
+  scope: 'my-plugin',
+  type: 'plugins',
+})
+```
+
+## Notes
+
+- Generated templates keep the same Node-RED-oriented directory layout.
+- `build` uses Vite multi-mode builds for `runtime` and `editor`.
+- `assemble` merges package outputs from `dist/` and generates a top-level `package.json`.
+- `.ts` config loading reuses the Vite runner, so no extra `tsx` execution chain is required.
+
+## Client SDK
+
+`@wry-smile/flowup/client` exposes reusable helpers for Node-RED editor UIs:
+
+- `createHydrateStore(...)`
+- `createVueHydrateStore(...)`
+- `createTailwindcssBridge(...)`
+
+Framework templates generate the matching glue files automatically, such as `client/hydrate.ts` and `client/useTailwind.ts`.

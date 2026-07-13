@@ -1,60 +1,21 @@
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'tsdown'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig([
   {
     entry: {
-      generate: resolve(__dirname, './generate/plop.ts'),
+      index: './src/index.ts',
+      client: './src/client/index.ts',
     },
-    copy: [
-      {
-        from: resolve(__dirname, './generate/template'),
-        to: resolve(__dirname, './dist'),
-      },
-      {
-        from: resolve(__dirname, './generate/template-plugin'),
-        to: resolve(__dirname, './dist'),
-      },
-    ],
     format: ['esm'],
-    external: ['plop'],
-    outExtensions: () => {
-      return {
-        js: '.js',
-        dts: '.d.ts',
-      }
-    },
     dts: true,
+    outExtensions: () => ({ js: '.js', dts: '.d.ts' }),
   },
   {
     entry: {
-      build: resolve(__dirname, './build/build.ts'),
+      'bin/flowup': './bin/flowup.ts',
     },
     format: ['esm'],
-    external: ['vite'],
-    dts: true,
-    outExtensions: () => {
-      return {
-        js: '.js',
-        dts: '.d.ts',
-      }
-    },
-  },
-  {
-    entry: {
-      index: resolve(__dirname, './build/index.ts'),
-    },
-    format: ['esm'],
-    external: ['vite', '@tailwindcss/vite', '@vitejs/plugin-vue', 'vite-plugin-singlefile'],
-    dts: true,
-    outExtensions: () => {
-      return {
-        js: '.js',
-        dts: '.d.ts',
-      }
-    },
+    dts: false,
+    outExtensions: () => ({ js: '.js' }),
   },
 ])

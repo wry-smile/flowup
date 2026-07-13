@@ -10,7 +10,11 @@
     "build": "flowup build"
   },
   "devDependencies": {
-    "@wry-smile/flowup": "workspace:*"
+    "@types/jquery": "^4.0.1",
+    "@types/node-red": "^1.3.5",
+    "@wry-smile/flowup": "^2.0.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.0"
   },
   "node-red": {
     "scope": "simple-plugin",

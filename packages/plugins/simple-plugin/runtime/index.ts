@@ -1,12 +1,10 @@
-import type { NodeInitializer } from "node-red";
+import type { NodeAPI } from "node-red";
+import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME } from "../constant";
 
-const pluginInit: NodeInitializer = (RED): void => {
- RED.plugins.registerPlugin("simple-plugin", {
-    type: "SimplePlugin",
+export default function pluginInit(RED: NodeAPI): void {
+  RED.plugins.registerPlugin(PLUGIN_NAME, {
+    type: PLUGIN_DISPLAY_NAME,
     onadd() {
-
-    }
-  })
-};
-
-export default pluginInit;
+    },
+  });
+}

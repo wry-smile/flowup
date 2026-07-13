@@ -1,0 +1,4 @@
+version: 1
+display_name: Flowup Consumer
+short_description: Use the published Flowup CLI for Node-RED package workflows
+default_prompt: Help me use Flowup to generate, build, configure, or assemble Node-RED nodes and plugins.

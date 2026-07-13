@@ -1,9 +1,6 @@
-import type { EditorRED } from "node-red";
-import type { SimpleNodeClientNodeProperties } from "./types";
+import { NODE_NAME, NODE_PALETTE_LABEL } from "../constant";
 
-declare const RED: EditorRED;
-
-RED.nodes.registerType<SimpleNodeClientNodeProperties>("simple-node", {
+RED.nodes.registerType<SimpleNodeClientNodeProperties>(NODE_NAME, {
   category: "function",
   color: "#a6bbcf",
   defaults: {
@@ -11,9 +8,8 @@ RED.nodes.registerType<SimpleNodeClientNodeProperties>("simple-node", {
   },
   inputs: 1,
   outputs: 1,
-  icon: "file.png",
-  paletteLabel: "simple-node",
+  paletteLabel: NODE_PALETTE_LABEL,
   label() {
-    return this.name || "simple-node";
+    return this.name || NODE_NAME;
   },
 });
