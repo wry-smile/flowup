@@ -60,7 +60,6 @@ export function defineConfig(config: FlowupConfig): UserConfigFnObject {
           build: {
             outDir,
             emptyOutDir: true,
-            minify: false,
             rolldownOptions: {
               platform: 'node',
               input: {
@@ -82,7 +81,6 @@ export function defineConfig(config: FlowupConfig): UserConfigFnObject {
             outDir,
             emptyOutDir: false,
             cssCodeSplit: false,
-            minify: false,
             rolldownOptions: {
               platform: 'browser',
               input: {
