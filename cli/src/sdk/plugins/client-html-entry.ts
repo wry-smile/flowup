@@ -20,11 +20,9 @@ export function flowupClientHtmlEntryPlugin(
     enforce: 'post',
     generateBundle(_, bundle) {
       const templatePath = path.resolve(options.template)
-      if (!existsSync(templatePath)) {
-        this.error(`HTML template not found: ${templatePath}`)
-      }
-
-      const template = readFileSync(templatePath, 'utf8')
+      const template = existsSync(templatePath)
+        ? readFileSync(templatePath, 'utf8')
+        : ''
       const entryChunk = findEntryChunk(bundle, options.name)
       if (!entryChunk) {
         this.error(`Client entry chunk not found: ${options.name}`)
