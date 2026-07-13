@@ -6,6 +6,12 @@
       "sourceType": "github",
       "skillPath": "skills/daisyui/SKILL.md",
       "computedHash": "92b9228e8f5325c1d44a3aa820f2af310743307ea978bb86faff118c6864e9ea"
+    },
+    "flowup-cli": {
+      "source": "local",
+      "sourceType": "local",
+      "skillPath": "skills/flowup-cli/SKILL.md",
+      "computedHash": "997185861e86d9fdeeb3a39bc13587c3038557958a4a443d2748cc4a720da086"
     }
   }
 }

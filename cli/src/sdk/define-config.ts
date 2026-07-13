@@ -6,11 +6,25 @@ import { flowupClientHtmlEntryPlugin } from './plugins/client-html-entry'
 import { flowupPackagePlugin } from './plugins/package'
 import { flowupStaticAssetsPlugin } from './plugins/static-assets'
 
+export interface FlowupAssembleConfig {
+  cwd?: string
+  output?: string
+  name?: string
+  version?: string
+  description?: string
+  author?: string
+  license?: string
+  packages?: string[]
+  clean?: boolean
+  skipBuild?: boolean
+}
+
 export interface FlowupConfig {
-  scope: string
+  scope?: string
   type?: 'nodes' | 'plugins'
   root?: string
   outDir?: string
+  assemble?: FlowupAssembleConfig
   runtime?: {
     entry?: string
     config?: UserConfig
@@ -34,9 +48,15 @@ export function defineConfig(config: FlowupConfig): UserConfigFnObject {
   const clientTemplate = path.resolve(root, config.client?.template ?? 'client/editor.html')
 
   return viteDefineConfig(({ mode }): UserConfig => {
+    if (mode === 'assemble')
+      return withFlowupMeta({}, config)
+
+    if (!config.scope)
+      throw new Error('flowup defineConfig requires "scope" for runtime/editor builds.')
+
     switch (mode) {
       case 'runtime':
-        return mergeConfig({
+        return withFlowupMeta(mergeConfig({
           build: {
             outDir,
             emptyOutDir: true,
@@ -54,10 +74,10 @@ export function defineConfig(config: FlowupConfig): UserConfigFnObject {
               },
             },
           },
-        }, config.runtime?.config ?? {})
+        }, config.runtime?.config ?? {}), config)
 
       case 'editor':
-        return mergeConfig({
+        return withFlowupMeta(mergeConfig({
           build: {
             outDir,
             emptyOutDir: false,
@@ -92,10 +112,17 @@ export function defineConfig(config: FlowupConfig): UserConfigFnObject {
               dirs: ['icons', 'resources', 'locales'],
             }),
           ],
-        }, config.client?.config ?? {})
+        }, config.client?.config ?? {}), config)
 
       default:
         throw new Error(`Unsupported build mode: ${mode}. Please use "runtime" or "editor".`)
     }
   })
+}
+
+function withFlowupMeta(config: UserConfig, flowup: FlowupConfig): UserConfig {
+  return {
+    ...config,
+    flowup,
+  } as UserConfig
 }

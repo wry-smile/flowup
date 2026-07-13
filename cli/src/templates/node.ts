@@ -221,10 +221,9 @@ function renderTsconfigNode(): string {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2023",
     "lib": ["ES2023"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "types": ["node"],
-    "allowImportingTsExtensions": true,
     "noEmit": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
@@ -273,7 +272,7 @@ export {};
 
 function renderRuntime(ctx: TemplateContext): string {
   return `import type { NodeAPI, NodeDef } from "node-red";
-import { NODE_NAME } from "../constant/index.js";
+import { NODE_NAME } from "../constant";
 
 export default function nodeInit(RED: NodeAPI): void {
   function ${ctx.properName}NodeConstructor(

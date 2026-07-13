@@ -56,7 +56,11 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
     answers.locales = options.locales
   }
 
-  if (options.framework === undefined) {
+  if (answers.type === 'plugin') {
+    answers.framework = 'vanilla'
+    answers.tailwind = false
+  }
+  else if (options.framework === undefined) {
     answers.framework = await selectOrExit<ClientFramework>({
       message: 'Select client framework?',
       options: [
@@ -71,7 +75,7 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
     answers.framework = options.framework
   }
 
-  if (answers.framework === 'vanilla') {
+  if (answers.type === 'plugin' || answers.framework === 'vanilla') {
     answers.tailwind = false
   }
   else if (options.tailwind === undefined) {

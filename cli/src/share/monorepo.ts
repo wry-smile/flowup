@@ -2,6 +2,20 @@ import { dirname, join } from 'node:path'
 import process from 'node:process'
 import { findUp } from 'find-up'
 
+const FLOWUP_CONFIG_CANDIDATES = [
+  'flowup.config.ts',
+  'flowup.config.js',
+  'flowup.config.mjs',
+  'flowup.config.cjs',
+]
+
+const VITE_CONFIG_CANDIDATES = [
+  'vite.config.ts',
+  'vite.config.js',
+  'vite.config.mjs',
+  'vite.config.cjs',
+]
+
 export async function findPnpmWorkspace(startDir: string = process.cwd()): Promise<string | null> {
   const found = await findUp('pnpm-workspace.yaml', { cwd: startDir, type: 'file' })
   return found ?? null
@@ -22,14 +36,8 @@ export function joinWorkspacePath(rootDir: string, relativePath: string): string
 
 export async function findViteConfig(startDir: string = process.cwd()): Promise<string> {
   const candidates = [
-    'flowup.config.ts',
-    'flowup.config.js',
-    'flowup.config.mjs',
-    'flowup.config.cjs',
-    'vite.config.ts',
-    'vite.config.js',
-    'vite.config.mjs',
-    'vite.config.cjs',
+    ...FLOWUP_CONFIG_CANDIDATES,
+    ...VITE_CONFIG_CANDIDATES,
   ]
 
   for (const name of candidates) {
@@ -39,4 +47,21 @@ export async function findViteConfig(startDir: string = process.cwd()): Promise<
   }
 
   return join(startDir, 'flowup.config.ts')
+}
+
+export async function findAssembleConfig(startDir: string = process.cwd()): Promise<string | null> {
+  const monorepoRoot = await findWorkspaceRoot(startDir)
+  const searchDir = monorepoRoot ?? startDir
+
+  for (const name of FLOWUP_CONFIG_CANDIDATES) {
+    const found = await findUp(name, {
+      cwd: searchDir,
+      type: 'file',
+      stopAt: searchDir,
+    })
+    if (found)
+      return found
+  }
+
+  return null
 }

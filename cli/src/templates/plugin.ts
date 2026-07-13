@@ -1,16 +1,5 @@
 import type { FileMap, TemplateContext } from '../commands/gen/context'
-import {
-  getFrameworkDevDependencies,
-  getFrameworkVitePluginSetup,
-  isSvelteFramework,
-  isVueFramework,
-  renderFrameworkEditorContent,
-  renderFrameworkReadmeLines,
-} from './client-framework'
 import { getBaseTemplateDevDependencies } from './dependency-versions'
-import { renderSveltePluginClient, renderSveltePluginFiles } from './plugin-frameworks/svelte'
-import { renderVanillaPluginClient } from './plugin-frameworks/vanilla'
-import { renderVuePluginClient, renderVuePluginFiles } from './plugin-frameworks/vue'
 
 export function pluginTemplate(ctx: TemplateContext): FileMap {
   return {
@@ -22,10 +11,8 @@ export function pluginTemplate(ctx: TemplateContext): FileMap {
     'constant/index.ts': renderConstants(ctx),
     'types/index.ts': renderTypes(ctx),
     'runtime/index.ts': renderRuntime(ctx),
-    'client/index.ts': renderClientEntry(ctx),
-    'client/editor.html': renderEditorHtml(ctx),
+    'client/index.ts': renderClientEntry(),
     'types/globals.d.ts': renderClientGlobals(),
-    ...renderFrameworkFiles(ctx),
     'icons/.gitkeep': renderGitkeep('Palette icons for the plugin UI.'),
     'icons/README.md': renderIconsReadme(),
     'resources/.gitkeep': renderGitkeep('Static resources served by Node-RED editor at /resources/<module>/<file>.'),
@@ -75,10 +62,7 @@ See https://nodered.org/docs/creating-nodes/resources
 }
 
 function renderPackageJson(ctx: TemplateContext): string {
-  const devDependencies = [
-    ...getBaseTemplateDevDependencies(ctx.flowupSpecifier),
-    ...getFrameworkDevDependencies(ctx),
-  ].join(',\n')
+  const devDependencies = getBaseTemplateDevDependencies(ctx.flowupSpecifier).join(',\n')
 
   return `{
   "name": "flowup-${ctx.name}",
@@ -105,19 +89,11 @@ ${devDependencies}
 }
 
 function renderViteConfig(ctx: TemplateContext): string {
-  const { imports, plugins } = getFrameworkVitePluginSetup(ctx)
-
-  const importBlock = imports.length ? `${imports.join('\n')}\n\n` : ''
-  const clientBlock = plugins.length
-    ? `  client: {\n    plugins: [${plugins.join(', ')}],\n  },`
-    : ''
-
-  return `${importBlock}import { defineConfig } from '@wry-smile/flowup'
+  return `import { defineConfig } from '@wry-smile/flowup'
 
 export default defineConfig({
   scope: '${ctx.name}',
   type: 'plugins',
-${clientBlock}
 })
 `
 }
@@ -134,38 +110,6 @@ function renderTsconfigRoot(): string {
 }
 
 function renderTsconfigApp(ctx: TemplateContext): string {
-  if (isVueFramework(ctx) || isSvelteFramework(ctx)) {
-    return `{
-  "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "isolatedModules": true,
-    "types": [
-      "vite/client",
-      "jquery"
-    ],
-    "allowArbitraryExtensions": true,
-    "noEmit": true,
-    "skipLibCheck": true
-  },
-  "include": [
-    "client/**/*.ts",
-    "client/**/*.tsx",
-    "client/**/*.vue",
-    "client/**/*.svelte",
-    "client/**/*.d.ts",
-    "constant/**/*.ts",
-    "types/**/*.ts",
-    "types/**/*.d.ts"
-  ]
-}
-`
-  }
-
   return `{
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
@@ -200,10 +144,9 @@ function renderTsconfigNode(): string {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2023",
     "lib": ["ES2023"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "types": ["node"],
-    "allowImportingTsExtensions": true,
     "noEmit": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
@@ -239,7 +182,7 @@ export {};
 
 function renderRuntime(ctx: TemplateContext): string {
   return `import type { NodeAPI } from "node-red";
-import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME } from "../constant/index.js";
+import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME } from "../constant";
 
 export default function pluginInit(RED: NodeAPI): void {
   RED.plugins.registerPlugin(PLUGIN_NAME, {
@@ -251,32 +194,13 @@ export default function pluginInit(RED: NodeAPI): void {
 `
 }
 
-function renderClientEntry(ctx: TemplateContext): string {
-  if (isVueFramework(ctx))
-    return renderVuePluginClient()
+function renderClientEntry(): string {
+  return `import { PLUGIN_NAME } from "../constant";
 
-  if (isSvelteFramework(ctx))
-    return renderSveltePluginClient()
-
-  return renderVanillaPluginClient()
-}
-
-function renderFrameworkFiles(ctx: TemplateContext): FileMap {
-  if (isVueFramework(ctx))
-    return renderVuePluginFiles(ctx)
-
-  if (isSvelteFramework(ctx))
-    return renderSveltePluginFiles(ctx)
-
-  return {}
-}
-
-function renderEditorHtml(ctx: TemplateContext): string {
-  const content = renderFrameworkEditorContent(ctx, `flowup-${ctx.name}-plugin`)
-
-  return `<script type="text/html" data-template-name="${ctx.name}">
-${content}
-</script>
+RED.plugins.registerPlugin(PLUGIN_NAME, {
+  onadd() {
+  },
+});
 `
 }
 
@@ -303,27 +227,14 @@ function renderLocaleJson(): string {
 }
 
 function renderReadme(ctx: TemplateContext): string {
-  const uiStackLines: string[] = []
-  if (isVueFramework(ctx))
-    uiStackLines.push('- **Vue** (SFC, .vue files)')
-  if (isSvelteFramework(ctx))
-    uiStackLines.push('- **Svelte** (.svelte files)')
-  if (ctx.tailwind)
-    uiStackLines.push('- **Tailwindcss** (utility-first CSS)')
-  if (uiStackLines.length === 0)
-    uiStackLines.push('- Plain HTML + TypeScript (no UI framework)')
-
   return `# ${ctx.name}
 
 A Node-RED editor plugin scaffolded with [flowup](https://github.com/wry-smile/flowup).
 
 ## UI Stack
 
-${uiStackLines.join('\n')}
-
-## Client Helpers
-
-${renderFrameworkReadmeLines(ctx).join('\n')}
+- Plain TypeScript plugin registration
+- No framework-specific client template is generated for plugins
 
 ## Layout
 

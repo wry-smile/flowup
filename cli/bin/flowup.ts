@@ -2,6 +2,7 @@
 
 import process from 'node:process'
 import { Command } from 'commander'
+import { registerAssembleCommand } from '../src/commands/assemble/command'
 import { registerBuildCommand } from '../src/commands/build/command'
 import { registerGenCommand } from '../src/commands/gen/command'
 import { resolveCliVersion } from '../src/share/cli-pkg'
@@ -14,6 +15,7 @@ program
   .version(resolveCliVersion())
 
 registerBuildCommand(program)
+registerAssembleCommand(program)
 registerGenCommand(program)
 
 program.parse(process.argv)

@@ -1,60 +1,135 @@
 # Flowup CLI
 
-当前已恢复 `flowup gen` 与 `flowup build`。
+Flowup is a CLI for scaffolding, building, and assembling Node-RED nodes and plugins with a Vite-based workflow.
+
+Chinese documentation: [README.zh-CN.md](./README.zh-CN.md)
 
 ## Commands
 
 ### `flowup gen`
 
-在当前目录生成一个新的 Node-RED 节点或插件模板：
+Generate a new Node-RED node or plugin template in the current directory.
 
 ```bash
 flowup gen --type node --name my-special-node
 ```
 
-支持参数：
+Options:
 
 - `--type <node|plugin>`
 - `--name <kebab-case>`
 - `--locales <csv>`
+- `--framework <vanilla|svelte|vue>`
 - `--vue [bool]`
+  Compatibility option. Prefer `--framework`.
 - `--tailwind [bool]`
 - `--non-interactive`
 
-未提供完整参数时会进入交互式收集。
+If required options are missing, Flowup switches to interactive prompts.
 
 ### `flowup build`
 
-使用当前包的 `vite.config.ts` 作为入口，按顺序执行：
+Build the current Node-RED package from `flowup.config.ts` or `vite.config.ts`.
 
 ```bash
 flowup build
 ```
 
-等价于依次跑：
+Equivalent to running:
 
 ```bash
 vite build --mode runtime
 vite build --mode editor
 ```
 
-支持参数：
+Options:
 
 - `--cwd <path>`
 - `--config <path>`
 - `--mode <all|runtime|editor>`
 
+### `flowup assemble`
+
+Assemble all Flowup-built Node-RED nodes and plugins into one distributable package.
+
+- In a monorepo, Flowup scans from the workspace root.
+- Outside a monorepo, Flowup scans from the current working directory.
+
+```bash
+flowup assemble
+```
+
+Flowup loads assemble configuration from `flowup.config.ts` by default.
+
+Recommended configuration:
+
+```ts
+import { defineConfig } from '@wry-smile/flowup'
+
+export default defineConfig({
+  assemble: {
+    output: 'dist/node-red-assemble',
+    name: 'node-red-my-assemble',
+    version: '1.0.0',
+    packages: ['packages/nodes/foo', 'packages/plugins/bar'],
+    skipBuild: false,
+  },
+})
+```
+
+Options:
+
+- `--cwd <path>`
+- `--config <path>`
+- `--output <path>`
+- `--name <name>`
+- `--version <version>`
+- `--description <text>`
+- `--author <author>`
+- `--license <license>`
+- `--packages <csv>`
+- `--no-clean`
+- `--skip-build`
+
+## Configuration
+
+`flowup.config.ts` is the shared entry for build-time and assemble-time behavior.
+
+Typical package config:
+
+```ts
+import { defineConfig } from '@wry-smile/flowup'
+
+export default defineConfig({
+  scope: 'my-node',
+  type: 'nodes',
+})
+```
+
+Typical plugin config:
+
+```ts
+import { defineConfig } from '@wry-smile/flowup'
+
+export default defineConfig({
+  scope: 'my-plugin',
+  type: 'plugins',
+})
+```
+
 ## Notes
 
-- 生成目录结构与旧版 `flowup gen` 保持一致
-- `build` 现在基于 `vite.config.ts` 双模式构建
+- Generated templates keep the same Node-RED-oriented directory layout.
+- `build` uses Vite multi-mode builds for `runtime` and `editor`.
+- `assemble` merges package outputs from `dist/` and generates a top-level `package.json`.
+- `.ts` config loading reuses the Vite runner, so no extra `tsx` execution chain is required.
 
 ## Client SDK
 
-`@wry-smile/flowup/client` 提供可直接在 Node-RED editor 客户端里复用的能力：
+`@wry-smile/flowup/client` exposes reusable helpers for Node-RED editor UIs:
 
 - `createHydrateStore(...)`
 - `createVueHydrateStore(...)`
 - `createTailwindcssBridge(...)`
 
-Vue + Tailwind 模板会自动生成对应的接线文件，例如 `client/hydrate.vue.ts` 与 `client/useTailwind.ts`。
+Framework templates generate the matching glue files automatically, such as `client/hydrate.ts` and `client/useTailwind.ts`.
