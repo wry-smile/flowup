@@ -1,0 +1,4 @@
+version: 1
+display_name: Flowup CLI
+short_description: Scaffold, build, and assemble Node-RED packages with Flowup
+default_prompt: Help me work on the Flowup CLI or use it to scaffold, build, or assemble Node-RED packages.

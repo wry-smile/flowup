@@ -2,7 +2,7 @@
   "name": "@wry-smile/flowup",
   "type": "module",
   "version": "2.0.0",
-  "description": "Flowup CLI refactor workspace package",
+  "description": "CLI for scaffolding, building, and assembling Node-RED nodes and plugins with Vite",
   "author": "@wry-smile",
   "publishConfig": {
     "access": "public"
@@ -30,20 +30,16 @@
     "flowup": "./dist/bin/flowup.js"
   },
   "files": [
-    "dist"
+    "README.md",
+    "README.zh-CN.md",
+    "dist",
+    "skills"
   ],
   "scripts": {
     "build": "tsdown",
     "release": "bumpp",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@clack/prompts": "catalog:",
-    "commander": "catalog:",
-    "find-up": "catalog:",
-    "js-yaml": "catalog:",
-    "vite": "catalog:"
   },
   "peerDependencies": {
     "vue": ">=3.5.0"
@@ -52,6 +48,13 @@
     "vue": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "@clack/prompts": "catalog:",
+    "commander": "catalog:",
+    "find-up": "catalog:",
+    "js-yaml": "catalog:",
+    "vite": "catalog:"
   },
   "devDependencies": {
     "bumpp": "catalog:",

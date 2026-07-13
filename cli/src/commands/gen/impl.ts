@@ -78,6 +78,12 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
       throw new Error(`Invalid locales: ${invalidLocales.join(', ')}`)
   }
 
+  if (options.type === 'plugin') {
+    options.framework = 'vanilla'
+    options.tailwind = false
+    options.vue = false
+  }
+
   if (options.framework === 'vanilla')
     options.tailwind = false
 
@@ -97,9 +103,9 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
       missing.push('--name')
     if (!options.locales)
       missing.push('--locales')
-    if (options.framework === undefined)
+    if (options.type !== 'plugin' && options.framework === undefined)
       missing.push('--framework')
-    if (options.framework && options.framework !== 'vanilla' && options.tailwind === undefined)
+    if (options.type !== 'plugin' && options.framework && options.framework !== 'vanilla' && options.tailwind === undefined)
       missing.push('--tailwind')
     throw new Error(`Non-interactive mode requires: ${missing.join(', ')}`)
   }
