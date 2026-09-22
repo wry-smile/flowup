@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, symlink, utimes, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
@@ -165,6 +165,8 @@ test('creating staging removes stale staging directories without touching output
   await writeFile(join(outputDir, 'state.txt'), 'known-good\n', 'utf8')
   await mkdir(staleDir)
   await writeFile(join(staleDir, 'partial.txt'), 'partial\n', 'utf8')
+  const staleDate = new Date(Date.now() - 25 * 60 * 60 * 1000)
+  await utimes(staleDir, staleDate, staleDate)
   const before = await snapshotDirectory(outputDir)
 
   const stagingDir = await createStagingDir(outputDir)
@@ -172,6 +174,19 @@ test('creating staging removes stale staging directories without touching output
 
   assert.equal(existsSync(staleDir), false)
   assert.deepEqual(await snapshotDirectory(outputDir), before)
+})
+
+test('creating staging preserves recent staging directories owned by another operation', async (t) => {
+  const rootDir = await createTemporaryRoot(t, 'flowup-active-staging-')
+  const outputDir = join(rootDir, 'dist')
+  const activeDir = join(rootDir, '.dist.flowup-tmp-active')
+  await mkdir(activeDir)
+  await writeFile(join(activeDir, 'partial.txt'), 'active\n', 'utf8')
+
+  const stagingDir = await createStagingDir(outputDir)
+  t.after(async () => rm(stagingDir, { recursive: true, force: true }))
+
+  assert.equal(await readFile(join(activeDir, 'partial.txt'), 'utf8'), 'active\n')
 })
 
 test('build skips symlinked static asset trees', async (t) => {
@@ -203,4 +218,64 @@ test('build skips symlinked static asset trees', async (t) => {
   assert.equal(existsSync(join(distDir, 'resources/linked/secret.txt')), false)
   const { manifest } = await readFlowupArtifact(distDir)
   assert.deepEqual(manifest.assets.resources, [])
+})
+
+test('build preserves static CSS resources while inlining client CSS', async (t) => {
+  const rootDir = await createTemporaryRoot(t, 'flowup-static-css-')
+  await createBuildFixture({ rootDir })
+  await mkdir(join(rootDir, 'resources'), { recursive: true })
+  await writeFile(join(rootDir, 'client/index.js'), 'import \'./style.css\'\nglobalThis.__flowupFixture = true\n', 'utf8')
+  await writeFile(join(rootDir, 'client/style.css'), '.editor-only { color: blue }\n', 'utf8')
+  await writeFile(join(rootDir, 'resources/theme.css'), '.resource-only { color: red }\n', 'utf8')
+
+  await runBuild({ cwd: rootDir, mode: 'all' })
+
+  const distDir = join(rootDir, 'dist')
+  assert.equal(
+    await readFile(join(distDir, 'resources/theme.css'), 'utf8'),
+    '.resource-only { color: red }\n',
+  )
+  const editorHtml = await readFile(join(distDir, 'fixture-node.html'), 'utf8')
+  assert.match(editorHtml, /editor-only/)
+  assert.doesNotMatch(editorHtml, /resource-only/)
+})
+
+test('partial builds use isolated outputs and never mutate release dist', async (t) => {
+  const rootDir = await createTemporaryRoot(t, 'flowup-partial-build-')
+  await createBuildFixture({ rootDir })
+  await runBuild({ cwd: rootDir, mode: 'all' })
+  const distDir = join(rootDir, 'dist')
+  const before = await snapshotDirectory(distDir)
+
+  await writeFile(
+    join(rootDir, 'runtime/index.js'),
+    'export default function(RED) { RED.nodes.registerType(\'fixture-node\', function UpdatedNode() {}) }\n',
+    'utf8',
+  )
+  await runBuild({ cwd: rootDir, mode: 'runtime' })
+  assert.deepEqual(await snapshotDirectory(distDir), before)
+  assert.equal(existsSync(join(rootDir, '.flowup/runtime/fixture-node.js')), true)
+
+  await writeFile(join(rootDir, 'client/index.js'), 'globalThis.__updatedFixture = true\n', 'utf8')
+  await runBuild({ cwd: rootDir, mode: 'editor' })
+  assert.deepEqual(await snapshotDirectory(distDir), before)
+  assert.equal(existsSync(join(rootDir, '.flowup/editor/fixture-node.html')), true)
+})
+
+test('build resolves default project paths from the config directory without changing cwd', async (t) => {
+  const rootDir = await createTemporaryRoot(t, 'flowup-config-root-')
+  await createBuildFixture({ rootDir })
+  const cliEntryUrl = new URL('../dist/index.js', import.meta.url).href
+  await writeFile(
+    join(rootDir, 'flowup.config.mjs'),
+    `import { defineConfig } from ${JSON.stringify(cliEntryUrl)}\nexport default defineConfig({ scope: 'fixture-node', runtime: { entry: 'runtime/index.js' }, client: { entry: 'client/index.js', template: 'client/editor.html' } })\n`,
+    'utf8',
+  )
+  const originalCwd = process.cwd()
+
+  await runBuild({ cwd: rootDir, mode: 'all' })
+
+  assert.equal(process.cwd(), originalCwd)
+  assert.equal(existsSync(join(rootDir, 'dist/fixture-node.js')), true)
+  assert.equal(existsSync(join(rootDir, 'dist/fixture-node.html')), true)
 })

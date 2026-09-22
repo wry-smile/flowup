@@ -1,56 +1,42 @@
 ---
 name: flowup-consumer
-description: Use this skill when the task is about consuming the published Flowup CLI to scaffold, build, or assemble Node-RED nodes and plugins. Focuses on command usage, flowup.config.ts configuration, generated package structure, and common consumer workflows rather than Flowup CLI source development.
+description: Use the published Flowup CLI to scaffold, configure, build, assemble, pack, or troubleshoot Node-RED nodes and plugins. Covers flowup.config.ts, publishable versus partial outputs, artifact validation, package-root publishing, and safe consumer workflows. Do not use for Flowup CLI source development.
 metadata:
-  short-description: Use the published Flowup CLI
+  short-description: Build Node-RED packages with Flowup
 ---
 
 # Flowup Consumer
 
-Use this skill when the task is about using the published `@wry-smile/flowup` package rather than modifying Flowup internals.
+Guide users through the existing `@wry-smile/flowup` workflow. Prefer the smallest command sequence that achieves the task, and do not invent unsupported CLI flags or config fields.
 
-## When To Use
+## Choose The Workflow
 
-- The user wants to scaffold a Node-RED node or plugin with `flowup gen`
-- The user wants to build a generated package with `flowup build`
-- The user wants to assemble multiple Flowup-built packages with `flowup assemble`
-- The user needs help writing or adjusting `flowup.config.ts`
-- The user needs help understanding the generated directory layout
+- Scaffold a package: `flowup gen`
+- Create a publishable component artifact: `flowup build`
+- Diagnose only one build half: `flowup build --mode runtime` or `flowup build --mode editor`
+- Combine several built components: `flowup assemble`
+- Reuse existing complete artifacts: `flowup assemble --skip-build`
 
-## Core Commands
+## Scaffold
 
-- `flowup gen`
-  Generates a new node or plugin package scaffold
-- `flowup build`
-  Builds the current package in `runtime` and `editor` modes
-- `flowup assemble`
-  Scans Flowup-built packages and assembles their `dist/` outputs into one distributable package
-
-## Recommended Workflow
-
-### Generate a package
+Run the generator from the directory that should contain the new package:
 
 ```bash
-flowup gen --type node --name my-node --framework vue --tailwind
+flowup gen \
+  --type node \
+  --name my-node \
+  --framework vue \
+  --tailwind \
+  --non-interactive
 ```
 
-### Build a package
+Use a kebab-case name beginning with a letter. Valid examples include `my-node` and `sensor2`; path separators, `..`, uppercase letters, and an existing target directory are rejected.
 
-```bash
-flowup build
-```
+Supported package types are `node` and `plugin`. Supported client frameworks are `vanilla`, `vue`, and `svelte`; Tailwind applies only to Vue and Svelte templates.
 
-### Assemble multiple packages
+## Configure And Build
 
-```bash
-flowup assemble
-```
-
-## Configuration Entry
-
-Use `flowup.config.ts` as the shared configuration entry for both package builds and assemble behavior.
-
-Example:
+Use `flowup.config.ts` as the shared build and assemble configuration entry:
 
 ```ts
 import { defineConfig } from '@wry-smile/flowup'
@@ -65,31 +51,61 @@ export default defineConfig({
 })
 ```
 
-## Generated Package Layout
+Run a complete build before packing or assembling:
 
-Common generated folders:
+```bash
+flowup build
+```
 
-- `runtime/`
-- `client/`
-- `types/`
-- `constant/`
-- `locales/`
-- `icons/`
-- `resources/`
+The complete artifact is `dist/`, including `package.json` and `flowup.manifest.json`. Paths in the config resolve relative to the config file. Runtime and editor overrides must keep the same project root and publish output.
 
-## Framework Notes
+Partial modes are diagnostic only:
 
-- `vanilla`
-  Best fit for native Node-RED editor patterns
-- `vue`
-  Best fit for custom-element driven editor panels
-- `svelte`
-  Best fit for lightweight reactive editor UIs
-- `tailwind`
-  Only applies to framework-based client templates, not vanilla templates
+```text
+--mode runtime -> .flowup/runtime/
+--mode editor  -> .flowup/editor/
+```
 
-## Consumer Guidance
+Never publish those directories or use them as input to `assemble --skip-build`.
 
-- Prefer `flowup.config.ts` over extra config entry files
-- Treat `node-red.nodes` and `node-red.plugins` package.json fields as output file mappings, not source imports
-- If the task is about Flowup CLI internals, templates, or source refactors, use a dedicated development-oriented Flowup skill instead of this one
+## Assemble
+
+From a workspace root, build and combine discovered Flowup packages with:
+
+```bash
+flowup assemble
+```
+
+Useful existing options:
+
+- `--packages <csv>` selects packages by npm name, folder name, or relative path; every selection must match.
+- `--skip-build` reuses existing `dist/` artifacts but still validates their manifests and files.
+- `--output <path>` overrides the aggregate directory; it must not overlap a source package or component `dist/`.
+- `--no-clean` preserves unrelated existing output files while replacing the newly assembled component set.
+- `--config <path>` selects a Flowup config; relative assemble paths resolve from that config's directory.
+
+The output is committed only after every component, dependency, entry, and resource passes validation. A failed assemble leaves the previous output unchanged.
+
+## Publish From Package Root
+
+Use the package root for `npm pack` or `npm publish`:
+
+```bash
+flowup build
+npm pack --dry-run
+```
+
+The root `package.json` should publish `dist`, root `resources`, README, and LICENSE. Its Node-RED entries point into `dist/`; the normalized `dist/package.json` exists for Flowup assemble and is not a separate publishing entry.
+
+Do not use `workspace:`, `catalog:`, `file:`, `link:`, or `portal:` protocols in publishable dependency groups. Replace them with registry-compatible versions before building.
+
+## Diagnose Failures
+
+- Missing or unsupported artifact manifest: rebuild every component with the current CLI, without a partial mode.
+- Missing runtime or editor output: run `flowup build`, not a single-mode build.
+- Package selection mismatch: check every value passed to `--packages` against npm names, directory names, or workspace-relative paths.
+- Dependency conflict: align the exact dependency declarations in the source components; assemble does not choose a version automatically.
+- Output overlap error: move the aggregate output outside all source packages and their `dist/` directories.
+- Resource not found after install: confirm the root package includes `resources/` and use statically identifiable resource URLs supported by the generated templates.
+
+If the task requires changing Flowup commands, build internals, templates, artifact schemas, or tests, treat it as Flowup source development rather than a consumer workflow.

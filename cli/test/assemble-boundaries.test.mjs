@@ -96,6 +96,28 @@ test('duplicate node entries are rejected before replacing output', async (t) =>
   assert.deepEqual(await snapshotDirectory(outputDir), before)
 })
 
+test('unsafe component directory names are rejected before any output mutation', async (t) => {
+  const rootDir = await createTemporaryRoot(t, 'flowup-unsafe-component-dir-')
+  await createBuiltPackage({
+    rootDir,
+    directory: 'packages/node-a',
+    name: 'node-a-package',
+    scope: '..',
+    nodes: { 'node-a': 'node-a.js' },
+  })
+  const outputDir = join(rootDir, 'output')
+  await mkdir(outputDir)
+  await writeFile(join(outputDir, 'state.txt'), 'known-good\n', 'utf8')
+  const before = await snapshotDirectory(outputDir)
+
+  await assert.rejects(
+    runAssemble({ cwd: rootDir, output: 'output', skipBuild: true }),
+    /safe assemble directory name/,
+  )
+
+  assert.deepEqual(await snapshotDirectory(outputDir), before)
+})
+
 test('package filters require every requested package and accept portable separators', async (t) => {
   const rootDir = await createTemporaryRoot(t, 'flowup-package-filter-')
   await createBuiltPackage({
@@ -169,6 +191,30 @@ test('malformed dist package metadata fails deterministically', async (t) => {
   )
 })
 
+test('non-publishable dependency protocols are rejected before assemble output changes', async (t) => {
+  const rootDir = await createTemporaryRoot(t, 'flowup-dependency-protocol-')
+  await createBuiltPackage({
+    rootDir,
+    directory: 'packages/node-a',
+    name: 'node-a-package',
+    scope: 'node-a',
+    nodes: { 'node-a': 'node-a.js' },
+    dependencies: { internal: 'workspace:*' },
+    manifest: false,
+  })
+  const outputDir = join(rootDir, 'output')
+  await mkdir(outputDir)
+  await writeFile(join(outputDir, 'state.txt'), 'known-good\n', 'utf8')
+  const before = await snapshotDirectory(outputDir)
+
+  await assert.rejects(
+    runAssemble({ cwd: rootDir, output: 'output', skipBuild: true }),
+    /Non-publishable dependency range.*workspace:\*/,
+  )
+
+  assert.deepEqual(await snapshotDirectory(outputDir), before)
+})
+
 test('--no-clean preserves unrelated files and replaces the selected component directory', async (t) => {
   const rootDir = await createTemporaryRoot(t, 'flowup-no-clean-')
   await createBuiltPackage({
@@ -219,4 +265,27 @@ test('default assemble output falls back outside a source dist on every platform
 
   assert.equal(result.outputDir, expectedOutput)
   assert.equal(existsSync(join(expectedOutput, 'root-node/root-node.js')), true)
+})
+
+test('assemble resolves configured cwd relative to its config file', async (t) => {
+  const rootDir = await createTemporaryRoot(t, 'flowup-configured-cwd-')
+  await createBuiltPackage({
+    rootDir,
+    directory: 'packages/node-a',
+    name: 'node-a-package',
+    scope: 'node-a',
+    nodes: { 'node-a': 'node-a.js' },
+  })
+  const configPath = join(rootDir, 'flowup.config.mjs')
+  await writeFile(
+    configPath,
+    'export default { assemble: { cwd: \'packages\', output: \'assembled\', skipBuild: true } }\n',
+    'utf8',
+  )
+
+  const result = await runAssemble({ config: configPath })
+
+  assert.equal(result.rootDir, join(rootDir, 'packages'))
+  assert.equal(result.outputDir, join(rootDir, 'packages/assembled'))
+  assert.equal(existsSync(join(result.outputDir, 'node-a/node-a.js')), true)
 })

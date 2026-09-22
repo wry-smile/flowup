@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdir, readdir, realpath, rename, rm } from 'node:fs/promises'
+import { mkdir, open, readdir, realpath, rename, rm, stat } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import process from 'node:process'
+
+const STALE_STAGING_AGE_MS = 24 * 60 * 60 * 1000
+const STALE_LOCK_AGE_MS = 5 * 60 * 1000
 
 export async function canonicalPath(filePath: string): Promise<string> {
   const absolutePath = resolve(filePath)
@@ -52,8 +56,10 @@ export async function createStagingDir(finalDir: string): Promise<string> {
   const resolvedFinal = resolve(finalDir)
   const parentDir = dirname(resolvedFinal)
   await mkdir(parentDir, { recursive: true })
-  await recoverInterruptedCommit(resolvedFinal)
-  await cleanupStaleStagingDirs(resolvedFinal)
+  await withOutputLock(resolvedFinal, async () => {
+    await recoverInterruptedCommit(resolvedFinal)
+    await cleanupStaleStagingDirs(resolvedFinal)
+  })
 
   const stagingDir = join(
     parentDir,
@@ -63,27 +69,39 @@ export async function createStagingDir(finalDir: string): Promise<string> {
   return stagingDir
 }
 
-export async function commitStagedDirectory(stagingDir: string, finalDir: string): Promise<void> {
+export interface CommitStagedDirectoryOptions {
+  replaceExisting?: boolean
+}
+
+export async function commitStagedDirectory(
+  stagingDir: string,
+  finalDir: string,
+  options: CommitStagedDirectoryOptions = {},
+): Promise<void> {
   const resolvedStaging = resolve(stagingDir)
   const resolvedFinal = resolve(finalDir)
-  const backupDir = getBackupDir(resolvedFinal)
-  await recoverInterruptedCommit(resolvedFinal)
-  const hadExistingOutput = existsSync(resolvedFinal)
+  await withOutputLock(resolvedFinal, async () => {
+    const backupDir = getBackupDir(resolvedFinal)
+    await recoverInterruptedCommit(resolvedFinal)
+    const hadExistingOutput = existsSync(resolvedFinal)
+    if (hadExistingOutput && options.replaceExisting === false)
+      throw new Error(`Target directory already exists: ${resolvedFinal}`)
 
-  if (hadExistingOutput)
-    await rename(resolvedFinal, backupDir)
+    if (hadExistingOutput)
+      await rename(resolvedFinal, backupDir)
 
-  try {
-    await rename(resolvedStaging, resolvedFinal)
-  }
-  catch (error) {
-    if (hadExistingOutput && existsSync(backupDir))
-      await rename(backupDir, resolvedFinal)
-    throw error
-  }
+    try {
+      await rename(resolvedStaging, resolvedFinal)
+    }
+    catch (error) {
+      if (hadExistingOutput && existsSync(backupDir))
+        await rename(backupDir, resolvedFinal)
+      throw error
+    }
 
-  if (hadExistingOutput)
-    await rm(backupDir, { recursive: true, force: true })
+    if (hadExistingOutput)
+      await rm(backupDir, { recursive: true, force: true })
+  })
 }
 
 async function recoverInterruptedCommit(finalDir: string): Promise<void> {
@@ -105,10 +123,80 @@ async function cleanupStaleStagingDirs(finalDir: string): Promise<void> {
   for (const entry of await readdir(parentDir, { withFileTypes: true })) {
     if (!entry.isDirectory() || !entry.name.startsWith(prefix))
       continue
-    await rm(join(parentDir, entry.name), { recursive: true, force: true })
+    const stagingDir = join(parentDir, entry.name)
+    const stagingStats = await stat(stagingDir)
+    if (Date.now() - stagingStats.mtimeMs >= STALE_STAGING_AGE_MS)
+      await rm(stagingDir, { recursive: true, force: true })
   }
 }
 
 function getBackupDir(finalDir: string): string {
   return join(dirname(finalDir), `.${basename(finalDir)}.flowup-backup`)
+}
+
+function getLockPath(finalDir: string): string {
+  return join(dirname(finalDir), `.${basename(finalDir)}.flowup-lock`)
+}
+
+async function withOutputLock<T>(finalDir: string, action: () => Promise<T>): Promise<T> {
+  const lockPath = getLockPath(finalDir)
+  const lock = await acquireOutputLock(lockPath)
+  try {
+    return await action()
+  }
+  finally {
+    try {
+      await lock.close()
+    }
+    finally {
+      await rm(lockPath, { force: true })
+    }
+  }
+}
+
+async function acquireOutputLock(lockPath: string) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const lock = await open(lockPath, 'wx')
+      try {
+        await lock.writeFile(`${JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() })}\n`)
+        return lock
+      }
+      catch (error) {
+        await lock.close()
+        await rm(lockPath, { force: true })
+        throw error
+      }
+    }
+    catch (error) {
+      if (!isAlreadyExistsError(error))
+        throw error
+
+      let lockStats
+      try {
+        lockStats = await stat(lockPath)
+      }
+      catch (statError) {
+        if (isNotFoundError(statError))
+          continue
+        throw statError
+      }
+      if (Date.now() - lockStats.mtimeMs < STALE_LOCK_AGE_MS) {
+        throw new Error(`Another Flowup operation is committing output: ${lockPath}`, {
+          cause: error,
+        })
+      }
+      await rm(lockPath, { force: true })
+    }
+  }
+
+  throw new Error(`Unable to acquire Flowup output lock: ${lockPath}`)
+}
+
+function isAlreadyExistsError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error && error.code === 'EEXIST'
+}
+
+function isNotFoundError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT'
 }

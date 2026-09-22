@@ -1,13 +1,14 @@
 import type { ClientFramework, FileMap } from './context'
 import type { LocaleCode } from './locale'
 import { existsSync } from 'node:fs'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import { resolveCliVersion } from '../../share/cli-pkg'
 import { isInMonorepo } from '../../share/monorepo'
 import { parseBool } from '../../share/paths'
+import { commitStagedDirectory, createStagingDir, isPathInside } from '../../share/safe-fs'
 import { nodeTemplate } from '../../templates/node'
 import { pluginTemplate } from '../../templates/plugin'
 import { collectMissing } from './collect'
@@ -72,6 +73,9 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
   if (options.type && options.type !== 'node' && options.type !== 'plugin')
     throw new Error(`Invalid --type: ${options.type}. Must be "node" or "plugin".`)
 
+  if (options.name)
+    options.name = validateGeneratorName(options.name)
+
   if (options.locales) {
     const invalidLocales = options.locales.filter(locale => !(locale in SUPPORTED_LOCALES))
     if (invalidLocales.length)
@@ -111,6 +115,7 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
   }
 
   const resolved = await collectMissing(options)
+  resolved.name = validateGeneratorName(resolved.name)
   await doGenerate(resolved)
 }
 
@@ -131,17 +136,36 @@ async function doGenerate(options: GenResolved): Promise<void> {
     ? nodeTemplate(context)
     : pluginTemplate(context)
 
-  const baseDir = resolve(process.cwd(), options.name)
+  const generationRoot = resolve(process.cwd())
+  const baseDir = resolve(generationRoot, options.name)
+  if (!isPathInside(generationRoot, baseDir))
+    throw new Error(`Target directory must stay inside the current directory: ${baseDir}`)
   if (existsSync(baseDir))
     throw new Error(`Target directory already exists: ${baseDir}`)
+
+  const stagingDir = await createStagingDir(baseDir)
+  if (existsSync(baseDir)) {
+    await rm(stagingDir, { recursive: true, force: true })
+    throw new Error(`Target directory already exists: ${baseDir}`)
+  }
 
   const spinner = p.spinner()
   spinner.start(`Generating ${options.type} "${options.name}" at ${baseDir}`)
 
-  for (const [relativePath, content] of Object.entries(files)) {
-    const absolutePath = resolve(baseDir, relativePath)
-    await mkdir(dirname(absolutePath), { recursive: true })
-    await writeFile(absolutePath, content, 'utf-8')
+  try {
+    for (const [relativePath, content] of Object.entries(files)) {
+      const absolutePath = resolve(stagingDir, relativePath)
+      if (!isPathInside(stagingDir, absolutePath))
+        throw new Error(`Generated file path must stay inside the target directory: ${relativePath}`)
+      await mkdir(dirname(absolutePath), { recursive: true })
+      await writeFile(absolutePath, content, 'utf-8')
+    }
+    await commitStagedDirectory(stagingDir, baseDir, { replaceExisting: false })
+  }
+  catch (error) {
+    await rm(stagingDir, { recursive: true, force: true })
+    spinner.stop(`Failed to generate ${options.type} "${options.name}"`)
+    throw error
   }
 
   spinner.stop(`Generated ${Object.keys(files).length} files in ${baseDir}`)
@@ -149,4 +173,13 @@ async function doGenerate(options: GenResolved): Promise<void> {
   p.log.info(`  cd ${options.name}`)
   p.log.info('  pnpm install')
   p.log.info('  pnpm build')
+}
+
+function validateGeneratorName(value: string): string {
+  if (!/^[a-z][a-z0-9-]*$/.test(value)) {
+    throw new Error(
+      `Invalid name: ${JSON.stringify(value)}. Use kebab-case lowercase letters, digits, and dashes, starting with a letter.`,
+    )
+  }
+  return value
 }

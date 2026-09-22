@@ -9,6 +9,7 @@ type OutputChunk = Rolldown.OutputChunk
 export interface FlowupClientHtmlEntryPluginOptions {
   name: string
   template: string
+  preservedAssetDirectories?: string[]
 }
 
 export function flowupClientHtmlEntryPlugin(
@@ -28,7 +29,7 @@ export function flowupClientHtmlEntryPlugin(
         this.error(`Client entry chunk not found: ${options.name}`)
       }
 
-      const cssAssets = findCssAssets(bundle)
+      const cssAssets = findCssAssets(bundle, options.preservedAssetDirectories ?? [])
       const css = cssAssets
         .map(asset => sourceToString(asset.source))
         .join('\n')
@@ -65,11 +66,19 @@ function findEntryChunk(bundle: OutputBundle, entryName: string): OutputChunk | 
   )
 }
 
-function findCssAssets(bundle: OutputBundle): OutputAsset[] {
+function findCssAssets(
+  bundle: OutputBundle,
+  preservedAssetDirectories: string[],
+): OutputAsset[] {
   return Object.values(bundle).filter(
     (item): item is OutputAsset =>
       item.type === 'asset'
       && item.fileName.endsWith('.css'),
+  ).filter(
+    item => !preservedAssetDirectories.some((directory) => {
+      const prefix = directory.replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/$/, '')
+      return prefix && item.fileName.startsWith(`${prefix}/`)
+    }),
   )
 }
 

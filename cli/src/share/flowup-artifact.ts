@@ -1,7 +1,7 @@
 import type { Dirent } from 'node:fs'
 import type { FlowupNodeRedField, FlowupPackageJson } from './flowup-packages'
 import { existsSync } from 'node:fs'
-import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { lstat, readdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { isAbsolute, join, posix, relative, resolve, sep } from 'node:path'
 
 export const FLOWUP_ARTIFACT_FILE = 'flowup.manifest.json'
@@ -143,7 +143,9 @@ export async function readDistPackageJson(distDir: string): Promise<FlowupPackag
   if (!existsSync(packageJsonPath))
     throw new Error(`Missing dist package manifest: ${packageJsonPath}`)
 
-  return await readJsonFile(packageJsonPath) as FlowupPackageJson
+  const packageJson = await readJsonFile(packageJsonPath) as FlowupPackageJson
+  validatePublishableDependencies(packageJson, packageJsonPath)
+  return packageJson
 }
 
 export async function validateNodeRedEntries(
@@ -159,21 +161,22 @@ export async function validateNodeRedEntries(
   for (const [entryName, entryPath] of entries) {
     const normalizedPath = normalizeArtifactPath(entryPath, `Node-RED entry "${entryName}"`)
     const absolutePath = resolve(distDir, ...normalizedPath.split('/'))
-    if (!existsSync(absolutePath)) {
-      throw new Error(
-        `Node-RED entry "${entryName}" points to missing artifact: ${normalizedPath}`,
-      )
-    }
+    await assertRegularFileInside(distDir, absolutePath, `Node-RED entry "${entryName}"`)
   }
 
   for (const [entryName, entryPath] of nodeEntries) {
     const normalizedPath = normalizeArtifactPath(entryPath, `Node-RED entry "${entryName}"`)
     const htmlPath = normalizedPath.replace(/\.c?js$/i, '.html')
-    if (htmlPath === normalizedPath || !existsSync(resolve(distDir, ...htmlPath.split('/')))) {
+    if (htmlPath === normalizedPath) {
       throw new Error(
         `Node-RED node entry "${entryName}" is missing its editor HTML artifact: ${htmlPath}`,
       )
     }
+    await assertRegularFileInside(
+      distDir,
+      resolve(distDir, ...htmlPath.split('/')),
+      `Node-RED node entry "${entryName}" editor HTML`,
+    )
   }
 }
 
@@ -267,9 +270,60 @@ async function validateDeclaredAssets(
 
   for (const assetPath of assets) {
     const normalizedPath = normalizeArtifactPath(assetPath, 'Artifact asset')
-    if (!existsSync(resolve(distDir, ...normalizedPath.split('/'))))
-      throw new Error(`Flowup artifact declares a missing asset: ${normalizedPath}`)
+    await assertRegularFileInside(
+      distDir,
+      resolve(distDir, ...normalizedPath.split('/')),
+      `Artifact asset "${normalizedPath}"`,
+    )
   }
+}
+
+function validatePublishableDependencies(
+  packageJson: FlowupPackageJson,
+  packageJsonPath: string,
+): void {
+  for (const group of ['dependencies', 'peerDependencies', 'optionalDependencies'] as const) {
+    const dependencies = packageJson[group]
+    if (dependencies === undefined)
+      continue
+    if (!dependencies || typeof dependencies !== 'object' || Array.isArray(dependencies))
+      throw new Error(`${group} must be an object in ${packageJsonPath}.`)
+
+    for (const [name, range] of Object.entries(dependencies)) {
+      if (typeof range !== 'string' || !range.trim())
+        throw new Error(`${group}.${name} must be a non-empty string in ${packageJsonPath}.`)
+      if (/^(?:catalog|file|link|portal|workspace):/i.test(range.trim())) {
+        throw new Error(
+          `Non-publishable dependency range for ${group}.${name} in ${packageJsonPath}: ${range}`,
+        )
+      }
+    }
+  }
+}
+
+async function assertRegularFileInside(
+  rootDir: string,
+  filePath: string,
+  label: string,
+): Promise<void> {
+  let stats
+  try {
+    stats = await lstat(filePath)
+  }
+  catch (error) {
+    throw new Error(`${label} points to a missing artifact: ${filePath}`, { cause: error })
+  }
+
+  if (!stats.isFile())
+    throw new Error(`${label} must point to a regular file: ${filePath}`)
+
+  const [canonicalRoot, canonicalFile] = await Promise.all([
+    realpath(rootDir),
+    realpath(filePath),
+  ])
+  const relPath = relative(canonicalRoot, canonicalFile)
+  if (!relPath || relPath.startsWith('..') || isAbsolute(relPath))
+    throw new Error(`${label} must stay inside the artifact directory: ${filePath}`)
 }
 
 async function readJsonFile(filePath: string): Promise<Record<string, unknown>> {

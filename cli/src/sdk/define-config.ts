@@ -41,82 +41,99 @@ export interface FlowupConfig {
 }
 
 export function defineConfig(config: FlowupConfig): UserConfigFnObject {
-  const root = path.resolve(config.root ?? process.cwd())
+  return viteDefineConfig(({ mode }): UserConfig => resolveFlowupViteConfig(config, mode, process.cwd()))
+}
+
+export function resolveFlowupViteConfig(
+  config: FlowupConfig,
+  mode: string,
+  baseDir: string,
+): UserConfig {
+  const root = path.resolve(baseDir, config.root ?? '.')
   const outDir = path.resolve(root, config.outDir ?? 'dist')
   const runtimeEntry = path.resolve(root, config.runtime?.entry ?? 'runtime/index.ts')
   const clientEntry = path.resolve(root, config.client?.entry ?? 'client/index.ts')
   const clientTemplate = path.resolve(root, config.client?.template ?? 'client/editor.html')
 
-  return viteDefineConfig(({ mode }): UserConfig => {
-    if (mode === 'assemble')
-      return withFlowupMeta({}, config)
+  if (mode === 'assemble')
+    return withFlowupMeta({ root }, config)
 
-    if (!config.scope)
-      throw new Error('flowup defineConfig requires "scope" for runtime/editor builds.')
+  if (!config.scope)
+    throw new Error('flowup defineConfig requires "scope" for runtime/editor builds.')
 
-    switch (mode) {
-      case 'runtime':
-        return withFlowupMeta(mergeConfig({
-          build: {
-            outDir,
-            emptyOutDir: true,
-            ssr: true,
-            rolldownOptions: {
-              platform: 'node',
-              input: {
-                [config.scope]: runtimeEntry,
-              },
-              preserveEntrySignatures: 'strict',
-              output: {
-                format: 'commonjs',
-                codeSplitting: false,
-                entryFileNames: '[name].js',
-              },
+  let resolved: UserConfig
+  switch (mode) {
+    case 'runtime':
+      resolved = mergeConfig({
+        root,
+        build: {
+          outDir,
+          emptyOutDir: true,
+          ssr: true,
+          rolldownOptions: {
+            platform: 'node',
+            input: {
+              [config.scope]: runtimeEntry,
+            },
+            preserveEntrySignatures: 'strict',
+            output: {
+              format: 'commonjs',
+              codeSplitting: false,
+              entryFileNames: '[name].js',
             },
           },
-        }, config.runtime?.config ?? {}), config)
+        },
+      }, config.runtime?.config ?? {})
+      break
 
-      case 'editor':
-        return withFlowupMeta(mergeConfig({
-          build: {
-            outDir,
-            emptyOutDir: false,
-            cssCodeSplit: false,
-            rolldownOptions: {
-              platform: 'browser',
-              input: {
-                [config.scope]: clientEntry,
-              },
-              output: {
-                format: 'iife',
-                codeSplitting: false,
-                entryFileNames: '[name].js',
-              },
+    case 'editor':
+      resolved = mergeConfig({
+        root,
+        build: {
+          outDir,
+          emptyOutDir: false,
+          cssCodeSplit: false,
+          rolldownOptions: {
+            platform: 'browser',
+            input: {
+              [config.scope]: clientEntry,
+            },
+            output: {
+              format: 'iife',
+              codeSplitting: false,
+              entryFileNames: '[name].js',
             },
           },
-          plugins: [
-            ...(config.client?.plugins ?? []),
-            flowupPackagePlugin({
-              cwd: root,
-              name: config.scope,
-              type: config.type ?? 'nodes',
-              extra: config.package?.extra,
-            }),
-            flowupClientHtmlEntryPlugin({
-              name: config.scope,
-              template: clientTemplate,
-            }),
-            flowupStaticAssetsPlugin({
-              cwd: root,
-              dirs: ['icons', 'resources', 'locales'],
-            }),
-          ],
-        }, config.client?.config ?? {}), config)
+        },
+        plugins: [
+          ...(config.client?.plugins ?? []),
+          flowupPackagePlugin({
+            cwd: root,
+            name: config.scope,
+            type: config.type ?? 'nodes',
+            extra: config.package?.extra,
+          }),
+          flowupClientHtmlEntryPlugin({
+            name: config.scope,
+            template: clientTemplate,
+            preservedAssetDirectories: ['icons', 'resources', 'locales'],
+          }),
+          flowupStaticAssetsPlugin({
+            cwd: root,
+            dirs: ['icons', 'resources', 'locales'],
+          }),
+        ],
+      }, config.client?.config ?? {})
+      break
 
-      default:
-        throw new Error(`Unsupported build mode: ${mode}. Please use "runtime" or "editor".`)
-    }
-  })
+    default:
+      throw new Error(`Unsupported build mode: ${mode}. Please use "runtime" or "editor".`)
+  }
+
+  return withFlowupMeta({
+    ...resolved,
+    root: path.resolve(baseDir, resolved.root ?? root),
+  }, config)
 }
 
 function withFlowupMeta(config: UserConfig, flowup: FlowupConfig): UserConfig {

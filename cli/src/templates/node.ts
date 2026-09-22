@@ -15,6 +15,7 @@ import { renderVueNodeClient, renderVueNodeFiles } from './node-frameworks/vue'
 
 export function nodeTemplate(ctx: TemplateContext): FileMap {
   return {
+    '.gitignore': renderGitignore(),
     'package.json': renderPackageJson(ctx),
     'LICENSE': renderMitLicense(),
     'flowup.config.ts': renderViteConfig(ctx),
@@ -39,6 +40,13 @@ export function nodeTemplate(ctx: TemplateContext): FileMap {
     }, {}),
     'README.md': renderReadme(ctx),
   }
+}
+
+function renderGitignore(): string {
+  return `node_modules/
+dist/
+.flowup/
+`
 }
 
 function renderPackageJson(ctx: TemplateContext): string {

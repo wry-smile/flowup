@@ -32,3 +32,4 @@ export {
   isPathInside,
   pathsOverlap,
 } from './share/safe-fs'
+export type { CommitStagedDirectoryOptions } from './share/safe-fs'

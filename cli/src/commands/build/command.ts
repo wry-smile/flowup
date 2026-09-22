@@ -21,7 +21,7 @@ export function registerBuildCommand(program: Command): void {
       }
       catch (error) {
         console.error('Build failed:', error)
-        process.exit(1)
+        process.exitCode = 1
       }
     })
 }

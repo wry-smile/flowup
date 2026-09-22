@@ -9,7 +9,7 @@ import { readFlowupArtifact } from '../../share/flowup-artifact'
 import { loadFlowupAssembleConfig } from '../../share/flowup-assemble-config'
 import { scanFlowupPackages } from '../../share/flowup-packages'
 import { parseCsvList } from '../../share/paths'
-import { assertSafeAssembleOutput, commitStagedDirectory, createStagingDir, pathsOverlap } from '../../share/safe-fs'
+import { assertSafeAssembleOutput, commitStagedDirectory, createStagingDir, isPathInside, pathsOverlap } from '../../share/safe-fs'
 import { renderMitLicense } from '../../templates/license'
 import { runBuild } from '../build/impl'
 
@@ -153,8 +153,11 @@ function normalizeAssembleOptions(
   configOptions: AssembleOptions | undefined,
   configRootDir: string | undefined,
 ): Required<AssembleOptions> {
+  const configuredCwd = configOptions?.cwd
+    ? resolve(configRootDir ?? process.cwd(), configOptions.cwd)
+    : undefined
   return {
-    cwd: rawOptions.cwd ?? configOptions?.cwd ?? configRootDir ?? process.cwd(),
+    cwd: rawOptions.cwd ?? configuredCwd ?? configRootDir ?? process.cwd(),
     config: rawOptions.config ?? configOptions?.config ?? '',
     output: rawOptions.output ?? configOptions?.output ?? '',
     name: rawOptions.name ?? configOptions?.name ?? 'flowup-assemble',
@@ -191,13 +194,16 @@ function createUniqueTargetDirName(
   pkg: FlowupPackageRecord,
   usedTargetDirs: Set<string>,
 ): string {
-  const preferred = sanitizeAssembleDirName(pkg.nodeRed.scope ?? basename(pkg.dir))
+  const preferred = sanitizeAssembleDirName(
+    pkg.nodeRed.scope ?? basename(pkg.dir),
+    `Node-RED scope for ${pkg.name}`,
+  )
   if (!usedTargetDirs.has(preferred)) {
     usedTargetDirs.add(preferred)
     return preferred
   }
 
-  const fallback = sanitizeAssembleDirName(pkg.name)
+  const fallback = sanitizeAssembleDirName(pkg.name, `package name for ${pkg.name}`)
   if (!usedTargetDirs.has(fallback)) {
     usedTargetDirs.add(fallback)
     return fallback
@@ -212,11 +218,20 @@ function createUniqueTargetDirName(
   return finalName
 }
 
-function sanitizeAssembleDirName(value: string): string {
-  return value
+function sanitizeAssembleDirName(value: string, label: string): string {
+  const sanitized = value
+    .trim()
     .replace(/^@/, '')
     .replace(/[\\/]/g, '-')
     .replace(/[^\w.-]/g, '-')
+
+  if (!sanitized || /^\.+$/.test(sanitized) || sanitized.endsWith('.'))
+    throw new Error(`${label} cannot produce a safe assemble directory name: ${JSON.stringify(value)}`)
+
+  if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(sanitized))
+    throw new Error(`${label} uses a reserved assemble directory name: ${JSON.stringify(value)}`)
+
+  return sanitized
 }
 
 function buildAssembleManifest(
@@ -320,6 +335,7 @@ async function copyPreparedPackage(
   assembleName: string,
 ): Promise<void> {
   const targetDir = resolve(stagingDir, pkg.targetDirName)
+  assertStagingChild(stagingDir, targetDir, `component ${pkg.name}`)
   await rm(targetDir, { recursive: true, force: true })
   await mkdir(targetDir, { recursive: true })
   await cp(pkg.distDir, targetDir, { recursive: true, force: true })
@@ -327,11 +343,17 @@ async function copyPreparedPackage(
   const resourcesDir = resolve(pkg.distDir, 'resources')
   if (existsSync(resourcesDir)) {
     const aggregateResourcesDir = resolve(stagingDir, 'resources', pkg.targetDirName)
+    assertStagingChild(stagingDir, aggregateResourcesDir, `resources for ${pkg.name}`)
     await rm(aggregateResourcesDir, { recursive: true, force: true })
     await mkdir(aggregateResourcesDir, { recursive: true })
     await cp(resourcesDir, aggregateResourcesDir, { recursive: true, force: true })
     await rewriteResourceReferences(targetDir, pkg.builtPackageJson.name ?? pkg.name, assembleName, pkg.targetDirName)
   }
+}
+
+function assertStagingChild(stagingDir: string, targetDir: string, label: string): void {
+  if (!isPathInside(resolve(stagingDir), resolve(targetDir)))
+    throw new Error(`Unsafe assemble path for ${label}: ${targetDir}`)
 }
 
 async function rewriteResourceReferences(

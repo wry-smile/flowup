@@ -35,17 +35,19 @@ Build the current Node-RED package from `flowup.config.ts` or `vite.config.ts`.
 flowup build
 ```
 
-Equivalent to running:
+The default `all` mode runs the runtime and editor builds as one transaction.
+It writes to a temporary sibling directory and replaces `dist/` only after the
+runtime, editor, package metadata, and artifact manifest have all been
+validated.
 
 ```bash
-vite build --mode runtime
-vite build --mode editor
+flowup build --mode all
 ```
 
-A full build is written through a temporary staging directory and replaces
-`dist/` only after the runtime, editor, package metadata, and artifact manifest
-have all been validated. The generated `dist/flowup.manifest.json` is consumed
-by `flowup assemble` as the artifact contract.
+The generated `dist/flowup.manifest.json` is consumed by `flowup assemble` as
+the artifact contract. Development-only `runtime` and `editor` modes write to
+`.flowup/runtime/` and `.flowup/editor/`; they never modify the publishable
+`dist/` directory.
 
 Options:
 

@@ -30,7 +30,7 @@ export function registerGenCommand(program: Command): void {
       }
       catch (error) {
         console.error('Generator failed:', error)
-        process.exit(1)
+        process.exitCode = 1
       }
     })
 }

@@ -4,6 +4,7 @@ import { renderMitLicense } from './license'
 
 export function pluginTemplate(ctx: TemplateContext): FileMap {
   return {
+    '.gitignore': renderGitignore(),
     'package.json': renderPackageJson(ctx),
     'LICENSE': renderMitLicense(),
     'flowup.config.ts': renderViteConfig(ctx),
@@ -25,6 +26,13 @@ export function pluginTemplate(ctx: TemplateContext): FileMap {
     }, {}),
     'README.md': renderReadme(ctx),
   }
+}
+
+function renderGitignore(): string {
+  return `node_modules/
+dist/
+.flowup/
+`
 }
 
 function renderGitkeep(hint: string): string {

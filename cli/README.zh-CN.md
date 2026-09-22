@@ -35,16 +35,16 @@ flowup gen --type node --name my-special-node
 flowup build
 ```
 
-等价于顺序执行：
+默认的 `all` 模式会将 runtime 与 editor 作为同一个事务执行：先写入临时同级目录，
+只有 runtime、editor、包元数据和 artifact manifest 全部通过校验后才替换 `dist/`。
 
 ```bash
-vite build --mode runtime
-vite build --mode editor
+flowup build --mode all
 ```
 
-完整构建会先写入临时 staging 目录，只有 runtime、editor、包元数据和
-artifact manifest 全部通过校验后才替换 `dist/`。生成的
-`dist/flowup.manifest.json` 是 `flowup assemble` 消费的产物契约。
+生成的 `dist/flowup.manifest.json` 是 `flowup assemble` 消费的产物契约。
+仅用于开发诊断的 `runtime` 和 `editor` 模式分别写入 `.flowup/runtime/` 与
+`.flowup/editor/`，不会修改可发布的 `dist/`。
 
 支持参数：
 

@@ -38,7 +38,7 @@ export function registerAssembleCommand(program: Command): void {
       }
       catch (error) {
         console.error('Assemble failed:', error)
-        process.exit(1)
+        process.exitCode = 1
       }
     })
 }
