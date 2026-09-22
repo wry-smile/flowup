@@ -42,16 +42,12 @@ RED.nodes.registerType<${ctx.properName}ClientNodeProperties>(NODE_NAME, {
     return this.name || NODE_NAME;
   },
   oneditprepare() {
-    const { hydrate } = useHydrateStore();
-
-    hydrate(this);
+    useHydrateStore().hydrate(this);
 
     ensureNodePanelElement();
   },
   oneditsave() {
-    const { commit } = useHydrateStore();
-
-    commit(this);
+    useHydrateStore().commit(this);
   },
 });
 `

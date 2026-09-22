@@ -25,7 +25,7 @@ export function flowupPackagePlugin(options: FlowupPackagePluginOptions): Plugin
         'description': srcPkg.description ?? '',
         'author': srcPkg.author ?? '',
         'license': srcPkg.license ?? 'ISC',
-        'keywords': Array.isArray(srcPkg.keywords) ? srcPkg.keywords : [],
+        'keywords': normalizeKeywords(srcPkg.keywords),
         'type': 'commonjs',
         'main': `./${options.name}.js`,
         'dependencies': srcPkg.dependencies,
@@ -46,13 +46,13 @@ export function flowupPackagePlugin(options: FlowupPackagePluginOptions): Plugin
 
 function readSourcePackageJson(filePath: string): Record<string, any> {
   if (!existsSync(filePath))
-    return {}
+    throw new Error(`Source package.json not found: ${filePath}`)
 
   try {
     return JSON.parse(readFileSync(filePath, 'utf8')) as Record<string, any>
   }
-  catch {
-    return {}
+  catch (error) {
+    throw new Error(`Unable to read source package.json: ${filePath}`, { cause: error })
   }
 }
 
@@ -60,14 +60,54 @@ function normalizeNodeRedField(
   nodeRed: unknown,
   options: FlowupPackagePluginOptions,
 ): Record<string, unknown> {
-  if (nodeRed && typeof nodeRed === 'object')
-    return nodeRed as Record<string, unknown>
+  if (nodeRed && typeof nodeRed === 'object') {
+    const value = nodeRed as Record<string, unknown>
+    return {
+      ...value,
+      ...normalizeEntryGroup(value.nodes, 'nodes'),
+      ...normalizeEntryGroup(value.plugins, 'plugins'),
+    }
+  }
 
   return {
     [options.type ?? 'nodes']: {
       [options.name]: `${options.name}.js`,
     },
   }
+}
+
+function normalizeEntryGroup(value: unknown, key: 'nodes' | 'plugins'): Record<string, unknown> {
+  if (!value || typeof value !== 'object')
+    return {}
+
+  return {
+    [key]: Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([name, entryPath]) => {
+        if (typeof entryPath !== 'string')
+          throw new TypeError(`node-red.${key}.${name} must be a string path.`)
+
+        return [name, stripDistPrefix(entryPath)]
+      }),
+    ),
+  }
+}
+
+function stripDistPrefix(filePath: string): string {
+  return filePath
+    .replaceAll('\\', '/')
+    .replace(/^\.\/dist\//, '')
+    .replace(/^dist\//, '')
+}
+
+function normalizeKeywords(value: unknown): string[] {
+  const keywords = Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string')
+    : []
+
+  if (!keywords.some(keyword => keyword.toLowerCase() === 'node-red'))
+    keywords.push('node-red')
+
+  return keywords
 }
 
 function stripUndefined<T extends Record<string, unknown>>(value: T): T {

@@ -1,5 +1,5 @@
-import type { GenOptions, GenResolved, GenType } from './impl'
 import type { ClientFramework } from './context'
+import type { GenOptions, GenResolved, GenType } from './impl'
 import type { LocaleCode } from './locale'
 import { kebabCase } from '../../share/paths'
 import { confirmOrExit, multiselectOrExit, selectOrExit, textOrExit } from '../../share/prompts'

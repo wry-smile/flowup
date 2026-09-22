@@ -21,3 +21,13 @@ simple-plugin/
 ├── icons/
 └── resources/
 ```
+
+## Build and Package
+
+```bash
+pnpm install
+pnpm build
+npm pack --dry-run
+```
+
+A full build generates `dist/flowup.manifest.json` for `flowup assemble`.

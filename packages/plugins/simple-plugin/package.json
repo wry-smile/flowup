@@ -2,10 +2,19 @@
   "name": "flowup-simple-plugin",
   "type": "module",
   "version": "1.0.0",
-  "description": "",
-  "author": "",
-  "license": "ISC",
-  "keywords": [],
+  "description": "Example Node-RED editor plugin built with Flowup.",
+  "author": "@wry-smile",
+  "license": "MIT",
+  "keywords": [
+    "node-red",
+    "flowup",
+    "node-red-plugin"
+  ],
+  "main": "./dist/simple-plugin.js",
+  "files": [
+    "dist",
+    "resources"
+  ],
   "scripts": {
     "build": "flowup build"
   },
@@ -19,7 +28,7 @@
   "node-red": {
     "scope": "simple-plugin",
     "plugins": {
-      "simple-plugin": "simple-plugin.js"
+      "simple-plugin": "dist/simple-plugin.js"
     }
   }
 }

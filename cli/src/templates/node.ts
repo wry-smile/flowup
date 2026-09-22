@@ -8,6 +8,7 @@ import {
   renderFrameworkReadmeLines,
 } from './client-framework'
 import { getBaseTemplateDevDependencies } from './dependency-versions'
+import { renderMitLicense } from './license'
 import { renderSvelteNodeClient, renderSvelteNodeFiles } from './node-frameworks/svelte'
 import { renderVanillaNodeClient } from './node-frameworks/vanilla'
 import { renderVueNodeClient, renderVueNodeFiles } from './node-frameworks/vue'
@@ -15,6 +16,7 @@ import { renderVueNodeClient, renderVueNodeFiles } from './node-frameworks/vue'
 export function nodeTemplate(ctx: TemplateContext): FileMap {
   return {
     'package.json': renderPackageJson(ctx),
+    'LICENSE': renderMitLicense(),
     'flowup.config.ts': renderViteConfig(ctx),
     'tsconfig.json': renderTsconfigRoot(),
     'tsconfig.app.json': renderTsconfigApp(ctx),
@@ -49,10 +51,18 @@ function renderPackageJson(ctx: TemplateContext): string {
   "name": "flowup-${ctx.name}",
   "type": "module",
   "version": "1.0.0",
-  "description": "",
-  "author": "",
-  "license": "ISC",
-  "keywords": [],
+  "description": "A Node-RED node built with Flowup.",
+  "license": "MIT",
+  "keywords": [
+    "node-red",
+    "flowup",
+    "node-red-node"
+  ],
+  "main": "./dist/${ctx.name}.js",
+  "files": [
+    "dist",
+    "resources"
+  ],
   "scripts": {
     "build": "flowup build"
   },
@@ -62,7 +72,7 @@ ${devDependencies}
   "node-red": {
     "scope": "${ctx.name}",
     "nodes": {
-      "${ctx.name}": "${ctx.name}.js"
+      "${ctx.name}": "dist/${ctx.name}.js"
     }
   }
 }
@@ -432,6 +442,16 @@ Produces:
 - \`dist/locales/\`
 - \`dist/icons/\`
 - \`dist/resources/\`
+- \`dist/flowup.manifest.json\`
+
+## Package
+
+Build and pack from the project root:
+
+\`\`\`bash
+pnpm build
+npm pack --dry-run
+\`\`\`
 ${addOnSection}
 `
 }

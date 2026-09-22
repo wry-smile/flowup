@@ -23,7 +23,7 @@ export function registerAssembleCommand(program: Command): void {
     .description('Assemble all flowup-built Node-RED nodes and plugins into one distributable package.')
     .option('--cwd <path>', 'Scan root, defaults to process.cwd()')
     .option('--config <path>', 'Path to flowup.config.ts (or .js/.mjs/.cjs)')
-    .option('--output <path>', 'Output directory, defaults to dist/flowup-assemble')
+    .option('--output <path>', 'Output directory, defaults to workspace dist/flowup-assemble or a safe sibling for a single package')
     .option('--name <name>', 'Assembled package name, defaults to flowup-assemble')
     .option('--version <version>', 'Assembled package version, defaults to 1.0.0')
     .option('--description <text>', 'Assembled package description')

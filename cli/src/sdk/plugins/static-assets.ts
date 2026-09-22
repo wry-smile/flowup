@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -40,13 +40,16 @@ function walkFiles(dir: string): string[] {
       continue
 
     const absPath = path.resolve(dir, name)
-    const stats = statSync(absPath)
+    const stats = lstatSync(absPath)
+    if (stats.isSymbolicLink())
+      continue
     if (stats.isDirectory()) {
       output.push(...walkFiles(absPath))
       continue
     }
 
-    output.push(absPath)
+    if (stats.isFile())
+      output.push(absPath)
   }
   return output
 }

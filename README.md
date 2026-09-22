@@ -62,6 +62,15 @@ Build the CLI:
 pnpm build
 ```
 
+Run the complete stability and release gate:
+
+```bash
+pnpm check
+```
+
+The gate includes CLI lint/typecheck, unit and real Node-RED integration tests,
+example package build/assemble/npm-pack checks, and a tarball-based release E2E.
+
 Generate a new node example:
 
 ```bash

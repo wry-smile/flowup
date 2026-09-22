@@ -1,5 +1,5 @@
-import type { FlowupAssembleConfig, FlowupConfig } from '../sdk/define-config'
 import type { UserConfig } from 'vite'
+import type { FlowupAssembleConfig, FlowupConfig } from '../sdk/define-config'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { loadConfigFromFile } from 'vite'

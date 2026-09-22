@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
-import { basename, relative, resolve } from 'node:path'
+import { basename, relative, resolve, sep } from 'node:path'
 import process from 'node:process'
 import { findWorkspaceRoot, isInMonorepo } from './monorepo'
 
@@ -26,20 +26,22 @@ export interface ScanFlowupPackagesResult {
 
 export interface FlowupNodeRedField {
   scope?: string
+  version?: string
+  dependencies?: string[]
   nodes?: Record<string, string>
   plugins?: Record<string, string>
 }
 
 export interface FlowupPackageJson extends Record<string, unknown> {
-  name?: string
-  version?: string
-  description?: string
-  author?: string
-  license?: string
-  keywords?: string[]
-  dependencies?: Record<string, string>
-  peerDependencies?: Record<string, string>
-  optionalDependencies?: Record<string, string>
+  'name'?: string
+  'version'?: string
+  'description'?: string
+  'author'?: string
+  'license'?: string
+  'keywords'?: string[]
+  'dependencies'?: Record<string, string>
+  'peerDependencies'?: Record<string, string>
+  'optionalDependencies'?: Record<string, string>
   'node-red'?: FlowupNodeRedField
 }
 
@@ -117,8 +119,6 @@ function readFlowupPackageRecord(
   packageJsonPath: string,
 ): FlowupPackageRecord | null {
   const packageJson = readJsonFile(packageJsonPath)
-  if (!packageJson)
-    return null
 
   const nodeRed = packageJson['node-red']
   if (!isFlowupNodeRedField(nodeRed))
@@ -136,7 +136,7 @@ function readFlowupPackageRecord(
   return {
     name,
     dir: packageDir,
-    relPath: relative(rootDir, packageDir) || '.',
+    relPath: normalizeRelativePath(relative(rootDir, packageDir)) || '.',
     packageJson,
     nodeRed,
     configFile,
@@ -160,17 +160,17 @@ function looksLikeFlowupConfig(filePath: string): boolean {
     const source = readFileSync(filePath, 'utf8')
     return source.includes('@wry-smile/flowup')
   }
-  catch {
-    return false
+  catch (error) {
+    throw new Error(`Unable to read Flowup config candidate: ${filePath}`, { cause: error })
   }
 }
 
-function readJsonFile(filePath: string): FlowupPackageJson | null {
+function readJsonFile(filePath: string): FlowupPackageJson {
   try {
     return JSON.parse(readFileSync(filePath, 'utf8')) as FlowupPackageJson
   }
-  catch {
-    return null
+  catch (error) {
+    throw new Error(`Unable to read package manifest: ${filePath}`, { cause: error })
   }
 }
 
@@ -192,10 +192,27 @@ function filterPackages(records: FlowupPackageRecord[], filters: string[] | unde
   if (!filters?.length)
     return records
 
-  const wanted = new Set(filters)
-  return records.filter((record) => {
-    return wanted.has(record.name)
-      || wanted.has(record.relPath)
-      || wanted.has(basename(record.dir))
+  const normalizedFilters = filters.map(normalizeRelativePath)
+  const wanted = new Set(normalizedFilters)
+  const matchedFilters = new Set<string>()
+  const filtered = records.filter((record) => {
+    const candidates = [record.name, record.relPath, basename(record.dir)]
+    const matches = candidates.filter(candidate => wanted.has(candidate))
+    for (const match of matches)
+      matchedFilters.add(match)
+    return matches.length > 0
   })
+
+  const missingFilters = normalizedFilters.filter(filter => !matchedFilters.has(filter))
+  if (missingFilters.length) {
+    throw new Error(
+      `Requested Flowup package(s) not found: ${missingFilters.join(', ')}`,
+    )
+  }
+
+  return filtered
+}
+
+function normalizeRelativePath(filePath: string): string {
+  return filePath.split(sep).join('/').replaceAll('\\', '/')
 }

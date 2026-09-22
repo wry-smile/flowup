@@ -1,16 +1,18 @@
 import type { FileMap, TemplateContext } from '../commands/gen/context'
 import { getBaseTemplateDevDependencies } from './dependency-versions'
+import { renderMitLicense } from './license'
 
 export function pluginTemplate(ctx: TemplateContext): FileMap {
   return {
     'package.json': renderPackageJson(ctx),
+    'LICENSE': renderMitLicense(),
     'flowup.config.ts': renderViteConfig(ctx),
     'tsconfig.json': renderTsconfigRoot(),
-    'tsconfig.app.json': renderTsconfigApp(ctx),
+    'tsconfig.app.json': renderTsconfigApp(),
     'tsconfig.node.json': renderTsconfigNode(),
     'constant/index.ts': renderConstants(ctx),
     'types/index.ts': renderTypes(ctx),
-    'runtime/index.ts': renderRuntime(ctx),
+    'runtime/index.ts': renderRuntime(),
     'client/index.ts': renderClientEntry(),
     'types/globals.d.ts': renderClientGlobals(),
     'icons/.gitkeep': renderGitkeep('Palette icons for the plugin UI.'),
@@ -68,10 +70,18 @@ function renderPackageJson(ctx: TemplateContext): string {
   "name": "flowup-${ctx.name}",
   "type": "module",
   "version": "1.0.0",
-  "description": "",
-  "author": "",
-  "license": "ISC",
-  "keywords": [],
+  "description": "A Node-RED editor plugin built with Flowup.",
+  "license": "MIT",
+  "keywords": [
+    "node-red",
+    "flowup",
+    "node-red-plugin"
+  ],
+  "main": "./dist/${ctx.name}.js",
+  "files": [
+    "dist",
+    "resources"
+  ],
   "scripts": {
     "build": "flowup build"
   },
@@ -81,7 +91,7 @@ ${devDependencies}
   "node-red": {
     "scope": "${ctx.name}",
     "plugins": {
-      "${ctx.name}": "${ctx.name}.js"
+      "${ctx.name}": "dist/${ctx.name}.js"
     }
   }
 }
@@ -109,7 +119,7 @@ function renderTsconfigRoot(): string {
 `
 }
 
-function renderTsconfigApp(ctx: TemplateContext): string {
+function renderTsconfigApp(): string {
   return `{
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
@@ -180,7 +190,7 @@ export {};
 `
 }
 
-function renderRuntime(ctx: TemplateContext): string {
+function renderRuntime(): string {
   return `import type { NodeAPI } from "node-red";
 import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME } from "../constant";
 
@@ -250,5 +260,15 @@ ${ctx.name}/
 ├── icons/
 └── resources/
 \`\`\`
+
+## Build and Package
+
+\`\`\`bash
+pnpm install
+pnpm build
+npm pack --dry-run
+\`\`\`
+
+A full build generates \`dist/flowup.manifest.json\` for \`flowup assemble\`.
 `
 }

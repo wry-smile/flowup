@@ -40,6 +40,16 @@ Produces:
 - `dist/locales/`
 - `dist/icons/`
 - `dist/resources/`
+- `dist/flowup.manifest.json`
+
+## Package
+
+Build and pack from the project root:
+
+```bash
+pnpm build
+npm pack --dry-run
+```
 
 
 ## 可选:Vue / Tailwindcss
@@ -63,4 +73,3 @@ export default defineConfig({
   client: { plugins: [vue(), tailwindcss()] },
 })
 ```
-

@@ -60,6 +60,7 @@ export function defineConfig(config: FlowupConfig): UserConfigFnObject {
           build: {
             outDir,
             emptyOutDir: true,
+            ssr: true,
             rolldownOptions: {
               platform: 'node',
               input: {

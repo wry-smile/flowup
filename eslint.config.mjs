@@ -8,4 +8,9 @@ export default eslintConfig({
   jsdoc: true,
   yaml: true,
 
+}, {
+  files: ['cli/package.json'],
+  rules: {
+    'pnpm/json-enforce-catalog': 'off',
+  },
 })

@@ -42,6 +42,11 @@ vite build --mode runtime
 vite build --mode editor
 ```
 
+A full build is written through a temporary staging directory and replaces
+`dist/` only after the runtime, editor, package metadata, and artifact manifest
+have all been validated. The generated `dist/flowup.manifest.json` is consumed
+by `flowup assemble` as the artifact contract.
+
 Options:
 
 - `--cwd <path>`
@@ -91,6 +96,10 @@ Options:
 - `--no-clean`
 - `--skip-build`
 
+The default output is `dist/flowup-assemble` at a workspace root. If the scan
+root is itself a source package, Flowup uses a sibling directory instead so the
+assemble output cannot overlap source files or the component `dist/`.
+
 ## Configuration
 
 `flowup.config.ts` is the shared entry for build-time and assemble-time behavior.
@@ -122,7 +131,74 @@ export default defineConfig({
 - Generated templates keep the same Node-RED-oriented directory layout.
 - `build` uses Vite multi-mode builds for `runtime` and `editor`.
 - `assemble` merges package outputs from `dist/` and generates a top-level `package.json`.
+- `assemble` builds and validates every component before atomically replacing its output.
 - `.ts` config loading reuses the Vite runner, so no extra `tsx` execution chain is required.
+
+## Packaging
+
+Generated projects are packaged from the project root. Their source
+`package.json` points Node-RED to `dist/<name>.js`, while the nested
+`dist/package.json` uses paths relative to `dist/` for assemble compatibility.
+The package publishes both `dist/` and the root `resources/` directory:
+Node-RED loads runtime/editor/locales/icons relative to the `dist/` entry, but
+serves module resources from the package root.
+
+```bash
+pnpm build
+npm pack --dry-run
+```
+
+Do not publish an incomplete `runtime`-only or `editor`-only build.
+
+For a release-level verification, pack and install the actual tarball rather
+than relying on a workspace link:
+
+```bash
+npm pack
+npm install ./flowup-my-node-1.0.0.tgz
+```
+
+Generated packages include a README, MIT LICENSE, non-empty description,
+Node-RED keywords, and the complete publish file list. Customize author and
+repository metadata before publishing your own package.
+
+## Compatibility and release checks
+
+Flowup requires Node.js `^20.19.0 || >=22.12.0` to run the CLI. Generated
+runtime packages are verified against Node-RED 4 and Node-RED 5 in CI.
+
+Repository release gates:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm test:integration
+pnpm check:examples
+pnpm test:e2e
+pnpm check
+```
+
+`pnpm test:e2e` packs and installs the real CLI tarball, generates a node and
+plugin in an empty directory, builds and assembles them, packs the component
+and assembled packages, installs those tarballs into isolated Node-RED user
+directories, and verifies runtime and HTTP resources.
+
+## Migrating earlier 2.x artifacts
+
+After upgrading the CLI, remove old `dist/` directories and run a complete
+`flowup build`; do not reuse an earlier runtime-only or editor-only artifact.
+Run `npm pack` from each component root, or directly from the `assemble` output
+directory for a combined package. Do not rename or move component directories
+inside an assembled output because their names are part of the Node-RED entry
+paths.
+
+## Troubleshooting
+
+- If `assemble --skip-build` reports a missing or unsupported manifest, rebuild every component with the current CLI.
+- If `/resources/<package>/...` returns 404 after installation, ensure the package `files` list includes both `dist` and the root `resources` directory.
+- If a workspace works but its tarball does not install, test the actual `.tgz` and check that it contains no `workspace:` or `catalog:` dependency ranges.
+- If an installed combined package cannot find a node or plugin, do not rearrange its component directories; rerun `assemble` and pack that output directly.
 
 ## Client SDK
 

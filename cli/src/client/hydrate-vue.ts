@@ -26,14 +26,14 @@ export class VueHydrateStore<T extends object> {
     return this.internalRefs
   }
 
-  public hydrate(source: StateSource<T>): void {
+  public hydrate = (source: StateSource<T>): void => {
     this.replaceState({
       ...this.createDefaultState(),
       ...this.pickFields(source),
     })
   }
 
-  public commit(target: StateTarget<T>): void {
+  public commit = (target: StateTarget<T>): void => {
     const snapshot = this.getSnapshot()
     for (const key of this.keys) {
       if (!this.hasOwn(snapshot, key))
@@ -43,11 +43,11 @@ export class VueHydrateStore<T extends object> {
     }
   }
 
-  public reset(): void {
+  public reset = (): void => {
     this.replaceState(this.createDefaultState())
   }
 
-  public getSnapshot(): T {
+  public getSnapshot = (): T => {
     const rawState = toRaw(this.internalState) as unknown as T
     return this.pickFields(rawState)
   }

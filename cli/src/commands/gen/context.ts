@@ -1,5 +1,6 @@
 import type { LocaleCode } from './locale'
 import { toProperCase } from '../../share/paths'
+
 export type ClientFramework = 'vanilla' | 'svelte' | 'vue'
 
 export interface TemplateContext {
