@@ -15,7 +15,6 @@ overrides:
 
 catalog:
   '@clack/prompts': ^1.6.0
-  '@tailwindcss/vite': ^4.3.1
   '@types/js-yaml': ^4.0.9
   '@types/micromatch': ^4.0.10
   '@types/node': ^26.0.1

@@ -1,36 +1,34 @@
 import type { FileMap, TemplateContext } from '../../commands/gen/context'
-import { renderTailwindCss, renderVueTailwindBridge } from '../framework-assets'
+import { renderVueTypes } from '../framework-assets'
 
 export function renderVuePluginFiles(ctx: TemplateContext): FileMap {
   return {
-    'client/App.ce.vue': renderVuePluginApp(ctx),
+    'client/App.vue': renderVuePluginApp(ctx),
     'client/hydrate.ts': renderVuePluginHydrateStore(),
-    ...(ctx.tailwind
-      ? {
-          'client/useTailwind.ts': renderVueTailwindBridge(),
-          'client/tailwind.css': renderTailwindCss(),
-        }
-      : {}),
+    'types/vue.d.ts': renderVueTypes(),
   }
 }
 
-export function renderVuePluginClient(): string {
-  return `import { defineCustomElement } from "vue";
-import AppCe from "./App.ce.vue";
-import { PLUGIN_NAME, PLUGIN_TAG_NAME } from "../constant";
-
-function ensurePluginPanelElement(): void {
-  if (!customElements.get(PLUGIN_TAG_NAME)) {
-    customElements.define(
-      PLUGIN_TAG_NAME,
-      defineCustomElement(AppCe),
-    );
-  }
-}
+export function renderVuePluginClient(ctx: TemplateContext): string {
+  return `import { createApp } from "vue";
+${ctx.unocss ? 'import "virtual:uno.css";\n' : ''}import App from "./App.vue";
+import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME } from "../constant";
 
 RED.plugins.registerPlugin(PLUGIN_NAME, {
   onadd() {
-    ensurePluginPanelElement();
+    if (RED.sidebar.containsTab(PLUGIN_NAME)) return;
+
+    const target = document.createElement("div");
+    target.dataset.flowupScope = PLUGIN_NAME;
+    target.className = "flowup-vue-root";
+    RED.sidebar.addTab({
+      id: PLUGIN_NAME,
+      name: PLUGIN_DISPLAY_NAME,
+      label: PLUGIN_DISPLAY_NAME,
+      iconClass: "fa fa-puzzle-piece",
+      content: target,
+    });
+    createApp(App).mount(target);
   },
 });
 `
@@ -60,24 +58,16 @@ export function useHydrateStore() {
 }
 
 function renderVuePluginApp(ctx: TemplateContext): string {
-  const tailwindImport = ctx.tailwind
-    ? `import { useTailwindcss } from "./useTailwind";
-
-useTailwindcss();
-`
-    : ''
-
   return `<script lang="ts" setup>
 import { computed } from "vue";
 import { useHydrateStore } from "./hydrate";
-${tailwindImport}
 const hydrateStore = useHydrateStore();
 const { name } = hydrateStore.refs;
 const title = computed(() => name.value || "${ctx.name}");
 </script>
 
 <template>
-  <div class="flowup-plugin-panel">
+  <div class="flowup-plugin-panel${ctx.unocss ? ' rounded-lg p-4' : ''}">
     <h3>{{ title }}</h3>
     <p>Vue plugin scaffold for ${ctx.name}.</p>
   </div>

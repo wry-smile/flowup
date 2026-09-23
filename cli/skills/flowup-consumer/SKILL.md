@@ -26,13 +26,20 @@ flowup gen \
   --type node \
   --name my-node \
   --framework vue \
-  --tailwind \
+  --unocss \
   --non-interactive
 ```
 
 Use a kebab-case name beginning with a letter. Valid examples include `my-node` and `sensor2`; path separators, `..`, uppercase letters, and an existing target directory are rejected.
 
-Supported package types are `node` and `plugin`. Supported client frameworks are `vanilla`, `vue`, and `svelte`; Tailwind applies only to Vue and Svelte templates.
+Supported package types are `node` and `plugin`. Supported client frameworks are `vanilla`, `vue`, and `svelte`; scoped UnoCSS applies only to Vue and Svelte templates.
+`--tailwind` remains a deprecated alias for `--unocss`. Use `--unocss` for new packages.
+
+## Scoped Framework Styles
+
+Vue and Svelte templates mount as ordinary framework apps. With `--unocss`, the generated `flowup.config.ts` adds `UnoCSS({ presets: [presetFlowupWind4({ scope: '<package-name>' })] })`, and the client imports `virtual:uno.css`. Keep the mount root's `data-flowup-scope` value equal to the preset scope. Add the same attribute to the root of any teleported overlay outside that container.
+
+The preset scopes generated utilities, reset, and theme variables and namespaces generated `@property` names and animation keyframes. It does not isolate package-authored global CSS or `@font-face`; handle those explicitly if added. Avoid building utility names only through runtime string concatenation; use statically extractable classes or UnoCSS safelist entries. See `packages/nodes/simple-node` for a Vue example and scoped CSS tests.
 
 ## Configure And Build
 

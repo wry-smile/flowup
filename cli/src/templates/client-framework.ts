@@ -31,11 +31,8 @@ export function getFrameworkDevDependencies(ctx: TemplateContext): string[] {
     devDependencies.push(`    "svelte": "${TEMPLATE_DEPENDENCY_VERSIONS.svelte}"`)
   }
 
-  if (ctx.tailwind) {
-    devDependencies.push(
-      `    "@tailwindcss/vite": "${TEMPLATE_DEPENDENCY_VERSIONS['@tailwindcss/vite']}"`,
-    )
-    devDependencies.push(`    "tailwindcss": "${TEMPLATE_DEPENDENCY_VERSIONS.tailwindcss}"`)
+  if (ctx.unocss) {
+    devDependencies.push(`    "unocss": "${TEMPLATE_DEPENDENCY_VERSIONS.unocss}"`)
   }
 
   return devDependencies
@@ -55,37 +52,40 @@ export function getFrameworkVitePluginSetup(ctx: TemplateContext): FrameworkPlug
     plugins.push('svelte()')
   }
 
-  if (ctx.tailwind) {
-    imports.push(`import tailwindcss from '@tailwindcss/vite'`)
-    plugins.push('tailwindcss()')
+  if (ctx.unocss) {
+    imports.push(`import UnoCSS from 'unocss/vite'`)
+    imports.push(`import { presetFlowupWind4 } from '@wry-smile/flowup'`)
+    const unoPlugin = `UnoCSS({ presets: [presetFlowupWind4({ scope: '${ctx.name}' })] })`
+    if (isSvelteFramework(ctx)) plugins.unshift(unoPlugin)
+    else plugins.push(unoPlugin)
   }
 
   return { imports, plugins }
 }
 
-export function renderFrameworkEditorContent(ctx: TemplateContext, tagName: string): string {
-  if (isVueFramework(ctx)) return `  <${tagName}></${tagName}>`
+export function renderFrameworkEditorContent(ctx: TemplateContext): string {
+  if (isVueFramework(ctx))
+    return `  <div data-flowup-scope="${ctx.name}" class="flowup-vue-root"></div>`
 
-  if (isSvelteFramework(ctx)) return '  <div class="flowup-svelte-root"></div>'
+  if (isSvelteFramework(ctx))
+    return `  <div data-flowup-scope="${ctx.name}" class="flowup-svelte-root"></div>`
 
   return '  <div></div>'
 }
 
 export function renderFrameworkReadmeLines(ctx: TemplateContext): string[] {
-  const lines = [
-    '- `@wry-smile/flowup/client` 提供通用的 hydrate store 与 Tailwind Shadow DOM bridge',
-  ]
+  const lines = ['- `@wry-smile/flowup/client` 提供通用的 hydrate store']
 
   if (isVueFramework(ctx)) lines.push('- Vue 模板会生成 `client/hydrate.ts`')
 
   if (isSvelteFramework(ctx))
     lines.push('- Svelte 模板会生成 `client/App.svelte` 与 `client/hydrate.ts`')
 
-  if (ctx.tailwind && isVueFramework(ctx))
-    lines.push('- Tailwind 模板会额外生成 `client/useTailwind.ts`')
+  if (ctx.unocss && isVueFramework(ctx))
+    lines.push('- UnoCSS 样式限定在 `data-flowup-scope` 容器内；弹出层挂载节点也需设置相同属性')
 
-  if (ctx.tailwind && isSvelteFramework(ctx))
-    lines.push('- Tailwind 模板会额外生成 `client/tailwind.css`')
+  if (ctx.unocss && isSvelteFramework(ctx))
+    lines.push('- UnoCSS 样式限定在 `data-flowup-scope` 容器内；弹出层挂载节点也需设置相同属性')
 
   lines.push('- 可复用常量会生成到 `constant/index.ts`')
 

@@ -17,6 +17,8 @@
   "include": [
     "client/**/*.ts",
     "client/**/*.tsx",
+    "client/**/*.vue",
+    "client/**/*.svelte",
     "client/**/*.d.ts",
     "constant/**/*.ts",
     "types/**/*.ts",

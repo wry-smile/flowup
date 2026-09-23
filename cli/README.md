@@ -22,10 +22,22 @@ Options:
 - `--framework <vanilla|svelte|vue>`
 - `--vue [bool]`
   Compatibility option. Prefer `--framework`.
-- `--tailwind [bool]`
+- `--unocss [bool]` for scoped UnoCSS in Vue or Svelte templates
+- `--tailwind [bool]` deprecated alias for `--unocss`
 - `--non-interactive`
 
 If required options are missing, Flowup switches to interactive prompts.
+
+For a Vue node with scoped atomic CSS:
+
+```bash
+flowup gen --type node --name my-node --framework vue --unocss --non-interactive
+```
+
+The same options work for a plugin or with `--framework svelte`. The generated
+Vue and Svelte clients mount as ordinary framework apps, without a web
+component or Shadow DOM. `--unocss` installs UnoCSS Wind4 and configures
+`presetFlowupWind4({ scope: 'my-node' })` in `flowup.config.ts`.
 
 ### `flowup build`
 
@@ -128,6 +140,27 @@ export default defineConfig({
 })
 ```
 
+### Scoped UnoCSS
+
+The generated editor imports `virtual:uno.css` and mounts under
+`data-flowup-scope="my-node"`. The Flowup Wind4 preset prefixes generated
+utility selectors with that scope, limits its reset and theme variables to the
+container, and gives generated `@property` registrations and animation
+keyframes package-specific names. It does not require a separate PostCSS setup.
+
+If a framework component teleports an overlay outside the editor container,
+put the same attribute on the overlay root:
+
+```html
+<div data-flowup-scope="my-node">...</div>
+```
+
+Keep utility names statically discoverable in source, or add dynamic names to
+the UnoCSS safelist. The preset covers its generated CSS; package-authored
+global CSS, including `@font-face`, needs its own isolation strategy. See
+[`simple-node`](../packages/nodes/simple-node/README.md) for Vue components and
+CSS output tests.
+
 ## Notes
 
 - Generated templates keep the same Node-RED-oriented directory layout.
@@ -208,6 +241,8 @@ paths.
 
 - `createHydrateStore(...)`
 - `createVueHydrateStore(...)`
-- `createTailwindcssBridge(...)`
+- `createTailwindcssBridge(...)` (legacy Shadow DOM helper)
 
-Framework templates generate the matching glue files automatically, such as `client/hydrate.ts` and `client/useTailwind.ts`.
+Vue and Svelte templates use `presetFlowupWind4({ scope })` and mount inside a
+`data-flowup-scope` container. Flowup scopes the CSS produced by this preset;
+custom global CSS remains the package author's responsibility.

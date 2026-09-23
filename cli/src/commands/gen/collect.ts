@@ -52,10 +52,7 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
     answers.locales = options.locales
   }
 
-  if (answers.type === 'plugin') {
-    answers.framework = 'vanilla'
-    answers.tailwind = false
-  } else if (options.framework === undefined) {
+  if (options.framework === undefined) {
     answers.framework = await selectOrExit<ClientFramework>({
       message: 'Select client framework?',
       options: [
@@ -69,15 +66,15 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
     answers.framework = options.framework
   }
 
-  if (answers.type === 'plugin' || answers.framework === 'vanilla') {
-    answers.tailwind = false
-  } else if (options.tailwind === undefined) {
-    answers.tailwind = await confirmOrExit({
-      message: 'Use Tailwindcss for styling?',
+  if (answers.framework === 'vanilla') {
+    answers.unocss = false
+  } else if (options.unocss === undefined) {
+    answers.unocss = await confirmOrExit({
+      message: 'Use scoped UnoCSS for styling?',
       initialValue: false,
     })
   } else {
-    answers.tailwind = options.tailwind
+    answers.unocss = options.unocss
   }
 
   return answers as GenResolved

@@ -1,32 +1,30 @@
 import type { FileMap, TemplateContext } from '../../commands/gen/context'
-import { renderTailwindCss, renderVueTailwindBridge } from '../framework-assets'
-
+import { renderVueTypes } from '../framework-assets'
 export function renderVueNodeFiles(ctx: TemplateContext): FileMap {
   return {
-    'client/App.ce.vue': renderVueNodeApp(ctx),
+    'client/App.vue': renderVueNodeApp(ctx),
     'client/hydrate.ts': renderVueNodeHydrateStore(ctx),
-    ...(ctx.tailwind
-      ? {
-          'client/useTailwind.ts': renderVueTailwindBridge(),
-          'client/tailwind.css': renderTailwindCss(),
-        }
-      : {}),
+    'types/vue.d.ts': renderVueTypes(),
   }
 }
 
 export function renderVueNodeClient(ctx: TemplateContext): string {
-  return `import { defineCustomElement } from "vue";
-import AppCe from "./App.ce.vue";
+  return `import { createApp, type App as VueApp } from "vue";
+${ctx.unocss ? 'import "virtual:uno.css";\n' : ''}import App from "./App.vue";
 import { useHydrateStore } from "./hydrate";
-import { NODE_NAME, NODE_PALETTE_LABEL, NODE_TAG_NAME } from "../constant";
+import { NODE_NAME, NODE_PALETTE_LABEL } from "../constant";
 
-function ensureNodePanelElement(): void {
-  if (!customElements.get(NODE_TAG_NAME)) {
-    customElements.define(
-      NODE_TAG_NAME,
-      defineCustomElement(AppCe),
-    );
-  }
+let app: VueApp | undefined;
+
+function getMountTarget(): HTMLElement | null {
+  return document.querySelector(
+    \`[data-flowup-scope="\${NODE_NAME}"].flowup-vue-root\`,
+  );
+}
+
+function destroyApp(): void {
+  app?.unmount();
+  app = undefined;
 }
 
 RED.nodes.registerType<${ctx.properName}ClientNodeProperties>(NODE_NAME, {
@@ -43,11 +41,19 @@ RED.nodes.registerType<${ctx.properName}ClientNodeProperties>(NODE_NAME, {
   },
   oneditprepare() {
     useHydrateStore().hydrate(this);
-
-    ensureNodePanelElement();
+    destroyApp();
+    const target = getMountTarget();
+    if (target) {
+      app = createApp(App);
+      app.mount(target);
+    }
   },
   oneditsave() {
     useHydrateStore().commit(this);
+    destroyApp();
+  },
+  oneditcancel() {
+    destroyApp();
   },
 });
 `
@@ -75,26 +81,18 @@ export function useHydrateStore() {
 }
 
 function renderVueNodeApp(ctx: TemplateContext): string {
-  const tailwindImport = ctx.tailwind
-    ? `import { useTailwindcss } from "./useTailwind";
-
-useTailwindcss();
-`
-    : ''
-
   return `<script lang="ts" setup>
 import { computed } from "vue";
 import { useHydrateStore } from "./hydrate";
-${tailwindImport}
 const hydrateStore = useHydrateStore();
 const { name } = hydrateStore.refs;
 const title = computed(() => name.value || "${ctx.name}");
 </script>
 
 <template>
-  <div class="flowup-panel">
+  <div class="flowup-panel${ctx.unocss ? ' rounded-lg p-4' : ''}">
     <h3>{{ title }}</h3>
-    <p>Vue custom-element editor scaffold for ${ctx.name}.</p>
+    <p>Vue editor scaffold for ${ctx.name}.</p>
   </div>
 </template>
 

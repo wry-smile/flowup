@@ -1,6 +1,15 @@
 import type { FileMap, TemplateContext } from '../commands/gen/context'
+import {
+  getFrameworkDevDependencies,
+  getFrameworkVitePluginSetup,
+  isSvelteFramework,
+  isVueFramework,
+  renderFrameworkReadmeLines,
+} from './client-framework'
 import { getBaseTemplateDevDependencies } from './dependency-versions'
 import { renderMitLicense } from './license'
+import { renderSveltePluginClient, renderSveltePluginFiles } from './plugin-frameworks/svelte'
+import { renderVuePluginClient, renderVuePluginFiles } from './plugin-frameworks/vue'
 
 export function pluginTemplate(ctx: TemplateContext): FileMap {
   return {
@@ -14,7 +23,8 @@ export function pluginTemplate(ctx: TemplateContext): FileMap {
     'constant/index.ts': renderConstants(ctx),
     'types/index.ts': renderTypes(ctx),
     'runtime/index.ts': renderRuntime(),
-    'client/index.ts': renderClientEntry(),
+    'client/index.ts': renderClientEntry(ctx),
+    ...renderFrameworkFiles(ctx),
     'types/globals.d.ts': renderClientGlobals(),
     'icons/.gitkeep': renderGitkeep('Palette icons for the plugin UI.'),
     'icons/README.md': renderIconsReadme(),
@@ -74,7 +84,10 @@ See https://nodered.org/docs/creating-nodes/resources
 }
 
 function renderPackageJson(ctx: TemplateContext): string {
-  const devDependencies = getBaseTemplateDevDependencies(ctx.flowupSpecifier).join(',\n')
+  const devDependencies = [
+    ...getBaseTemplateDevDependencies(ctx.flowupSpecifier),
+    ...getFrameworkDevDependencies(ctx),
+  ].join(',\n')
 
   return `{
   "name": "flowup-${ctx.name}",
@@ -109,11 +122,18 @@ ${devDependencies}
 }
 
 function renderViteConfig(ctx: TemplateContext): string {
-  return `import { defineConfig } from '@wry-smile/flowup'
+  const { imports, plugins } = getFrameworkVitePluginSetup(ctx)
+  const importBlock = imports.length ? `${imports.join('\n')}\n\n` : ''
+  const clientBlock = plugins.length
+    ? `  client: {\n    plugins: [${plugins.join(', ')}],\n  },`
+    : ''
+
+  return `${importBlock}import { defineConfig } from '@wry-smile/flowup'
 
 export default defineConfig({
   scope: '${ctx.name}',
   type: 'plugins',
+${clientBlock}
 })
 `
 }
@@ -149,6 +169,8 @@ function renderTsconfigApp(): string {
   "include": [
     "client/**/*.ts",
     "client/**/*.tsx",
+    "client/**/*.vue",
+    "client/**/*.svelte",
     "client/**/*.d.ts",
     "constant/**/*.ts",
     "types/**/*.ts",
@@ -214,7 +236,10 @@ export default function pluginInit(RED: NodeAPI): void {
 `
 }
 
-function renderClientEntry(): string {
+function renderClientEntry(ctx: TemplateContext): string {
+  if (isVueFramework(ctx)) return renderVuePluginClient(ctx)
+  if (isSvelteFramework(ctx)) return renderSveltePluginClient(ctx)
+
   return `import { PLUGIN_NAME } from "../constant";
 
 RED.plugins.registerPlugin(PLUGIN_NAME, {
@@ -222,6 +247,12 @@ RED.plugins.registerPlugin(PLUGIN_NAME, {
   },
 });
 `
+}
+
+function renderFrameworkFiles(ctx: TemplateContext): FileMap {
+  if (isVueFramework(ctx)) return renderVuePluginFiles(ctx)
+  if (isSvelteFramework(ctx)) return renderSveltePluginFiles(ctx)
+  return {}
 }
 
 function renderClientGlobals(): string {
@@ -247,14 +278,22 @@ function renderLocaleJson(): string {
 }
 
 function renderReadme(ctx: TemplateContext): string {
+  const stack = isVueFramework(ctx)
+    ? '- Vue sidebar plugin'
+    : isSvelteFramework(ctx)
+      ? '- Svelte sidebar plugin'
+      : '- Plain TypeScript plugin registration'
+  const uno = ctx.unocss ? '\n- UnoCSS Wind4 with a Flowup scope' : ''
+
   return `# ${ctx.name}
 
 A Node-RED editor plugin scaffolded with [flowup](https://github.com/wry-smile/flowup).
 
 ## UI Stack
 
-- Plain TypeScript plugin registration
-- No framework-specific client template is generated for plugins
+${stack}${uno}
+
+${renderFrameworkReadmeLines(ctx).join('\n')}
 
 ## Layout
 

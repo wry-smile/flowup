@@ -55,7 +55,11 @@ export default defineConfig({
 
 - Generated packages should keep Node-RED-oriented folders such as `runtime/`, `client/`, `types/`, `locales/`, `icons/`, and `resources/`
 - Framework choices currently include `vanilla`, `svelte`, and `vue`
-- `tailwind` is only relevant for framework-based client templates, not vanilla templates
+- `unocss` is only relevant for framework-based client templates, not vanilla templates
+- Prefer `--unocss`; `--tailwind` is a deprecated generator alias
+- Vue and Svelte templates mount as ordinary apps under `data-flowup-scope="<name>"`; teleported overlay roots need the same attribute
+- The exported `presetFlowupWind4({ scope })` wraps Wind4 to scope generated utilities, reset, and theme variables and namespace generated `@property` names and keyframes; package-authored global CSS and `@font-face` are outside that guarantee
+- Use statically extractable utility names or an UnoCSS safelist. The `packages/nodes/simple-node` example exercises utility categories and checks its built CSS
 
 ## Working Conventions
 

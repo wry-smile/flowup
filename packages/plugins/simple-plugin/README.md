@@ -4,8 +4,13 @@ A Node-RED editor plugin scaffolded with [flowup](https://github.com/wry-smile/f
 
 ## UI Stack
 
-- Plain TypeScript plugin registration
-- No framework-specific client template is generated for plugins
+- Vue sidebar plugin
+- UnoCSS Wind4 with a Flowup scope
+
+- `@wry-smile/flowup/client` 提供通用的 hydrate store
+- Vue 模板会生成 `client/hydrate.ts`
+- UnoCSS 样式限定在 `data-flowup-scope` 容器内；弹出层挂载节点也需设置相同属性
+- 可复用常量会生成到 `constant/index.ts`
 
 ## Layout
 

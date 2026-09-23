@@ -261,7 +261,6 @@ function renderTsconfigNode(): string {
 
 function renderConstants(ctx: TemplateContext): string {
   return `export const NODE_NAME = "${ctx.name}";
-export const NODE_TAG_NAME = "flowup-${ctx.name}-editor";
 export const NODE_PALETTE_LABEL = "${ctx.name}";
 `
 }
@@ -347,7 +346,7 @@ export {};
 }
 
 function renderEditorHtml(ctx: TemplateContext): string {
-  const content = renderFrameworkEditorContent(ctx, `flowup-${ctx.name}-editor`)
+  const content = renderFrameworkEditorContent(ctx)
 
   return `<script type="text/html" data-template-name="${ctx.name}">
 ${content}
@@ -373,33 +372,34 @@ function renderReadme(ctx: TemplateContext): string {
   const uiStackLines: string[] = []
   if (isVueFramework(ctx)) uiStackLines.push('- **Vue** (SFC, .vue files)')
   if (isSvelteFramework(ctx)) uiStackLines.push('- **Svelte** (.svelte files)')
-  if (ctx.tailwind) uiStackLines.push('- **Tailwindcss** (utility-first CSS)')
+  if (ctx.unocss) uiStackLines.push('- **UnoCSS Wind4** (scoped atomic CSS)')
   if (uiStackLines.length === 0) uiStackLines.push('- Plain HTML + TypeScript (no UI framework)')
 
   const addOnSection =
-    isVueFramework(ctx) || isSvelteFramework(ctx) || ctx.tailwind
+    isVueFramework(ctx) || isSvelteFramework(ctx) || ctx.unocss
       ? ''
       : `
 
-## 可选:Vue / Tailwindcss
+## 可选:Vue / UnoCSS
 
 本脚手架默认是纯 HTML + TypeScript,不依赖任何 UI 框架。
 
-如果你之后想加 Vue 或 Tailwindcss:
+如果你之后想加 Vue 或 UnoCSS:
 
 \`\`\`bash
-pnpm add -D @vitejs/plugin-vue @tailwindcss/vite
+pnpm add -D @vitejs/plugin-vue unocss
 \`\`\`
 
 然后在 \`flowup.config.ts\` 里手动 import + 注入 plugin:
 
 \`\`\`ts
 import vue from '@vitejs/plugin-vue'
-import tailwindcss from '@tailwindcss/vite'
+import UnoCSS from 'unocss/vite'
+import { presetFlowupWind4 } from '@wry-smile/flowup'
 
 export default defineConfig({
   scope: '${ctx.name}',
-  client: { plugins: [vue(), tailwindcss()] },
+  client: { plugins: [vue(), UnoCSS({ presets: [presetFlowupWind4({ scope: '${ctx.name}' })] })] },
 })
 \`\`\`
 `
@@ -457,4 +457,6 @@ npm pack --dry-run
 \`\`\`
 ${addOnSection}
 `
+    .trimEnd()
+    .concat('\n')
 }

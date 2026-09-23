@@ -1,13 +1,9 @@
-export function renderTailwindCss(): string {
-  return `@import 'tailwindcss';
-`
+export function renderVueTypes(): string {
+  return `declare module "*.vue" {
+  import type { DefineComponent } from "vue";
+  const component: DefineComponent;
+  export default component;
 }
-
-export function renderVueTailwindBridge(): string {
-  return `import { createTailwindcssBridge } from "@wry-smile/flowup/client";
-import tailwindcss from "./tailwind.css?inline";
-
-export const useTailwindcss = createTailwindcssBridge(tailwindcss);
 `
 }
 

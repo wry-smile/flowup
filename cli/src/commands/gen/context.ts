@@ -12,7 +12,7 @@ export interface TemplateContext {
   clientFramework: ClientFramework
   vue: boolean
   svelte: boolean
-  tailwind: boolean
+  unocss: boolean
 }
 
 export type FileMap = Record<string, string>
@@ -24,6 +24,7 @@ export interface CreateContextOptions {
   inMonorepo?: boolean
   clientFramework?: ClientFramework
   vue?: boolean
+  unocss?: boolean
   tailwind?: boolean
 }
 
@@ -39,6 +40,6 @@ export function createContext(opts: CreateContextOptions): TemplateContext {
     clientFramework,
     vue: clientFramework === 'vue',
     svelte: clientFramework === 'svelte',
-    tailwind: opts.tailwind ?? false,
+    unocss: opts.unocss ?? opts.tailwind ?? false,
   }
 }

@@ -22,10 +22,22 @@ flowup gen --type node --name my-special-node
 - `--framework <vanilla|svelte|vue>`
 - `--vue [bool]`
   兼容旧用法，推荐改用 `--framework`
-- `--tailwind [bool]`
+- `--unocss [bool]`：在 Vue 或 Svelte 模板中启用带作用域的 UnoCSS
+- `--tailwind [bool]`：`--unocss` 的旧别名
 - `--non-interactive`
 
 如果缺少必填参数，Flowup 会自动进入交互式模式。
+
+生成带作用域原子样式的 Vue 节点：
+
+```bash
+flowup gen --type node --name my-node --framework vue --unocss --non-interactive
+```
+
+插件也可使用相同参数，或将框架改为 `--framework svelte`。生成的 Vue 和 Svelte
+客户端会作为普通框架应用挂载，不再构建为 Web Component，也不使用 Shadow DOM。
+`--unocss` 会安装 UnoCSS Wind4，并在 `flowup.config.ts` 中配置
+`presetFlowupWind4({ scope: 'my-node' })`。
 
 ### `flowup build`
 
@@ -124,6 +136,23 @@ export default defineConfig({
 })
 ```
 
+### UnoCSS 作用域
+
+生成的 editor 会导入 `virtual:uno.css`，并挂载在
+`data-flowup-scope="my-node"` 容器内。Flowup Wind4 预设为生成的工具类选择器
+增加作用域，将 reset 和主题变量限定在容器内，并为生成的 `@property` 注册项与
+动画关键帧使用包专属名称。无需另行配置 PostCSS。
+
+如果组件将弹出层传送到 editor 容器外，请在弹出层根节点添加相同属性：
+
+```html
+<div data-flowup-scope="my-node">...</div>
+```
+
+工具类名称应能从源码静态提取；动态拼接的名称需要加入 UnoCSS safelist。
+预设只处理它生成的 CSS。包内自行编写的全局 CSS（包括 `@font-face`）需自行处理隔离。
+Vue 组件和构建产物测试见 [`simple-node`](../packages/nodes/simple-node/README.md)。
+
 ## 说明
 
 - 生成的模板会保持 Node-RED 友好的目录结构
@@ -197,6 +226,7 @@ runtime 或 editor 的旧产物。组件包从项目根目录执行 `npm pack`�
 
 - `createHydrateStore(...)`
 - `createVueHydrateStore(...)`
-- `createTailwindcssBridge(...)`
+- `createTailwindcssBridge(...)`（兼容旧 Shadow DOM 模板）
 
-不同框架模板会自动生成对应的接线文件，例如 `client/hydrate.ts`、`client/useTailwind.ts`。
+Vue 和 Svelte 模板使用 `presetFlowupWind4({ scope })`，挂载在
+`data-flowup-scope` 容器内。Flowup 负责该预设生成的样式作用域；用户自行编写的全局 CSS 由用户管理。

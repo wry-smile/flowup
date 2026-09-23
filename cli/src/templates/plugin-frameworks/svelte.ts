@@ -1,50 +1,34 @@
 import type { FileMap, TemplateContext } from '../../commands/gen/context'
-import { renderSvelteTypes, renderTailwindCss } from '../framework-assets'
+import { renderSvelteTypes } from '../framework-assets'
 
 export function renderSveltePluginFiles(ctx: TemplateContext): FileMap {
   return {
     'client/App.svelte': renderSveltePluginApp(ctx),
     'client/hydrate.ts': renderSveltePluginHydrateStore(),
     'types/svelte.d.ts': renderSvelteTypes(),
-    ...(ctx.tailwind
-      ? {
-          'client/tailwind.css': renderTailwindCss(),
-        }
-      : {}),
   }
 }
 
-export function renderSveltePluginClient(): string {
-  return `import { mount, unmount } from "svelte";
-import App from "./App.svelte";
-import { PLUGIN_NAME } from "../constant";
-
-let app: ReturnType<typeof mount> | undefined;
-
-function getMountTarget(): HTMLElement | null {
-  return document.querySelector(
-    \`[data-template-name="\${PLUGIN_NAME}"] .flowup-svelte-root\`,
-  ) as HTMLElement | null;
-}
-
-function destroyApp(): void {
-  if (!app)
-    return;
-
-  unmount(app);
-  app = undefined;
-}
+export function renderSveltePluginClient(ctx: TemplateContext): string {
+  return `import { mount } from "svelte";
+${ctx.unocss ? 'import "virtual:uno.css";\n' : ''}import App from "./App.svelte";
+import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME } from "../constant";
 
 RED.plugins.registerPlugin(PLUGIN_NAME, {
   onadd() {
-    destroyApp();
+    if (RED.sidebar.containsTab(PLUGIN_NAME)) return;
 
-    const target = getMountTarget();
-    if (target)
-      app = mount(App, { target });
-  },
-  onremove() {
-    destroyApp();
+    const target = document.createElement("div");
+    target.dataset.flowupScope = PLUGIN_NAME;
+    target.className = "flowup-svelte-root";
+    RED.sidebar.addTab({
+      id: PLUGIN_NAME,
+      name: PLUGIN_DISPLAY_NAME,
+      label: PLUGIN_DISPLAY_NAME,
+      iconClass: "fa fa-puzzle-piece",
+      content: target,
+    });
+    mount(App, { target });
   },
 });
 `
@@ -100,15 +84,9 @@ export function useHydrateStore() {
 }
 
 function renderSveltePluginApp(ctx: TemplateContext): string {
-  const tailwindImport = ctx.tailwind
-    ? `import "./tailwind.css";
-`
-    : ''
-
   return `<script lang="ts">
 import { derived } from "svelte/store";
 import { useHydrateStore } from "./hydrate";
-${tailwindImport}
 const hydrateStore = useHydrateStore();
 const name = derived(hydrateStore.state, $state => $state.name ?? "${ctx.name}");
 </script>

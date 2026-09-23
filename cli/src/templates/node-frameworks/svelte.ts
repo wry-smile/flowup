@@ -1,22 +1,17 @@
 import type { FileMap, TemplateContext } from '../../commands/gen/context'
-import { renderSvelteTypes, renderTailwindCss } from '../framework-assets'
+import { renderSvelteTypes } from '../framework-assets'
 
 export function renderSvelteNodeFiles(ctx: TemplateContext): FileMap {
   return {
     'client/App.svelte': renderSvelteNodeApp(ctx),
     'client/hydrate.ts': renderSvelteNodeHydrateStore(ctx),
     'types/svelte.d.ts': renderSvelteTypes(),
-    ...(ctx.tailwind
-      ? {
-          'client/tailwind.css': renderTailwindCss(),
-        }
-      : {}),
   }
 }
 
 export function renderSvelteNodeClient(ctx: TemplateContext): string {
   return `import { mount, unmount } from "svelte";
-import App from "./App.svelte";
+${ctx.unocss ? 'import "virtual:uno.css";\n' : ''}import App from "./App.svelte";
 import { useHydrateStore } from "./hydrate";
 import { NODE_NAME, NODE_PALETTE_LABEL } from "../constant";
 
@@ -24,7 +19,7 @@ let app: ReturnType<typeof mount> | undefined;
 
 function getMountTarget(): HTMLElement | null {
   return document.querySelector(
-    \`[data-template-name="\${NODE_NAME}"] .flowup-svelte-root\`,
+    \`[data-flowup-scope="\${NODE_NAME}"].flowup-svelte-root\`,
   ) as HTMLElement | null;
 }
 
@@ -119,15 +114,9 @@ export function useHydrateStore() {
 }
 
 function renderSvelteNodeApp(ctx: TemplateContext): string {
-  const tailwindImport = ctx.tailwind
-    ? `import "./tailwind.css";
-`
-    : ''
-
   return `<script lang="ts">
 import { derived } from "svelte/store";
 import { useHydrateStore } from "./hydrate";
-${tailwindImport}
 const hydrateStore = useHydrateStore();
 const name = derived(hydrateStore.state, $state => $state.name ?? "");
 

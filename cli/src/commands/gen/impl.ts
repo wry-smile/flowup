@@ -23,12 +23,15 @@ export interface GenOptions {
   locales?: LocaleCode[]
   framework?: ClientFramework
   vue?: boolean
+  unocss?: boolean
   tailwind?: boolean
   nonInteractive?: boolean
 }
 
-export interface GenResolved extends Required<Omit<GenOptions, 'nonInteractive' | 'vue'>> {
-  tailwind: boolean
+export interface GenResolved extends Required<
+  Omit<GenOptions, 'nonInteractive' | 'vue' | 'tailwind'>
+> {
+  unocss: boolean
 }
 
 export function readOptionsFromEnv(): Partial<GenOptions> {
@@ -38,6 +41,7 @@ export function readOptionsFromEnv(): Partial<GenOptions> {
     locales: parseLocalesFromEnv(process.env.FLOWUP_GEN_LOCALES),
     framework: process.env.FLOWUP_GEN_FRAMEWORK as ClientFramework | undefined,
     vue: parseBool(process.env.FLOWUP_GEN_VUE),
+    unocss: parseBool(process.env.FLOWUP_GEN_UNOCSS),
     tailwind: parseBool(process.env.FLOWUP_GEN_TAILWIND),
   }
 }
@@ -59,7 +63,7 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
     locales: rawOptions.locales ?? envOptions.locales,
     framework: rawOptions.framework ?? envOptions.framework,
     vue: rawOptions.vue ?? envOptions.vue,
-    tailwind: rawOptions.tailwind ?? envOptions.tailwind,
+    unocss: rawOptions.unocss ?? rawOptions.tailwind ?? envOptions.unocss ?? envOptions.tailwind,
     nonInteractive: rawOptions.nonInteractive,
   }
 
@@ -81,20 +85,14 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
     if (invalidLocales.length) throw new Error(`Invalid locales: ${invalidLocales.join(', ')}`)
   }
 
-  if (options.type === 'plugin') {
-    options.framework = 'vanilla'
-    options.tailwind = false
-    options.vue = false
-  }
-
-  if (options.framework === 'vanilla') options.tailwind = false
+  if (options.framework === 'vanilla') options.unocss = false
 
   const allProvided =
     !!options.type &&
     !!options.name &&
     !!options.locales &&
     options.framework !== undefined &&
-    (options.framework === 'vanilla' || options.tailwind !== undefined)
+    (options.framework === 'vanilla' || options.unocss !== undefined)
   if (allProvided) {
     await doGenerate(options as GenResolved)
     return
@@ -105,14 +103,9 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
     if (!options.type) missing.push('--type')
     if (!options.name) missing.push('--name')
     if (!options.locales) missing.push('--locales')
-    if (options.type !== 'plugin' && options.framework === undefined) missing.push('--framework')
-    if (
-      options.type !== 'plugin' &&
-      options.framework &&
-      options.framework !== 'vanilla' &&
-      options.tailwind === undefined
-    )
-      missing.push('--tailwind')
+    if (options.framework === undefined) missing.push('--framework')
+    if (options.framework && options.framework !== 'vanilla' && options.unocss === undefined)
+      missing.push('--unocss')
     throw new Error(`Non-interactive mode requires: ${missing.join(', ')}`)
   }
 
@@ -131,7 +124,7 @@ async function doGenerate(options: GenResolved): Promise<void> {
     inMonorepo,
     clientFramework: options.framework,
     vue: options.framework === 'vue',
-    tailwind: options.tailwind,
+    unocss: options.unocss,
   })
 
   const files: FileMap = options.type === 'node' ? nodeTemplate(context) : pluginTemplate(context)
