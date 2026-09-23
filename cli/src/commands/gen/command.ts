@@ -32,7 +32,6 @@ export function registerGenCommand(program: Command): void {
       'Enable scoped UnoCSS for Svelte or Vue templates. Pass --unocss=false to disable.',
       value => value,
     )
-    .option('--tailwind [bool]', 'Deprecated alias for --unocss.', value => value)
     .option(
       '--non-interactive',
       'Error if any required option is missing instead of prompting',
@@ -69,13 +68,6 @@ function toGenOptions(options: Record<string, unknown>): GenOptions {
     unocss: hasArgvFlag('--unocss')
       ? (() => {
           const raw = options.unocss as string | undefined
-          if (raw === undefined || raw === '' || raw === 'true') return true
-          return parseBool(raw) ?? true
-        })()
-      : undefined,
-    tailwind: hasArgvFlag('--tailwind')
-      ? (() => {
-          const raw = options.tailwind as string | undefined
           if (raw === undefined || raw === '' || raw === 'true') return true
           return parseBool(raw) ?? true
         })()

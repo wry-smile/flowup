@@ -23,7 +23,6 @@ Options:
 - `--vue [bool]`
   Compatibility option. Prefer `--framework`.
 - `--unocss [bool]` for scoped UnoCSS in Vue or Svelte templates
-- `--tailwind [bool]` deprecated alias for `--unocss`
 - `--non-interactive`
 
 If required options are missing, Flowup switches to interactive prompts.
@@ -38,6 +37,7 @@ The same options work for a plugin or with `--framework svelte`. The generated
 Vue and Svelte clients mount as ordinary framework apps, without a web
 component or Shadow DOM. `--unocss` installs UnoCSS Wind4 and configures
 `presetFlowupWind4({ scope: 'my-node' })` in `flowup.config.ts`.
+For existing projects, see the [UnoCSS migration guide](./docs/unocss-migration.md).
 
 ### `flowup build`
 
@@ -66,6 +66,56 @@ Options:
 - `--cwd <path>`
 - `--config <path>`
 - `--mode <all|runtime|editor>`
+
+### `flowup dev`
+
+Build the current package, then start a Node-RED editor with `nodesDir` set to
+the completed `dist/` output. Flowup then watches the package for changes,
+rebuilds it, and restarts Node-RED after a successful build. The preview runs
+until you stop the command.
+Generated node and plugin packages include a `dev` script and a Node-RED
+development dependency.
+
+```bash
+pnpm dev
+# or: flowup dev --cwd packages/nodes/my-node
+```
+
+Configure the preview in `flowup.config.ts`:
+
+```ts
+import { defineConfig } from '@wry-smile/flowup'
+
+export default defineConfig({
+  scope: 'my-node',
+  nodeRed: {
+    port: 1880,
+    host: '127.0.0.1',
+    userDir: '.flowup/node-red',
+    // settingsFile: 'node-red/settings.cjs',
+    // flowsFile: 'flows.json',
+    // safe: true,
+  },
+})
+```
+
+`userDir` defaults to `.flowup/node-red` under the package root, keeping
+preview flows separate from your normal Node-RED data. `settingsFile` resolves
+relative to the config file; `userDir` resolves relative to the package root.
+Flowup gives the preview `userDir` a CommonJS `package.json` when it has none,
+so Node-RED's generated `settings.js` also works inside a package with
+`"type": "module"`. An existing `userDir/package.json` is preserved; its
+`type` must not be `module`.
+When a custom settings file is inside an ESM package, use a `.cjs` extension.
+The built `dist/` always takes precedence over `nodesDir` in a custom settings
+file. Install `node-red` in the package's development dependencies if it is not
+already available. `--cwd` and `--config` use the same path rules as `build`.
+Node-RED's process working directory is the package root. Flowup excludes
+`dist/`, the configured `userDir`, `.flowup/`, `node_modules/`, and test directories from watching.
+Changes within 250 ms are combined; builds run serially, and Node-RED restarts
+once after the final successful build. On a build failure, the current preview
+continues running. Changing the configured package root requires restarting
+`flowup dev`.
 
 ### `flowup assemble`
 
@@ -160,11 +210,14 @@ the UnoCSS safelist. The preset covers its generated CSS; package-authored
 global CSS, including `@font-face`, needs its own isolation strategy. See
 [`simple-node`](../packages/nodes/simple-node/README.md) for Vue components and
 CSS output tests.
+For a focused setup and migration workflow, see the packaged
+[Flowup UnoCSS skill](./skills/flowup-unocss/SKILL.md).
 
 ## Notes
 
 - Generated templates keep the same Node-RED-oriented directory layout.
 - `build` uses Vite multi-mode builds for `runtime` and `editor`.
+- `dev` builds and watches a package, restarting its Node-RED preview after successful changes.
 - `assemble` merges package outputs from `dist/` and generates a top-level `package.json`.
 - `assemble` builds and validates every component before atomically replacing its output.
 - `.ts` config loading reuses the Vite runner, so no extra `tsx` execution chain is required.
@@ -241,7 +294,6 @@ paths.
 
 - `createHydrateStore(...)`
 - `createVueHydrateStore(...)`
-- `createTailwindcssBridge(...)` (legacy Shadow DOM helper)
 
 Vue and Svelte templates use `presetFlowupWind4({ scope })` and mount inside a
 `data-flowup-scope` container. Flowup scopes the CSS produced by this preset;

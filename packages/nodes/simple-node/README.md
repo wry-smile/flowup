@@ -36,6 +36,11 @@ pnpm install
 pnpm build
 ```
 
+Run `pnpm dev` to build and preview this node in Node-RED. Source changes
+rebuild the package and restart Node-RED. The preview uses `dist/` as
+`nodesDir`; set the optional `nodeRed` field in `flowup.config.ts`
+to change the port, data directory, or settings file.
+
 Produces:
 
 - `dist/simple-node.js`

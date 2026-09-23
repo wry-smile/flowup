@@ -24,13 +24,10 @@ export interface GenOptions {
   framework?: ClientFramework
   vue?: boolean
   unocss?: boolean
-  tailwind?: boolean
   nonInteractive?: boolean
 }
 
-export interface GenResolved extends Required<
-  Omit<GenOptions, 'nonInteractive' | 'vue' | 'tailwind'>
-> {
+export interface GenResolved extends Required<Omit<GenOptions, 'nonInteractive' | 'vue'>> {
   unocss: boolean
 }
 
@@ -42,7 +39,6 @@ export function readOptionsFromEnv(): Partial<GenOptions> {
     framework: process.env.FLOWUP_GEN_FRAMEWORK as ClientFramework | undefined,
     vue: parseBool(process.env.FLOWUP_GEN_VUE),
     unocss: parseBool(process.env.FLOWUP_GEN_UNOCSS),
-    tailwind: parseBool(process.env.FLOWUP_GEN_TAILWIND),
   }
 }
 
@@ -63,7 +59,7 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
     locales: rawOptions.locales ?? envOptions.locales,
     framework: rawOptions.framework ?? envOptions.framework,
     vue: rawOptions.vue ?? envOptions.vue,
-    unocss: rawOptions.unocss ?? rawOptions.tailwind ?? envOptions.unocss ?? envOptions.tailwind,
+    unocss: rawOptions.unocss ?? envOptions.unocss,
     nonInteractive: rawOptions.nonInteractive,
   }
 

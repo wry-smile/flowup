@@ -22,6 +22,8 @@ Use this skill when the task involves the local `@wry-smile/flowup` CLI or packa
   Generates Node-RED node or plugin templates
 - `flowup build`
   Runs Vite build twice with `runtime` and `editor` modes
+- `flowup dev`
+  Runs a complete build, starts Node-RED with `nodesDir` pointing to the built `dist/`, then watches source files and restarts after successful rebuilds
 - `flowup assemble`
   Scans Flowup-built packages, optionally builds them, then assembles their `dist/` outputs into one package
 
@@ -34,6 +36,7 @@ Use this skill when the task involves the local `@wry-smile/flowup` CLI or packa
   - `runtime`
   - `client`
   - `package`
+  - `nodeRed` for local preview settings (`port`, `host`, `userDir`, `settingsFile`, `flowsFile`, `safe`)
 - Assemble-level config lives under `assemble` in the same `flowup.config.ts`
 
 Example:
@@ -56,10 +59,13 @@ export default defineConfig({
 - Generated packages should keep Node-RED-oriented folders such as `runtime/`, `client/`, `types/`, `locales/`, `icons/`, and `resources/`
 - Framework choices currently include `vanilla`, `svelte`, and `vue`
 - `unocss` is only relevant for framework-based client templates, not vanilla templates
-- Prefer `--unocss`; `--tailwind` is a deprecated generator alias
+- Generated packages include a `dev` script and a Node-RED development dependency; preview data defaults to `.flowup/node-red` under the package root
+- Node-RED's generated `settings.js` uses CommonJS. Keep the preview `userDir` inside its own CommonJS package boundary when the source package is ESM; do not replace an existing userDir `package.json`
+- Use `--unocss` for scoped atomic CSS in Vue and Svelte templates
 - Vue and Svelte templates mount as ordinary apps under `data-flowup-scope="<name>"`; teleported overlay roots need the same attribute
 - The exported `presetFlowupWind4({ scope })` wraps Wind4 to scope generated utilities, reset, and theme variables and namespace generated `@property` names and keyframes; package-authored global CSS and `@font-face` are outside that guarantee
 - Use statically extractable utility names or an UnoCSS safelist. The `packages/nodes/simple-node` example exercises utility categories and checks its built CSS
+- For an existing editor migration, read `cli/docs/unocss-migration.md`; the packaged `cli/skills/flowup-unocss/SKILL.md` covers focused UnoCSS setup
 
 ## Working Conventions
 

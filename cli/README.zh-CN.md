@@ -23,7 +23,6 @@ flowup gen --type node --name my-special-node
 - `--vue [bool]`
   兼容旧用法，推荐改用 `--framework`
 - `--unocss [bool]`：在 Vue 或 Svelte 模板中启用带作用域的 UnoCSS
-- `--tailwind [bool]`：`--unocss` 的旧别名
 - `--non-interactive`
 
 如果缺少必填参数，Flowup 会自动进入交互式模式。
@@ -38,6 +37,7 @@ flowup gen --type node --name my-node --framework vue --unocss --non-interactive
 客户端会作为普通框架应用挂载，不再构建为 Web Component，也不使用 Shadow DOM。
 `--unocss` 会安装 UnoCSS Wind4，并在 `flowup.config.ts` 中配置
 `presetFlowupWind4({ scope: 'my-node' })`。
+已有项目请参阅 [UnoCSS 迁移指南](./docs/unocss-migration.zh-CN.md)。
 
 ### `flowup build`
 
@@ -63,6 +63,49 @@ flowup build --mode all
 - `--cwd <path>`
 - `--config <path>`
 - `--mode <all|runtime|editor>`
+
+### `flowup dev`
+
+先完整构建当前包，再启动 Node-RED editor，并将 `nodesDir` 指向本次生成的
+`dist/`。随后会监听源码，重新构建成功后重启 Node-RED。命令会持续运行，直到手动停止。新生成的 node/plugin 包包含 `dev` 脚本
+和 Node-RED 开发依赖。
+
+```bash
+pnpm dev
+# 或：flowup dev --cwd packages/nodes/my-node
+```
+
+可在 `flowup.config.ts` 中配置预览：
+
+```ts
+import { defineConfig } from '@wry-smile/flowup'
+
+export default defineConfig({
+  scope: 'my-node',
+  nodeRed: {
+    port: 1880,
+    host: '127.0.0.1',
+    userDir: '.flowup/node-red',
+    // settingsFile: 'node-red/settings.cjs',
+    // flowsFile: 'flows.json',
+    // safe: true,
+  },
+})
+```
+
+`userDir` 默认是包根目录下的 `.flowup/node-red`，与日常使用的 Node-RED 数据
+分开。`settingsFile` 相对配置文件解析，`userDir` 相对包根目录解析。即使自定义
+settings 文件设置了 `nodesDir`，预览时也会使用本次构建的 `dist/`。
+如果预览 `userDir` 尚无 `package.json`，Flowup 会创建 CommonJS 包边界，确保
+Node-RED 生成的 `settings.js` 在 `"type": "module"` 的节点包内仍可加载。
+已有 `userDir/package.json` 会保留，但不能设置 `"type": "module"`。
+自定义 settings 文件若位于 ESM 包内，请使用 `.cjs` 扩展名。
+如果包内尚未安装 `node-red`，需将其加入开发依赖。`--cwd` 和 `--config` 的
+路径规则与 `build` 相同。
+Node-RED 进程的工作目录是包根目录。监听会排除 `dist/`、配置的 `userDir`、`.flowup/`、
+`node_modules/` 和测试目录；250ms 内的变化合并处理，构建串行执行，最后一次
+成功构建后只重启一次 Node-RED。构建失败会保留当前预览。更改包根目录配置后
+需要重新启动 `flowup dev`。
 
 ### `flowup assemble`
 
@@ -152,11 +195,14 @@ export default defineConfig({
 工具类名称应能从源码静态提取；动态拼接的名称需要加入 UnoCSS safelist。
 预设只处理它生成的 CSS。包内自行编写的全局 CSS（包括 `@font-face`）需自行处理隔离。
 Vue 组件和构建产物测试见 [`simple-node`](../packages/nodes/simple-node/README.md)。
+专门的配置与迁移流程见随 CLI 发布的
+[Flowup UnoCSS SKILL](./skills/flowup-unocss/SKILL.md)。
 
 ## 说明
 
 - 生成的模板会保持 Node-RED 友好的目录结构
 - `build` 基于 Vite 的双模式构建 `runtime` 与 `editor`
+- `dev` 会构建并监听包的变化，成功构建后重启本地 Node-RED 预览
 - `assemble` 会聚合各包 `dist/` 产物并生成总 `package.json`
 - `assemble` 会先构建并校验全部组件，再原子替换最终输出
 - `.ts` 配置文件通过 Vite runner 加载，不需要额外再引入 `tsx` 执行链
@@ -226,7 +272,6 @@ runtime 或 editor 的旧产物。组件包从项目根目录执行 `npm pack`�
 
 - `createHydrateStore(...)`
 - `createVueHydrateStore(...)`
-- `createTailwindcssBridge(...)`（兼容旧 Shadow DOM 模板）
 
 Vue 和 Svelte 模板使用 `presetFlowupWind4({ scope })`，挂载在
 `data-flowup-scope` 容器内。Flowup 负责该预设生成的样式作用域；用户自行编写的全局 CSS 由用户管理。

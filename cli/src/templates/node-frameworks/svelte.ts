@@ -113,7 +113,7 @@ export function useHydrateStore() {
 `
 }
 
-function renderSvelteNodeApp(ctx: TemplateContext): string {
+function renderSvelteNodeApp(_ctx: TemplateContext): string {
   return `<script lang="ts">
 import { derived } from "svelte/store";
 import { useHydrateStore } from "./hydrate";

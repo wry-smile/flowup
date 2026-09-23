@@ -35,4 +35,8 @@ pnpm build
 npm pack --dry-run
 ```
 
+Run `pnpm dev` to build and preview the plugin in Node-RED. Source changes
+rebuild the package and restart Node-RED. Configure the
+preview through the optional `nodeRed` field in `flowup.config.ts`.
+
 A full build generates `dist/flowup.manifest.json` for `flowup assemble`.

@@ -25,7 +25,6 @@ export interface CreateContextOptions {
   clientFramework?: ClientFramework
   vue?: boolean
   unocss?: boolean
-  tailwind?: boolean
 }
 
 export function createContext(opts: CreateContextOptions): TemplateContext {
@@ -40,6 +39,6 @@ export function createContext(opts: CreateContextOptions): TemplateContext {
     clientFramework,
     vue: clientFramework === 'vue',
     svelte: clientFramework === 'svelte',
-    unocss: opts.unocss ?? opts.tailwind ?? false,
+    unocss: opts.unocss ?? false,
   }
 }

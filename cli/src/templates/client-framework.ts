@@ -55,9 +55,9 @@ export function getFrameworkVitePluginSetup(ctx: TemplateContext): FrameworkPlug
   if (ctx.unocss) {
     imports.push(`import UnoCSS from 'unocss/vite'`)
     imports.push(`import { presetFlowupWind4 } from '@wry-smile/flowup'`)
-    const unoPlugin = `UnoCSS({ presets: [presetFlowupWind4({ scope: '${ctx.name}' })] })`
-    if (isSvelteFramework(ctx)) plugins.unshift(unoPlugin)
-    else plugins.push(unoPlugin)
+    const unocssPlugin = `UnoCSS({ presets: [presetFlowupWind4({ scope: '${ctx.name}' })] })`
+    if (isSvelteFramework(ctx)) plugins.unshift(unocssPlugin)
+    else plugins.push(unocssPlugin)
   }
 
   return { imports, plugins }

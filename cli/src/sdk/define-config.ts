@@ -19,12 +19,28 @@ export interface FlowupAssembleConfig {
   skipBuild?: boolean
 }
 
+export interface FlowupNodeRedDevConfig {
+  /** Node-RED port. Defaults to 1880. */
+  port?: number
+  /** Host/interface for the editor. Defaults to Node-RED's own setting. */
+  host?: string
+  /** Node-RED data directory, relative to the Flowup package root. */
+  userDir?: string
+  /** Existing Node-RED settings.js, relative to the Flowup config file. */
+  settingsFile?: string
+  /** Flow file name passed to Node-RED. */
+  flowsFile?: string
+  /** Open the editor without starting flows. */
+  safe?: boolean
+}
+
 export interface FlowupConfig {
   scope?: string
   type?: 'nodes' | 'plugins'
   root?: string
   outDir?: string
   assemble?: FlowupAssembleConfig
+  nodeRed?: FlowupNodeRedDevConfig
   runtime?: {
     entry?: string
     config?: UserConfig

@@ -13,6 +13,7 @@ Guide users through the existing `@wry-smile/flowup` workflow. Prefer the smalle
 
 - Scaffold a package: `flowup gen`
 - Create a publishable component artifact: `flowup build`
+- Build and preview a single package in Node-RED: `flowup dev`
 - Diagnose only one build half: `flowup build --mode runtime` or `flowup build --mode editor`
 - Combine several built components: `flowup assemble`
 - Reuse existing complete artifacts: `flowup assemble --skip-build`
@@ -33,13 +34,14 @@ flowup gen \
 Use a kebab-case name beginning with a letter. Valid examples include `my-node` and `sensor2`; path separators, `..`, uppercase letters, and an existing target directory are rejected.
 
 Supported package types are `node` and `plugin`. Supported client frameworks are `vanilla`, `vue`, and `svelte`; scoped UnoCSS applies only to Vue and Svelte templates.
-`--tailwind` remains a deprecated alias for `--unocss`. Use `--unocss` for new packages.
 
 ## Scoped Framework Styles
 
 Vue and Svelte templates mount as ordinary framework apps. With `--unocss`, the generated `flowup.config.ts` adds `UnoCSS({ presets: [presetFlowupWind4({ scope: '<package-name>' })] })`, and the client imports `virtual:uno.css`. Keep the mount root's `data-flowup-scope` value equal to the preset scope. Add the same attribute to the root of any teleported overlay outside that container.
 
 The preset scopes generated utilities, reset, and theme variables and namespaces generated `@property` names and animation keyframes. It does not isolate package-authored global CSS or `@font-face`; handle those explicitly if added. Avoid building utility names only through runtime string concatenation; use statically extractable classes or UnoCSS safelist entries. See `packages/nodes/simple-node` for a Vue example and scoped CSS tests.
+
+For migrations from an existing scoped editor or detailed UnoCSS setup, use the packaged `flowup-unocss` skill and `docs/unocss-migration.md`.
 
 ## Configure And Build
 
@@ -65,6 +67,9 @@ flowup build
 ```
 
 The complete artifact is `dist/`, including `package.json` and `flowup.manifest.json`. Paths in the config resolve relative to the config file. Runtime and editor overrides must keep the same project root and publish output.
+
+For a local preview, run `flowup dev` from the package root. It completes the build before launching Node-RED and forces `nodesDir` to the built `dist/`. Configure Node-RED through the top-level `nodeRed` field in `flowup.config.ts`: `port`, `host`, `userDir`, `settingsFile`, `flowsFile`, and `safe`. The default `userDir` is `.flowup/node-red` under the package root; `settingsFile` is relative to the config file. The package needs a `node-red` development dependency. The Node-RED process uses the package root as its working directory. Flowup watches source changes, combines events within 250 ms, runs builds serially, and restarts Node-RED once after the last successful build. A failed rebuild leaves the current preview running.
+Node-RED's generated `settings.js` is CommonJS. Flowup creates a CommonJS `package.json` in an empty preview `userDir` to prevent an enclosing ESM package from changing its interpretation; an existing `userDir/package.json` is preserved and must not declare `"type": "module"`.
 
 Partial modes are diagnostic only:
 

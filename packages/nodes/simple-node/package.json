@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "flowup build",
+    "dev": "flowup dev",
     "test": "flowup build && vitest run"
   },
   "devDependencies": {
@@ -26,6 +27,7 @@
     "@vue/test-utils": "^2.5.1",
     "@wry-smile/flowup": "^2.0.0",
     "happy-dom": "^20.14.5",
+    "node-red": "^4.1.0",
     "typescript": "^6.0.3",
     "unocss": "^66.10.5",
     "vite": "^8.1.0",

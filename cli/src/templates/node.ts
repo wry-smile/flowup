@@ -74,7 +74,8 @@ function renderPackageJson(ctx: TemplateContext): string {
     "resources"
   ],
   "scripts": {
-    "build": "flowup build"
+    "build": "flowup build",
+    "dev": "flowup dev"
   },
   "devDependencies": {
 ${devDependencies}
@@ -437,6 +438,16 @@ ${ctx.name}/
 pnpm install
 pnpm build
 \`\`\`
+
+## Preview in Node-RED
+
+\`\`\`bash
+pnpm dev
+\`\`\`
+
+Flowup builds the package and starts Node-RED with \`nodesDir\` pointing at
+\`dist/\`. Source changes trigger a rebuild and one restart after the final
+successful build. Configure the preview with \`nodeRed\` in \`flowup.config.ts\`.
 
 Produces:
 

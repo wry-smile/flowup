@@ -5,9 +5,13 @@ export type { BuildMode, BuildOptions } from './commands/build/impl'
 export { runGenerator } from './commands/gen/impl'
 export type { GenOptions, GenResolved, GenType } from './commands/gen/impl'
 export { defineConfig } from './sdk/define-config'
-export { presetFlowupWind4 } from './sdk/preset-flowup-wind4'
-export type { FlowupWind4Options } from './sdk/preset-flowup-wind4'
-export type { FlowupAssembleConfig, FlowupConfig } from './sdk/define-config'
+export { presetFlowupWind4 } from './sdk/preset-flowup-unocss-wind4'
+export type { FlowupWind4Options } from './sdk/preset-flowup-unocss-wind4'
+export type {
+  FlowupAssembleConfig,
+  FlowupConfig,
+  FlowupNodeRedDevConfig,
+} from './sdk/define-config'
 export { flowupClientHtmlEntryPlugin } from './sdk/plugins/client-html-entry'
 export type { FlowupClientHtmlEntryPluginOptions } from './sdk/plugins/client-html-entry'
 export { flowupPackagePlugin } from './sdk/plugins/package'

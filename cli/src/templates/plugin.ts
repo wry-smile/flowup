@@ -106,7 +106,8 @@ function renderPackageJson(ctx: TemplateContext): string {
     "resources"
   ],
   "scripts": {
-    "build": "flowup build"
+    "build": "flowup build",
+    "dev": "flowup dev"
   },
   "devDependencies": {
 ${devDependencies}
@@ -283,7 +284,7 @@ function renderReadme(ctx: TemplateContext): string {
     : isSvelteFramework(ctx)
       ? '- Svelte sidebar plugin'
       : '- Plain TypeScript plugin registration'
-  const uno = ctx.unocss ? '\n- UnoCSS Wind4 with a Flowup scope' : ''
+  const unocssLine = ctx.unocss ? '\n- UnoCSS Wind4 with a Flowup scope' : ''
 
   return `# ${ctx.name}
 
@@ -291,7 +292,7 @@ A Node-RED editor plugin scaffolded with [flowup](https://github.com/wry-smile/f
 
 ## UI Stack
 
-${stack}${uno}
+${stack}${unocssLine}
 
 ${renderFrameworkReadmeLines(ctx).join('\n')}
 
@@ -317,6 +318,11 @@ pnpm install
 pnpm build
 npm pack --dry-run
 \`\`\`
+
+Run \`pnpm dev\` to build and preview this plugin in Node-RED. Source changes
+rebuild the package and restart Node-RED. The preview uses \`dist/\` as
+\`nodesDir\`; configure it with \`nodeRed\` in
+\`flowup.config.ts\`.
 
 A full build generates \`dist/flowup.manifest.json\` for \`flowup assemble\`.
 `

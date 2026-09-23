@@ -35,7 +35,7 @@ interface FlowupUserConfig extends UserConfig {
   flowup?: FlowupConfig
 }
 
-export async function runBuild(options: BuildOptions = {}): Promise<void> {
+export async function runBuild(options: BuildOptions = {}): Promise<string> {
   const cwd = resolve(options.cwd ?? process.cwd())
   const configFile = options.config ? resolve(cwd, options.config) : await findViteConfig(cwd)
 
@@ -44,11 +44,14 @@ export async function runBuild(options: BuildOptions = {}): Promise<void> {
   const mode = options.mode ?? 'all'
   if (!['all', 'runtime', 'editor'].includes(mode)) throw new Error(`Invalid build mode: ${mode}`)
   if (mode === 'all') {
-    await runTransactionalBuild(await resolveBuildPlan(cwd, configFile))
-    return
+    const plan = await resolveBuildPlan(cwd, configFile)
+    await runTransactionalBuild(plan)
+    return plan.finalOutDir
   }
 
-  await runPartialBuild(await loadModeBuildPlan(cwd, configFile, mode), mode)
+  const plan = await loadModeBuildPlan(cwd, configFile, mode)
+  await runPartialBuild(plan, mode)
+  return resolve(plan.rootDir, '.flowup', mode)
 }
 
 async function resolveBuildPlan(cwd: string, configFile: string): Promise<BuildPlan> {
