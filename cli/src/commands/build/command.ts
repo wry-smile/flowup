@@ -11,15 +11,19 @@ export interface BuildCommandOptions {
 export function registerBuildCommand(program: Command): void {
   program
     .command('build')
-    .description('Build a Node-RED node or plugin using flowup.config.ts (or vite.config.ts) as the entry point.')
+    .description(
+      'Build a Node-RED node or plugin using flowup.config.ts (or vite.config.ts) as the entry point.',
+    )
     .option('--cwd <path>', 'Working directory, defaults to process.cwd()')
-    .option('--config <path>', 'Path to flowup.config.ts or vite.config.ts, defaults to find-up from cwd')
+    .option(
+      '--config <path>',
+      'Path to flowup.config.ts or vite.config.ts, defaults to find-up from cwd',
+    )
     .option('--mode <mode>', 'Build mode: runtime, editor, or all', 'all')
     .action(async (options: BuildCommandOptions) => {
       try {
         await runBuild(options)
-      }
-      catch (error) {
+      } catch (error) {
         console.error('Build failed:', error)
         process.exitCode = 1
       }

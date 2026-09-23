@@ -108,7 +108,7 @@ export async function readFlowupArtifact(distDir: string): Promise<ReadFlowupArt
     }
   }
 
-  const rawManifest = await readJsonFile(manifestPath) as Partial<FlowupArtifactManifest>
+  const rawManifest = (await readJsonFile(manifestPath)) as Partial<FlowupArtifactManifest>
   if (rawManifest.formatVersion !== FLOWUP_ARTIFACT_FORMAT_VERSION) {
     throw new Error(
       `Unsupported Flowup artifact format in ${manifestPath}: ${String(rawManifest.formatVersion)}.`,
@@ -120,16 +120,23 @@ export async function readFlowupArtifact(distDir: string): Promise<ReadFlowupArt
 
   const manifest = rawManifest as FlowupArtifactManifest
   validateArtifactShape(manifest, manifestPath)
-  if (manifest.package.name !== packageJson.name || manifest.package.version !== packageJson.version) {
+  if (
+    manifest.package.name !== packageJson.name ||
+    manifest.package.version !== packageJson.version
+  ) {
     throw new Error(
       `Flowup artifact package metadata does not match ${join(distDir, 'package.json')}.`,
     )
   }
 
   const packageNodeRed = requireNodeRedEntries(packageJson, join(distDir, 'package.json'))
-  if (!entryMapsEqual(manifest.nodeRed.nodes, packageNodeRed.nodes)
-    || !entryMapsEqual(manifest.nodeRed.plugins, packageNodeRed.plugins)) {
-    throw new Error(`Flowup artifact Node-RED entries do not match ${join(distDir, 'package.json')}.`)
+  if (
+    !entryMapsEqual(manifest.nodeRed.nodes, packageNodeRed.nodes) ||
+    !entryMapsEqual(manifest.nodeRed.plugins, packageNodeRed.plugins)
+  ) {
+    throw new Error(
+      `Flowup artifact Node-RED entries do not match ${join(distDir, 'package.json')}.`,
+    )
   }
 
   await validateNodeRedEntries(distDir, manifest.nodeRed)
@@ -143,7 +150,7 @@ export async function readDistPackageJson(distDir: string): Promise<FlowupPackag
   if (!existsSync(packageJsonPath))
     throw new Error(`Missing dist package manifest: ${packageJsonPath}`)
 
-  const packageJson = await readJsonFile(packageJsonPath) as FlowupPackageJson
+  const packageJson = (await readJsonFile(packageJsonPath)) as FlowupPackageJson
   validatePublishableDependencies(packageJson, packageJsonPath)
   return packageJson
 }
@@ -187,12 +194,12 @@ export function normalizeArtifactPath(filePath: string, label: string): string {
   const slashPath = filePath.replaceAll('\\', '/')
   const normalizedPath = posix.normalize(slashPath)
   if (
-    isAbsolute(filePath)
-    || /^[a-z]:\//i.test(slashPath)
-    || normalizedPath === '.'
-    || normalizedPath === '..'
-    || normalizedPath.startsWith('../')
-    || normalizedPath.startsWith('/')
+    isAbsolute(filePath) ||
+    /^[a-z]:\//i.test(slashPath) ||
+    normalizedPath === '.' ||
+    normalizedPath === '..' ||
+    normalizedPath.startsWith('../') ||
+    normalizedPath.startsWith('/')
   ) {
     throw new Error(`${label} must stay inside the package: ${filePath}`)
   }
@@ -200,16 +207,20 @@ export function normalizeArtifactPath(filePath: string, label: string): string {
   return normalizedPath
 }
 
-function requireNodeRedEntries(packageJson: FlowupPackageJson, filePath: string): FlowupNodeRedField {
+function requireNodeRedEntries(
+  packageJson: FlowupPackageJson,
+  filePath: string,
+): FlowupNodeRedField {
   const nodeRed = packageJson['node-red']
   if (!nodeRed || typeof nodeRed !== 'object')
     throw new Error(`Missing valid "node-red" field in ${filePath}.`)
   return nodeRed
 }
 
-function normalizeEntryMap(value: Record<string, string> | undefined): Record<string, string> | undefined {
-  if (!value || !Object.keys(value).length)
-    return undefined
+function normalizeEntryMap(
+  value: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (!value || !Object.keys(value).length) return undefined
 
   return Object.fromEntries(
     Object.entries(value).map(([name, filePath]) => [
@@ -225,8 +236,7 @@ function validateArtifactShape(manifest: FlowupArtifactManifest, manifestPath: s
   requireNonEmptyString(manifest.package.version, 'artifact package version')
 
   for (const [groupName, entries] of Object.entries(manifest.nodeRed)) {
-    if (entries === undefined)
-      continue
+    if (entries === undefined) continue
     if (!entries || typeof entries !== 'object' || Array.isArray(entries))
       throw new Error(`Invalid ${groupName} entry map in ${manifestPath}.`)
     for (const [entryName, entryPath] of Object.entries(entries)) {
@@ -242,9 +252,13 @@ function validateArtifactShape(manifest: FlowupArtifactManifest, manifestPath: s
   }
 
   if (manifest.runtime.format !== 'commonjs')
-    throw new Error(`Unsupported runtime format in ${manifestPath}: ${String(manifest.runtime.format)}`)
-  if (!Array.isArray(manifest.runtime.externalDependencies)
-    || manifest.runtime.externalDependencies.some(dependency => typeof dependency !== 'string')) {
+    throw new Error(
+      `Unsupported runtime format in ${manifestPath}: ${String(manifest.runtime.format)}`,
+    )
+  if (
+    !Array.isArray(manifest.runtime.externalDependencies) ||
+    manifest.runtime.externalDependencies.some(dependency => typeof dependency !== 'string')
+  ) {
     throw new Error(`Invalid runtime externalDependencies in ${manifestPath}.`)
   }
 }
@@ -284,8 +298,7 @@ function validatePublishableDependencies(
 ): void {
   for (const group of ['dependencies', 'peerDependencies', 'optionalDependencies'] as const) {
     const dependencies = packageJson[group]
-    if (dependencies === undefined)
-      continue
+    if (dependencies === undefined) continue
     if (!dependencies || typeof dependencies !== 'object' || Array.isArray(dependencies))
       throw new Error(`${group} must be an object in ${packageJsonPath}.`)
 
@@ -309,18 +322,13 @@ async function assertRegularFileInside(
   let stats
   try {
     stats = await lstat(filePath)
-  }
-  catch (error) {
+  } catch (error) {
     throw new Error(`${label} points to a missing artifact: ${filePath}`, { cause: error })
   }
 
-  if (!stats.isFile())
-    throw new Error(`${label} must point to a regular file: ${filePath}`)
+  if (!stats.isFile()) throw new Error(`${label} must point to a regular file: ${filePath}`)
 
-  const [canonicalRoot, canonicalFile] = await Promise.all([
-    realpath(rootDir),
-    realpath(filePath),
-  ])
+  const [canonicalRoot, canonicalFile] = await Promise.all([realpath(rootDir), realpath(filePath)])
   const relPath = relative(canonicalRoot, canonicalFile)
   if (!relPath || relPath.startsWith('..') || isAbsolute(relPath))
     throw new Error(`${label} must stay inside the artifact directory: ${filePath}`)
@@ -329,8 +337,7 @@ async function assertRegularFileInside(
 async function readJsonFile(filePath: string): Promise<Record<string, unknown>> {
   try {
     return JSON.parse(await readFile(filePath, 'utf8')) as Record<string, unknown>
-  }
-  catch (error) {
+  } catch (error) {
     throw new Error(`Unable to read JSON file ${filePath}.`, { cause: error })
   }
 }
@@ -340,18 +347,15 @@ async function walkRegularFiles(rootDir: string, currentDir: string = rootDir): 
   const output: string[] = []
 
   for (const entry of entries) {
-    if (entry.name.startsWith('.'))
-      continue
+    if (entry.name.startsWith('.')) continue
 
     const absolutePath = join(currentDir, entry.name)
-    if (entry.isSymbolicLink())
-      continue
+    if (entry.isSymbolicLink()) continue
     if (entry.isDirectory()) {
-      output.push(...await walkRegularFiles(rootDir, absolutePath))
+      output.push(...(await walkRegularFiles(rootDir, absolutePath)))
       continue
     }
-    if (isRegularFile(entry))
-      output.push(relative(rootDir, absolutePath).split(sep).join('/'))
+    if (isRegularFile(entry)) output.push(relative(rootDir, absolutePath).split(sep).join('/'))
   }
 
   return output.sort()
@@ -371,7 +375,9 @@ function stripEmptyEntryMaps(manifest: FlowupArtifactManifest): FlowupArtifactMa
   return {
     ...manifest,
     nodeRed: Object.fromEntries(
-      Object.entries(manifest.nodeRed).filter(([, entries]) => entries && Object.keys(entries).length),
+      Object.entries(manifest.nodeRed).filter(
+        ([, entries]) => entries && Object.keys(entries).length,
+      ),
     ),
   }
 }

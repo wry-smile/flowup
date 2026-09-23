@@ -35,8 +35,7 @@ export class HydrateStore<T extends object> {
   public commit(target: StateTarget<T>): void {
     const snapshot = this.getSnapshot()
     for (const key of this.keys) {
-      if (!this.hasOwn(snapshot, key))
-        continue
+      if (!this.hasOwn(snapshot, key)) continue
 
       this.assignField(target, key, snapshot[key])
     }
@@ -76,15 +75,18 @@ export class HydrateStore<T extends object> {
   private pickFields(source: Readonly<Partial<T>>): Partial<T> {
     const result: Partial<T> = {}
     for (const key of this.keys) {
-      if (!this.hasOwn(source, key))
-        continue
+      if (!this.hasOwn(source, key)) continue
 
       this.assignField(result, key, source[key])
     }
     return result
   }
 
-  private assignField<K extends keyof T>(target: Partial<T>, key: K, value: T[K] | undefined): void {
+  private assignField<K extends keyof T>(
+    target: Partial<T>,
+    key: K,
+    value: T[K] | undefined,
+  ): void {
     target[key] = this.cloneValue(value)
   }
 
@@ -97,11 +99,9 @@ export class HydrateStore<T extends object> {
   }
 
   private cloneValue<V>(value: V): V {
-    if (value === undefined || value === null || typeof value !== 'object')
-      return value
+    if (value === undefined || value === null || typeof value !== 'object') return value
 
-    if (typeof structuredClone === 'function')
-      return structuredClone(value)
+    if (typeof structuredClone === 'function') return structuredClone(value)
 
     return JSON.parse(JSON.stringify(value)) as V
   }

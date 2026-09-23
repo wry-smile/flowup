@@ -1,4 +1,3 @@
-/* eslint-disable antfu/no-import-dist, test/no-import-node-test */
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
@@ -24,13 +23,8 @@ test('assemble output rejects both parent and child overlap with a source packag
     assertSafeAssembleOutput(join(packageDir, 'runtime'), [packageDir]),
     /overlaps source package/,
   )
-  await assert.rejects(
-    assertSafeAssembleOutput(rootDir, [packageDir]),
-    /overlaps source package/,
-  )
-  await assert.doesNotReject(
-    assertSafeAssembleOutput(join(rootDir, 'output'), [packageDir]),
-  )
+  await assert.rejects(assertSafeAssembleOutput(rootDir, [packageDir]), /overlaps source package/)
+  await assert.doesNotReject(assertSafeAssembleOutput(join(rootDir, 'output'), [packageDir]))
 
   await rm(rootDir, { recursive: true, force: true })
 })
@@ -71,16 +65,20 @@ test('artifact manifest validates entries and rejects path traversal', async () 
   const distDir = await mkdtemp(join(tmpdir(), 'flowup-artifact-'))
   await writeFile(join(distDir, 'node-a.js'), 'module.exports = () => {}\n', 'utf8')
   await writeFile(join(distDir, 'node-a.html'), '<script></script>\n', 'utf8')
-  await writeFile(join(distDir, 'package.json'), JSON.stringify({
-    'name': 'node-red-node-a',
-    'version': '1.0.0',
-    'dependencies': { example: '^1.0.0' },
-    'node-red': {
-      nodes: {
-        'node-a': 'node-a.js',
+  await writeFile(
+    join(distDir, 'package.json'),
+    JSON.stringify({
+      name: 'node-red-node-a',
+      version: '1.0.0',
+      dependencies: { example: '^1.0.0' },
+      'node-red': {
+        nodes: {
+          'node-a': 'node-a.js',
+        },
       },
-    },
-  }), 'utf8')
+    }),
+    'utf8',
+  )
 
   const written = await writeFlowupArtifactManifest(distDir, 'test')
   const loaded = await readFlowupArtifact(distDir)
@@ -100,28 +98,36 @@ test('assemble reads built metadata and preserves nested entry paths', async () 
   await mkdir(join(distDir, 'nodes'), { recursive: true })
   await mkdir(join(distDir, 'resources'), { recursive: true })
   await writeFile(join(packageDir, 'flowup.config.js'), '// @wry-smile/flowup\n', 'utf8')
-  await writeFile(join(packageDir, 'package.json'), JSON.stringify({
-    'name': 'node-red-node-a-source',
-    'version': '0.1.0',
-    'node-red': {
-      scope: 'node-a',
-      nodes: {
-        'node-a': 'dist/nodes/node-a.js',
+  await writeFile(
+    join(packageDir, 'package.json'),
+    JSON.stringify({
+      name: 'node-red-node-a-source',
+      version: '0.1.0',
+      'node-red': {
+        scope: 'node-a',
+        nodes: {
+          'node-a': 'dist/nodes/node-a.js',
+        },
       },
-    },
-  }), 'utf8')
-  await writeFile(join(distDir, 'package.json'), JSON.stringify({
-    'name': 'node-red-node-a-built',
-    'version': '1.2.3',
-    'dependencies': {
-      example: '^2.0.0',
-    },
-    'node-red': {
-      nodes: {
-        'node-a': 'nodes/node-a.js',
+    }),
+    'utf8',
+  )
+  await writeFile(
+    join(distDir, 'package.json'),
+    JSON.stringify({
+      name: 'node-red-node-a-built',
+      version: '1.2.3',
+      dependencies: {
+        example: '^2.0.0',
       },
-    },
-  }), 'utf8')
+      'node-red': {
+        nodes: {
+          'node-a': 'nodes/node-a.js',
+        },
+      },
+    }),
+    'utf8',
+  )
   await writeFile(join(distDir, 'nodes', 'node-a.js'), 'module.exports = () => {}\n', 'utf8')
   await writeFile(
     join(distDir, 'nodes', 'node-a.html'),

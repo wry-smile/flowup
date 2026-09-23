@@ -6,7 +6,7 @@ export function pluginTemplate(ctx: TemplateContext): FileMap {
   return {
     '.gitignore': renderGitignore(),
     'package.json': renderPackageJson(ctx),
-    'LICENSE': renderMitLicense(),
+    LICENSE: renderMitLicense(),
     'flowup.config.ts': renderViteConfig(ctx),
     'tsconfig.json': renderTsconfigRoot(),
     'tsconfig.app.json': renderTsconfigApp(),
@@ -18,7 +18,9 @@ export function pluginTemplate(ctx: TemplateContext): FileMap {
     'types/globals.d.ts': renderClientGlobals(),
     'icons/.gitkeep': renderGitkeep('Palette icons for the plugin UI.'),
     'icons/README.md': renderIconsReadme(),
-    'resources/.gitkeep': renderGitkeep('Static resources served by Node-RED editor at /resources/<module>/<file>.'),
+    'resources/.gitkeep': renderGitkeep(
+      'Static resources served by Node-RED editor at /resources/<module>/<file>.',
+    ),
     'resources/README.md': renderResourcesReadme(),
     ...ctx.locales.reduce<FileMap>((acc, locale) => {
       acc[`locales/${locale}/${ctx.name}.json`] = renderLocaleJson()

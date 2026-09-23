@@ -14,7 +14,6 @@ overrides:
   '@wry-smile/flowup': link:./cli
 
 catalog:
-  '@antfu/eslint-config': ^9.1.0
   '@clack/prompts': ^1.6.0
   '@tailwindcss/vite': ^4.3.1
   '@types/js-yaml': ^4.0.9
@@ -25,12 +24,12 @@ catalog:
   '@wry-smile/utils': ^1.1.3
   bumpp: ^11.1.0
   commander: ^15.0.0
-  eslint: ^10.5.0
-  eslint-plugin-format: ^2.0.1
   find-up: ^8.0.0
   js-yaml: ^5.1.0
   micromatch: ^4.0.8
   node-red: ^5.0.0
+  oxfmt: ^0.70.0
+  oxlint: ^1.85.0
   tsdown: ^0.22.3
   typescript: ^6.0.3
   vite: ^8.1.0

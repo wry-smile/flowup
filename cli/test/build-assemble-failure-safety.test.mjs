@@ -1,4 +1,3 @@
-/* eslint-disable antfu/no-import-dist, test/no-import-node-test */
 import assert from 'node:assert/strict'
 import { Buffer } from 'node:buffer'
 import { existsSync } from 'node:fs'
@@ -21,11 +20,16 @@ import {
   writeJson,
 } from './helpers/fixtures.mjs'
 
-test('build failures leave the previous dist byte-for-byte unchanged', async (t) => {
+test('build failures leave the previous dist byte-for-byte unchanged', async t => {
   const scenarios = [
     { name: 'runtime build failure', runtime: false, editor: true },
     { name: 'editor build failure', runtime: true, editor: false },
-    { name: 'artifact validation failure', runtime: true, editor: true, artifactEntry: 'missing-entry' },
+    {
+      name: 'artifact validation failure',
+      runtime: true,
+      editor: true,
+      artifactEntry: 'missing-entry',
+    },
   ]
 
   for (const scenario of scenarios) {
@@ -45,7 +49,7 @@ test('build failures leave the previous dist byte-for-byte unchanged', async (t)
   }
 })
 
-test('a second package build failure leaves the previous assemble output unchanged', async (t) => {
+test('a second package build failure leaves the previous assemble output unchanged', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-second-package-failure-')
   await createBuildFixture({ rootDir: join(rootDir, 'packages/a-node'), scope: 'a-node' })
   await createBuildFixture({
@@ -63,7 +67,7 @@ test('a second package build failure leaves the previous assemble output unchang
   assert.deepEqual(await snapshotDirectory(outputDir), before)
 })
 
-test('assemble dependency conflicts leave the previous output unchanged', async (t) => {
+test('assemble dependency conflicts leave the previous output unchanged', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-dependency-failure-')
   await createBuiltPackage({
     rootDir,
@@ -94,7 +98,7 @@ test('assemble dependency conflicts leave the previous output unchanged', async 
   assert.deepEqual(await snapshotDirectory(outputDir), before)
 })
 
-test('assemble copy failures leave the previous output unchanged', async (t) => {
+test('assemble copy failures leave the previous output unchanged', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-copy-failure-')
   const { distDir } = await createBuiltPackage({
     rootDir,
@@ -110,14 +114,12 @@ test('assemble copy failures leave the previous output unchanged', async (t) => 
   await writeFile(join(outputDir, 'state.txt'), 'known-good\n', 'utf8')
   const before = await snapshotDirectory(outputDir)
 
-  await assert.rejects(
-    runAssemble({ cwd: rootDir, output: 'output', skipBuild: true }),
-  )
+  await assert.rejects(runAssemble({ cwd: rootDir, output: 'output', skipBuild: true }))
 
   assert.deepEqual(await snapshotDirectory(outputDir), before)
 })
 
-test('invalid artifact manifests leave the previous output unchanged', async (t) => {
+test('invalid artifact manifests leave the previous output unchanged', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-manifest-failure-')
   const { distDir } = await createBuiltPackage({
     rootDir,
@@ -143,7 +145,7 @@ test('invalid artifact manifests leave the previous output unchanged', async (t)
   assert.deepEqual(await snapshotDirectory(outputDir), before)
 })
 
-test('failed atomic replacement restores the previous output', async (t) => {
+test('failed atomic replacement restores the previous output', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-commit-failure-')
   const outputDir = join(rootDir, 'dist')
   await mkdir(outputDir)
@@ -157,7 +159,7 @@ test('failed atomic replacement restores the previous output', async (t) => {
   assert.equal(existsSync(join(rootDir, '.dist.flowup-backup')), false)
 })
 
-test('creating staging removes stale staging directories without touching output', async (t) => {
+test('creating staging removes stale staging directories without touching output', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-stale-staging-')
   const outputDir = join(rootDir, 'dist')
   const staleDir = join(rootDir, '.dist.flowup-tmp-stale')
@@ -176,7 +178,7 @@ test('creating staging removes stale staging directories without touching output
   assert.deepEqual(await snapshotDirectory(outputDir), before)
 })
 
-test('creating staging preserves recent staging directories owned by another operation', async (t) => {
+test('creating staging preserves recent staging directories owned by another operation', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-active-staging-')
   const outputDir = join(rootDir, 'dist')
   const activeDir = join(rootDir, '.dist.flowup-tmp-active')
@@ -189,7 +191,7 @@ test('creating staging preserves recent staging directories owned by another ope
   assert.equal(await readFile(join(activeDir, 'partial.txt'), 'utf8'), 'active\n')
 })
 
-test('build skips symlinked static asset trees', async (t) => {
+test('build skips symlinked static asset trees', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-symlink-assets-')
   await createBuildFixture({ rootDir })
   const externalDir = join(rootDir, 'external-assets')
@@ -203,8 +205,7 @@ test('build skips symlinked static asset trees', async (t) => {
       join(resourcesDir, 'linked'),
       process.platform === 'win32' ? 'junction' : 'dir',
     )
-  }
-  catch (error) {
+  } catch (error) {
     if (error?.code === 'EPERM') {
       t.skip('The current environment does not permit creating symlinks')
       return
@@ -220,11 +221,15 @@ test('build skips symlinked static asset trees', async (t) => {
   assert.deepEqual(manifest.assets.resources, [])
 })
 
-test('build preserves static CSS resources while inlining client CSS', async (t) => {
+test('build preserves static CSS resources while inlining client CSS', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-static-css-')
   await createBuildFixture({ rootDir })
   await mkdir(join(rootDir, 'resources'), { recursive: true })
-  await writeFile(join(rootDir, 'client/index.js'), 'import \'./style.css\'\nglobalThis.__flowupFixture = true\n', 'utf8')
+  await writeFile(
+    join(rootDir, 'client/index.js'),
+    "import './style.css'\nglobalThis.__flowupFixture = true\n",
+    'utf8',
+  )
   await writeFile(join(rootDir, 'client/style.css'), '.editor-only { color: blue }\n', 'utf8')
   await writeFile(join(rootDir, 'resources/theme.css'), '.resource-only { color: red }\n', 'utf8')
 
@@ -240,7 +245,7 @@ test('build preserves static CSS resources while inlining client CSS', async (t)
   assert.doesNotMatch(editorHtml, /resource-only/)
 })
 
-test('partial builds use isolated outputs and never mutate release dist', async (t) => {
+test('partial builds use isolated outputs and never mutate release dist', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-partial-build-')
   await createBuildFixture({ rootDir })
   await runBuild({ cwd: rootDir, mode: 'all' })
@@ -249,7 +254,7 @@ test('partial builds use isolated outputs and never mutate release dist', async 
 
   await writeFile(
     join(rootDir, 'runtime/index.js'),
-    'export default function(RED) { RED.nodes.registerType(\'fixture-node\', function UpdatedNode() {}) }\n',
+    "export default function(RED) { RED.nodes.registerType('fixture-node', function UpdatedNode() {}) }\n",
     'utf8',
   )
   await runBuild({ cwd: rootDir, mode: 'runtime' })
@@ -262,7 +267,7 @@ test('partial builds use isolated outputs and never mutate release dist', async 
   assert.equal(existsSync(join(rootDir, '.flowup/editor/fixture-node.html')), true)
 })
 
-test('build resolves default project paths from the config directory without changing cwd', async (t) => {
+test('build resolves default project paths from the config directory without changing cwd', async t => {
   const rootDir = await createTemporaryRoot(t, 'flowup-config-root-')
   await createBuildFixture({ rootDir })
   const cliEntryUrl = new URL('../dist/index.js', import.meta.url).href

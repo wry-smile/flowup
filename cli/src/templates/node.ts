@@ -17,7 +17,7 @@ export function nodeTemplate(ctx: TemplateContext): FileMap {
   return {
     '.gitignore': renderGitignore(),
     'package.json': renderPackageJson(ctx),
-    'LICENSE': renderMitLicense(),
+    LICENSE: renderMitLicense(),
     'flowup.config.ts': renderViteConfig(ctx),
     'tsconfig.json': renderTsconfigRoot(),
     'tsconfig.app.json': renderTsconfigApp(ctx),
@@ -31,7 +31,9 @@ export function nodeTemplate(ctx: TemplateContext): FileMap {
     ...renderFrameworkFiles(ctx),
     'icons/.gitkeep': renderGitkeep('Palette icons referenced by client/index.ts -> icon.'),
     'icons/README.md': renderIconsReadme(ctx),
-    'resources/.gitkeep': renderGitkeep('Static resources served by Node-RED editor at /resources/<module>/<file>.'),
+    'resources/.gitkeep': renderGitkeep(
+      'Static resources served by Node-RED editor at /resources/<module>/<file>.',
+    ),
     'resources/README.md': renderResourcesReadme(),
     ...ctx.locales.reduce<FileMap>((acc, locale) => {
       acc[`locales/${locale}/${ctx.name}.html`] = renderLocaleHelpHtml(ctx)
@@ -314,21 +316,17 @@ export default function nodeInit(RED: NodeAPI): void {
 }
 
 function renderClientEntry(ctx: TemplateContext): string {
-  if (isVueFramework(ctx))
-    return renderVueNodeClient(ctx)
+  if (isVueFramework(ctx)) return renderVueNodeClient(ctx)
 
-  if (isSvelteFramework(ctx))
-    return renderSvelteNodeClient(ctx)
+  if (isSvelteFramework(ctx)) return renderSvelteNodeClient(ctx)
 
   return renderVanillaNodeClient(ctx)
 }
 
 function renderFrameworkFiles(ctx: TemplateContext): FileMap {
-  if (isVueFramework(ctx))
-    return renderVueNodeFiles(ctx)
+  if (isVueFramework(ctx)) return renderVueNodeFiles(ctx)
 
-  if (isSvelteFramework(ctx))
-    return renderSvelteNodeFiles(ctx)
+  if (isSvelteFramework(ctx)) return renderSvelteNodeFiles(ctx)
 
   return {}
 }
@@ -373,18 +371,15 @@ function renderLocaleJson(): string {
 
 function renderReadme(ctx: TemplateContext): string {
   const uiStackLines: string[] = []
-  if (isVueFramework(ctx))
-    uiStackLines.push('- **Vue** (SFC, .vue files)')
-  if (isSvelteFramework(ctx))
-    uiStackLines.push('- **Svelte** (.svelte files)')
-  if (ctx.tailwind)
-    uiStackLines.push('- **Tailwindcss** (utility-first CSS)')
-  if (uiStackLines.length === 0)
-    uiStackLines.push('- Plain HTML + TypeScript (no UI framework)')
+  if (isVueFramework(ctx)) uiStackLines.push('- **Vue** (SFC, .vue files)')
+  if (isSvelteFramework(ctx)) uiStackLines.push('- **Svelte** (.svelte files)')
+  if (ctx.tailwind) uiStackLines.push('- **Tailwindcss** (utility-first CSS)')
+  if (uiStackLines.length === 0) uiStackLines.push('- Plain HTML + TypeScript (no UI framework)')
 
-  const addOnSection = (isVueFramework(ctx) || isSvelteFramework(ctx) || ctx.tailwind)
-    ? ''
-    : `
+  const addOnSection =
+    isVueFramework(ctx) || isSvelteFramework(ctx) || ctx.tailwind
+      ? ''
+      : `
 
 ## 可选:Vue / Tailwindcss
 

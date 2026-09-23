@@ -1,4 +1,3 @@
-/* eslint-disable antfu/no-import-dist */
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'

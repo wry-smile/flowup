@@ -25,12 +25,9 @@ export async function loadFlowupAssembleConfig(
   options: LoadFlowupAssembleConfigOptions = {},
 ): Promise<LoadedFlowupAssembleConfig | null> {
   const cwd = resolve(options.cwd ?? process.cwd())
-  const configPath = options.config
-    ? resolve(cwd, options.config)
-    : await findAssembleConfig(cwd)
+  const configPath = options.config ? resolve(cwd, options.config) : await findAssembleConfig(cwd)
 
-  if (!configPath)
-    return null
+  if (!configPath) return null
 
   const loaded = await loadConfigFromFile(
     {
@@ -46,8 +43,7 @@ export async function loadFlowupAssembleConfig(
     'runner',
   )
 
-  if (!loaded)
-    return null
+  if (!loaded) return null
 
   const flowup = readFlowupConfig(loaded.config)
   return {
@@ -60,8 +56,7 @@ export async function loadFlowupAssembleConfig(
 
 function readFlowupConfig(config: UserConfig): FlowupConfig {
   const flowup = (config as FlowupUserConfig).flowup
-  if (flowup)
-    return flowup
+  if (flowup) return flowup
 
   return config as FlowupConfig
 }

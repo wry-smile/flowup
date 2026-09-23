@@ -9,12 +9,10 @@ const STALE_LOCK_AGE_MS = 5 * 60 * 1000
 
 export async function canonicalPath(filePath: string): Promise<string> {
   const absolutePath = resolve(filePath)
-  if (existsSync(absolutePath))
-    return realpath(absolutePath)
+  if (existsSync(absolutePath)) return realpath(absolutePath)
 
   const parent = dirname(absolutePath)
-  if (parent === absolutePath)
-    return absolutePath
+  if (parent === absolutePath) return absolutePath
 
   return join(await canonicalPath(parent), basename(absolutePath))
 }
@@ -61,10 +59,7 @@ export async function createStagingDir(finalDir: string): Promise<string> {
     await cleanupStaleStagingDirs(resolvedFinal)
   })
 
-  const stagingDir = join(
-    parentDir,
-    `.${basename(resolvedFinal)}.flowup-tmp-${randomUUID()}`,
-  )
+  const stagingDir = join(parentDir, `.${basename(resolvedFinal)}.flowup-tmp-${randomUUID()}`)
   await mkdir(stagingDir)
   return stagingDir
 }
@@ -87,27 +82,22 @@ export async function commitStagedDirectory(
     if (hadExistingOutput && options.replaceExisting === false)
       throw new Error(`Target directory already exists: ${resolvedFinal}`)
 
-    if (hadExistingOutput)
-      await rename(resolvedFinal, backupDir)
+    if (hadExistingOutput) await rename(resolvedFinal, backupDir)
 
     try {
       await rename(resolvedStaging, resolvedFinal)
-    }
-    catch (error) {
-      if (hadExistingOutput && existsSync(backupDir))
-        await rename(backupDir, resolvedFinal)
+    } catch (error) {
+      if (hadExistingOutput && existsSync(backupDir)) await rename(backupDir, resolvedFinal)
       throw error
     }
 
-    if (hadExistingOutput)
-      await rm(backupDir, { recursive: true, force: true })
+    if (hadExistingOutput) await rm(backupDir, { recursive: true, force: true })
   })
 }
 
 async function recoverInterruptedCommit(finalDir: string): Promise<void> {
   const backupDir = getBackupDir(finalDir)
-  if (!existsSync(backupDir))
-    return
+  if (!existsSync(backupDir)) return
 
   if (existsSync(finalDir)) {
     await rm(backupDir, { recursive: true, force: true })
@@ -121,8 +111,7 @@ async function cleanupStaleStagingDirs(finalDir: string): Promise<void> {
   const parentDir = dirname(finalDir)
   const prefix = `.${basename(finalDir)}.flowup-tmp-`
   for (const entry of await readdir(parentDir, { withFileTypes: true })) {
-    if (!entry.isDirectory() || !entry.name.startsWith(prefix))
-      continue
+    if (!entry.isDirectory() || !entry.name.startsWith(prefix)) continue
     const stagingDir = join(parentDir, entry.name)
     const stagingStats = await stat(stagingDir)
     if (Date.now() - stagingStats.mtimeMs >= STALE_STAGING_AGE_MS)
@@ -143,12 +132,10 @@ async function withOutputLock<T>(finalDir: string, action: () => Promise<T>): Pr
   const lock = await acquireOutputLock(lockPath)
   try {
     return await action()
-  }
-  finally {
+  } finally {
     try {
       await lock.close()
-    }
-    finally {
+    } finally {
       await rm(lockPath, { force: true })
     }
   }
@@ -159,26 +146,23 @@ async function acquireOutputLock(lockPath: string) {
     try {
       const lock = await open(lockPath, 'wx')
       try {
-        await lock.writeFile(`${JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() })}\n`)
+        await lock.writeFile(
+          `${JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() })}\n`,
+        )
         return lock
-      }
-      catch (error) {
+      } catch (error) {
         await lock.close()
         await rm(lockPath, { force: true })
         throw error
       }
-    }
-    catch (error) {
-      if (!isAlreadyExistsError(error))
-        throw error
+    } catch (error) {
+      if (!isAlreadyExistsError(error)) throw error
 
       let lockStats
       try {
         lockStats = await stat(lockPath)
-      }
-      catch (statError) {
-        if (isNotFoundError(statError))
-          continue
+      } catch (statError) {
+        if (isNotFoundError(statError)) continue
         throw statError
       }
       if (Date.now() - lockStats.mtimeMs < STALE_LOCK_AGE_MS) {

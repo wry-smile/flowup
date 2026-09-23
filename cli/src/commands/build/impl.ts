@@ -37,16 +37,12 @@ interface FlowupUserConfig extends UserConfig {
 
 export async function runBuild(options: BuildOptions = {}): Promise<void> {
   const cwd = resolve(options.cwd ?? process.cwd())
-  const configFile = options.config
-    ? resolve(cwd, options.config)
-    : await findViteConfig(cwd)
+  const configFile = options.config ? resolve(cwd, options.config) : await findViteConfig(cwd)
 
-  if (!existsSync(configFile))
-    throw new Error(`Flowup/Vite config file not found: ${configFile}`)
+  if (!existsSync(configFile)) throw new Error(`Flowup/Vite config file not found: ${configFile}`)
 
   const mode = options.mode ?? 'all'
-  if (!['all', 'runtime', 'editor'].includes(mode))
-    throw new Error(`Invalid build mode: ${mode}`)
+  if (!['all', 'runtime', 'editor'].includes(mode)) throw new Error(`Invalid build mode: ${mode}`)
   if (mode === 'all') {
     await runTransactionalBuild(await resolveBuildPlan(cwd, configFile))
     return
@@ -96,8 +92,7 @@ async function loadModeBuildPlan(
     'runner',
   )
 
-  if (!loadedConfig)
-    throw new Error(`Unable to load Flowup/Vite config: ${configFile}`)
+  if (!loadedConfig) throw new Error(`Unable to load Flowup/Vite config: ${configFile}`)
 
   const loaded = loadedConfig.config as FlowupUserConfig
   const config = loaded.flowup
@@ -126,10 +121,7 @@ async function loadModeBuildPlan(
   }
 }
 
-function validateFlowupBuildInvariants(
-  config: UserConfig,
-  mode: Exclude<BuildMode, 'all'>,
-): void {
+function validateFlowupBuildInvariants(config: UserConfig, mode: Exclude<BuildMode, 'all'>): void {
   const output = config.build?.rolldownOptions?.output
   if (!output || Array.isArray(output))
     throw new Error(`${mode} build must define exactly one output configuration.`)
@@ -156,8 +148,7 @@ async function runTransactionalBuild(plan: BuildPlan): Promise<void> {
     await runViteBuild(plan.editor.config, 'editor', stagingDir, false)
     await writeFlowupArtifactManifest(stagingDir, resolveCliVersion())
     await commitStagedDirectory(stagingDir, plan.finalOutDir)
-  }
-  catch (error) {
+  } catch (error) {
     await rm(stagingDir, { recursive: true, force: true })
     throw error
   }
@@ -173,8 +164,7 @@ async function runPartialBuild(
   try {
     await runViteBuild(plan.config, mode, stagingDir, true)
     await commitStagedDirectory(stagingDir, outputDir)
-  }
-  catch (error) {
+  } catch (error) {
     await rm(stagingDir, { recursive: true, force: true })
     throw error
   }

@@ -23,6 +23,8 @@
     "gen:node": "cd packages/nodes && flowup gen",
     "gen:plugin": "cd packages/plugins && flowup gen",
     "lint": "pnpm -F @wry-smile/flowup lint",
+    "format": "oxfmt cli",
+    "format:check": "oxfmt --check cli",
     "release": "pnpm -F @wry-smile/flowup release",
     "test": "pnpm -F @wry-smile/flowup test",
     "test:e2e": "pnpm -F @wry-smile/flowup test:e2e",
@@ -31,14 +33,13 @@
     "typecheck": "pnpm -F @wry-smile/flowup typecheck"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "catalog:",
     "@types/node": "catalog:",
     "@types/node-red": "catalog:",
     "@wry-smile/flowup": "workspace:*",
     "@wry-smile/utils": "catalog:",
     "bumpp": "catalog:",
-    "eslint": "catalog:",
-    "eslint-plugin-format": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
     "node-red": "catalog:",
     "typescript": "catalog:"
   }

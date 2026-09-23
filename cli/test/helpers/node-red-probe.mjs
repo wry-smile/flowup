@@ -7,8 +7,7 @@ import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
 const configPath = process.argv[2]
-if (!configPath)
-  throw new Error('Expected a probe config path.')
+if (!configPath) throw new Error('Expected a probe config path.')
 
 const config = JSON.parse(await readFile(resolve(configPath), 'utf8'))
 const { RED, express } = await loadNodeRed()
@@ -41,7 +40,11 @@ try {
   started = true
 
   for (const nodeType of config.nodes ?? [])
-    assert.equal(typeof RED.nodes.getType(nodeType), 'function', `Node type not loaded: ${nodeType}`)
+    assert.equal(
+      typeof RED.nodes.getType(nodeType),
+      'function',
+      `Node type not loaded: ${nodeType}`,
+    )
 
   if (config.plugins?.length) {
     const pluginList = await fetchJson(createUrl(server, '/plugins'), {
@@ -62,19 +65,22 @@ try {
     assert.equal(response.status, 200, `${request.path} returned ${response.status}`)
     const body = await response.text()
     if (request.includes)
-      assert.ok(body.includes(request.includes), `${request.path} did not include ${request.includes}`)
+      assert.ok(
+        body.includes(request.includes),
+        `${request.path} did not include ${request.includes}`,
+      )
   }
 
-  console.log(JSON.stringify({
-    nodeRedVersion: RED.version(),
-    nodes: config.nodes ?? [],
-    plugins: config.plugins ?? [],
-    requests: config.requests?.length ?? 0,
-  }))
-}
-finally {
-  if (started)
-    await RED.stop()
+  console.log(
+    JSON.stringify({
+      nodeRedVersion: RED.version(),
+      nodes: config.nodes ?? [],
+      plugins: config.plugins ?? [],
+      requests: config.requests?.length ?? 0,
+    }),
+  )
+} finally {
+  if (started) await RED.stop()
   await closeServer(server)
 }
 
@@ -112,9 +118,8 @@ async function listen(server) {
 }
 
 async function closeServer(server) {
-  if (!server.listening)
-    return
+  if (!server.listening) return
   await new Promise((resolveClose, reject) => {
-    server.close(error => error ? reject(error) : resolveClose())
+    server.close(error => (error ? reject(error) : resolveClose()))
   })
 }

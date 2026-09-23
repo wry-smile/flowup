@@ -17,8 +17,7 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
       ],
       initialValue: 'node',
     })
-  }
-  else {
+  } else {
     answers.type = options.type
   }
 
@@ -27,17 +26,15 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
       message: `Enter the ${answers.type} name (kebab-case)?`,
       defaultValue: '',
       placeholder: 'my-special-node',
-      validate: (value) => {
-        if (!value || !value.trim())
-          return 'Name is required'
+      validate: value => {
+        if (!value || !value.trim()) return 'Name is required'
         if (!/^[a-z][a-z0-9-]*$/.test(value.trim()))
           return 'Use kebab-case: lowercase letters, digits, dashes (must start with a letter)'
         return undefined
       },
     })
     answers.name = kebabCase(raw)
-  }
-  else {
+  } else {
     answers.name = kebabCase(options.name)
   }
 
@@ -51,16 +48,14 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
       initialValues: DEFAULT_LOCALES,
       required: false,
     })
-  }
-  else {
+  } else {
     answers.locales = options.locales
   }
 
   if (answers.type === 'plugin') {
     answers.framework = 'vanilla'
     answers.tailwind = false
-  }
-  else if (options.framework === undefined) {
+  } else if (options.framework === undefined) {
     answers.framework = await selectOrExit<ClientFramework>({
       message: 'Select client framework?',
       options: [
@@ -70,21 +65,18 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
       ],
       initialValue: 'vanilla',
     })
-  }
-  else {
+  } else {
     answers.framework = options.framework
   }
 
   if (answers.type === 'plugin' || answers.framework === 'vanilla') {
     answers.tailwind = false
-  }
-  else if (options.tailwind === undefined) {
+  } else if (options.tailwind === undefined) {
     answers.tailwind = await confirmOrExit({
       message: 'Use Tailwindcss for styling?',
       initialValue: false,
     })
-  }
-  else {
+  } else {
     answers.tailwind = options.tailwind
   }
 

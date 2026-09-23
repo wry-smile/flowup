@@ -19,8 +19,7 @@ export function toProperCase(input: string): string {
 }
 
 export function parseCsvList(input: string | undefined | null): string[] | undefined {
-  if (!input)
-    return undefined
+  if (!input) return undefined
   const list = input
     .split(',')
     .map(s => s.trim())
@@ -29,15 +28,11 @@ export function parseCsvList(input: string | undefined | null): string[] | undef
 }
 
 export function parseBool(input: string | boolean | undefined | null): boolean | undefined {
-  if (input === undefined || input === null)
-    return undefined
-  if (typeof input === 'boolean')
-    return input
+  if (input === undefined || input === null) return undefined
+  if (typeof input === 'boolean') return input
   const value = input.trim().toLowerCase()
-  if (value === 'true' || value === '1' || value === 'yes')
-    return true
-  if (value === 'false' || value === '0' || value === 'no')
-    return false
+  if (value === 'true' || value === '1' || value === 'yes') return true
+  if (value === 'false' || value === '0' || value === 'no') return false
   return undefined
 }
 
@@ -46,14 +41,12 @@ export function hasArgvFlag(flag: string, argv: readonly string[] = process.argv
 }
 
 export function stripQuotes(value: unknown): unknown {
-  if (typeof value !== 'string')
-    return value
+  if (typeof value !== 'string') return value
   const text = value.trim()
   if (text.length >= 2) {
     const first = text.charAt(0)
     const last = text.charAt(text.length - 1)
-    if ((first === '"' || first === '\'') && first === last)
-      return text.slice(1, -1)
+    if ((first === '"' || first === "'") && first === last) return text.slice(1, -1)
   }
   return value
 }

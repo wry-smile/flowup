@@ -3,11 +3,7 @@ export type { AssembleOptions, AssembleResult } from './commands/assemble/impl'
 export { runBuild } from './commands/build/impl'
 export type { BuildMode, BuildOptions } from './commands/build/impl'
 export { runGenerator } from './commands/gen/impl'
-export type {
-  GenOptions,
-  GenResolved,
-  GenType,
-} from './commands/gen/impl'
+export type { GenOptions, GenResolved, GenType } from './commands/gen/impl'
 export { defineConfig } from './sdk/define-config'
 export type { FlowupAssembleConfig, FlowupConfig } from './sdk/define-config'
 export { flowupClientHtmlEntryPlugin } from './sdk/plugins/client-html-entry'

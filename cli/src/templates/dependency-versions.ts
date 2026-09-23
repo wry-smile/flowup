@@ -4,11 +4,11 @@ export const TEMPLATE_DEPENDENCY_VERSIONS = {
   '@vitejs/plugin-vue': '^6.0.7',
   '@sveltejs/vite-plugin-svelte': '^7.2.0',
   '@tailwindcss/vite': '^4.3.1',
-  'svelte': '^5.56.4',
-  'tailwindcss': '^4.3.2',
-  'typescript': '^6.0.3',
-  'vite': '^8.1.0',
-  'vue': '^3.5.39',
+  svelte: '^5.56.4',
+  tailwindcss: '^4.3.2',
+  typescript: '^6.0.3',
+  vite: '^8.1.0',
+  vue: '^3.5.39',
 } as const
 
 export function getBaseTemplateDevDependencies(flowupSpecifier: string): string[] {

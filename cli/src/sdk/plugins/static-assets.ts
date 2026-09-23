@@ -16,8 +16,7 @@ export function flowupStaticAssetsPlugin(options: FlowupStaticAssetsPluginOption
       const cwd = path.resolve(options.cwd ?? process.cwd())
       for (const dir of options.dirs) {
         const absDir = path.resolve(cwd, dir)
-        if (!existsSync(absDir))
-          continue
+        if (!existsSync(absDir)) continue
 
         for (const file of walkFiles(absDir)) {
           const relFromDir = path.relative(absDir, file)
@@ -36,20 +35,17 @@ export function flowupStaticAssetsPlugin(options: FlowupStaticAssetsPluginOption
 function walkFiles(dir: string): string[] {
   const output: string[] = []
   for (const name of readdirSync(dir)) {
-    if (name === '.DS_Store' || name.startsWith('.'))
-      continue
+    if (name === '.DS_Store' || name.startsWith('.')) continue
 
     const absPath = path.resolve(dir, name)
     const stats = lstatSync(absPath)
-    if (stats.isSymbolicLink())
-      continue
+    if (stats.isSymbolicLink()) continue
     if (stats.isDirectory()) {
       output.push(...walkFiles(absPath))
       continue
     }
 
-    if (stats.isFile())
-      output.push(absPath)
+    if (stats.isFile()) output.push(absPath)
   }
   return output
 }

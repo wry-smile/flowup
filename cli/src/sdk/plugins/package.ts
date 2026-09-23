@@ -20,17 +20,17 @@ export function flowupPackagePlugin(options: FlowupPackagePluginOptions): Plugin
       const srcPkg = readSourcePackageJson(srcPkgPath)
 
       const packageJson = {
-        'name': srcPkg.name ?? `node-red-contrib-${options.name}`,
-        'version': srcPkg.version ?? '0.0.0',
-        'description': srcPkg.description ?? '',
-        'author': srcPkg.author ?? '',
-        'license': srcPkg.license ?? 'ISC',
-        'keywords': normalizeKeywords(srcPkg.keywords),
-        'type': 'commonjs',
-        'main': `./${options.name}.js`,
-        'dependencies': srcPkg.dependencies,
-        'peerDependencies': srcPkg.peerDependencies,
-        'optionalDependencies': srcPkg.optionalDependencies,
+        name: srcPkg.name ?? `node-red-contrib-${options.name}`,
+        version: srcPkg.version ?? '0.0.0',
+        description: srcPkg.description ?? '',
+        author: srcPkg.author ?? '',
+        license: srcPkg.license ?? 'ISC',
+        keywords: normalizeKeywords(srcPkg.keywords),
+        type: 'commonjs',
+        main: `./${options.name}.js`,
+        dependencies: srcPkg.dependencies,
+        peerDependencies: srcPkg.peerDependencies,
+        optionalDependencies: srcPkg.optionalDependencies,
         ...options.extra,
         'node-red': normalizeNodeRedField(srcPkg['node-red'], options),
       }
@@ -45,13 +45,11 @@ export function flowupPackagePlugin(options: FlowupPackagePluginOptions): Plugin
 }
 
 function readSourcePackageJson(filePath: string): Record<string, any> {
-  if (!existsSync(filePath))
-    throw new Error(`Source package.json not found: ${filePath}`)
+  if (!existsSync(filePath)) throw new Error(`Source package.json not found: ${filePath}`)
 
   try {
     return JSON.parse(readFileSync(filePath, 'utf8')) as Record<string, any>
-  }
-  catch (error) {
+  } catch (error) {
     throw new Error(`Unable to read source package.json: ${filePath}`, { cause: error })
   }
 }
@@ -77,8 +75,7 @@ function normalizeNodeRedField(
 }
 
 function normalizeEntryGroup(value: unknown, key: 'nodes' | 'plugins'): Record<string, unknown> {
-  if (!value || typeof value !== 'object')
-    return {}
+  if (!value || typeof value !== 'object') return {}
 
   return {
     [key]: Object.fromEntries(
@@ -104,14 +101,11 @@ function normalizeKeywords(value: unknown): string[] {
     ? value.filter((entry): entry is string => typeof entry === 'string')
     : []
 
-  if (!keywords.some(keyword => keyword.toLowerCase() === 'node-red'))
-    keywords.push('node-red')
+  if (!keywords.some(keyword => keyword.toLowerCase() === 'node-red')) keywords.push('node-red')
 
   return keywords
 }
 
 function stripUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, entry]) => entry !== undefined),
-  ) as T
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T
 }

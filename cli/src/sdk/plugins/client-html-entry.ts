@@ -12,33 +12,23 @@ export interface FlowupClientHtmlEntryPluginOptions {
   preservedAssetDirectories?: string[]
 }
 
-export function flowupClientHtmlEntryPlugin(
-  options: FlowupClientHtmlEntryPluginOptions,
-): Plugin {
+export function flowupClientHtmlEntryPlugin(options: FlowupClientHtmlEntryPluginOptions): Plugin {
   return {
     name: 'flowup-client-html-entry',
     apply: 'build',
     enforce: 'post',
     generateBundle(_, bundle) {
       const templatePath = path.resolve(options.template)
-      const template = existsSync(templatePath)
-        ? readFileSync(templatePath, 'utf8')
-        : ''
+      const template = existsSync(templatePath) ? readFileSync(templatePath, 'utf8') : ''
       const entryChunk = findEntryChunk(bundle, options.name)
       if (!entryChunk) {
         this.error(`Client entry chunk not found: ${options.name}`)
       }
 
       const cssAssets = findCssAssets(bundle, options.preservedAssetDirectories ?? [])
-      const css = cssAssets
-        .map(asset => sourceToString(asset.source))
-        .join('\n')
+      const css = cssAssets.map(asset => sourceToString(asset.source)).join('\n')
 
-      const html = [
-        createStyleTag(css),
-        createScriptTag(entryChunk?.code),
-        template.trim(),
-      ]
+      const html = [createStyleTag(css), createScriptTag(entryChunk?.code), template.trim()]
         .filter(Boolean)
         .join('\n\n')
         .concat('\n')
@@ -49,7 +39,7 @@ export function flowupClientHtmlEntryPlugin(
         source: html,
       })
 
-      entryChunk?.fileName && delete bundle[entryChunk.fileName]
+      if (entryChunk?.fileName) delete bundle[entryChunk.fileName]
       for (const asset of cssAssets) {
         delete bundle[asset.fileName]
       }
@@ -59,50 +49,32 @@ export function flowupClientHtmlEntryPlugin(
 
 function findEntryChunk(bundle: OutputBundle, entryName: string): OutputChunk | undefined {
   return Object.values(bundle).find(
-    (item): item is OutputChunk =>
-      item.type === 'chunk'
-      && item.isEntry
-      && item.name === entryName,
+    (item): item is OutputChunk => item.type === 'chunk' && item.isEntry && item.name === entryName,
   )
 }
 
-function findCssAssets(
-  bundle: OutputBundle,
-  preservedAssetDirectories: string[],
-): OutputAsset[] {
-  return Object.values(bundle).filter(
-    (item): item is OutputAsset =>
-      item.type === 'asset'
-      && item.fileName.endsWith('.css'),
-  ).filter(
-    item => !preservedAssetDirectories.some((directory) => {
-      const prefix = directory.replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/$/, '')
-      return prefix && item.fileName.startsWith(`${prefix}/`)
-    }),
-  )
+function findCssAssets(bundle: OutputBundle, preservedAssetDirectories: string[]): OutputAsset[] {
+  return Object.values(bundle)
+    .filter((item): item is OutputAsset => item.type === 'asset' && item.fileName.endsWith('.css'))
+    .filter(
+      item =>
+        !preservedAssetDirectories.some(directory => {
+          const prefix = directory.replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/$/, '')
+          return prefix && item.fileName.startsWith(`${prefix}/`)
+        }),
+    )
 }
 
 function createScriptTag(code: string = ''): string {
-  return [
-    '<script>',
-    code.replace(/<\/script/giu, '<\\/script'),
-    '</script>',
-  ].join('\n')
+  return ['<script>', code.replace(/<\/script/giu, '<\\/script'), '</script>'].join('\n')
 }
 
 function createStyleTag(css: string): string {
-  if (!css)
-    return ''
+  if (!css) return ''
 
-  return [
-    '<style>',
-    css.replace(/<\/style/giu, '<\\/style'),
-    '</style>',
-  ].join('\n')
+  return ['<style>', css.replace(/<\/style/giu, '<\\/style'), '</style>'].join('\n')
 }
 
 function sourceToString(source: string | Uint8Array): string {
-  return typeof source === 'string'
-    ? source
-    : new TextDecoder().decode(source)
+  return typeof source === 'string' ? source : new TextDecoder().decode(source)
 }

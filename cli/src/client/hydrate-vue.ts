@@ -36,8 +36,7 @@ export class VueHydrateStore<T extends object> {
   public commit = (target: StateTarget<T>): void => {
     const snapshot = this.getSnapshot()
     for (const key of this.keys) {
-      if (!this.hasOwn(snapshot, key))
-        continue
+      if (!this.hasOwn(snapshot, key)) continue
 
       this.assignField(target, key, snapshot[key])
     }
@@ -75,15 +74,18 @@ export class VueHydrateStore<T extends object> {
   private pickFields(source: Readonly<Partial<T>>): T {
     const result = this.createDefaultState()
     for (const key of this.keys) {
-      if (!this.hasOwn(source, key))
-        continue
+      if (!this.hasOwn(source, key)) continue
 
       this.assignField(result, key, source[key])
     }
     return result
   }
 
-  private assignField<K extends keyof T>(target: Partial<T>, key: K, value: T[K] | undefined): void {
+  private assignField<K extends keyof T>(
+    target: Partial<T>,
+    key: K,
+    value: T[K] | undefined,
+  ): void {
     target[key] = this.cloneValue(value)
   }
 
@@ -96,12 +98,10 @@ export class VueHydrateStore<T extends object> {
   }
 
   private cloneValue<V>(value: V): V {
-    if (value === undefined || value === null || typeof value !== 'object')
-      return value
+    if (value === undefined || value === null || typeof value !== 'object') return value
 
     const rawValue = toRaw(value)
-    if (typeof structuredClone === 'function')
-      return structuredClone(rawValue)
+    if (typeof structuredClone === 'function') return structuredClone(rawValue)
 
     return JSON.parse(JSON.stringify(rawValue)) as V
   }

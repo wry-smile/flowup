@@ -35,15 +35,11 @@ export function joinWorkspacePath(rootDir: string, relativePath: string): string
 }
 
 export async function findViteConfig(startDir: string = process.cwd()): Promise<string> {
-  const candidates = [
-    ...FLOWUP_CONFIG_CANDIDATES,
-    ...VITE_CONFIG_CANDIDATES,
-  ]
+  const candidates = [...FLOWUP_CONFIG_CANDIDATES, ...VITE_CONFIG_CANDIDATES]
 
   for (const name of candidates) {
     const found = await findUp(name, { cwd: startDir, type: 'file' })
-    if (found)
-      return found
+    if (found) return found
   }
 
   return join(startDir, 'flowup.config.ts')
@@ -59,8 +55,7 @@ export async function findAssembleConfig(startDir: string = process.cwd()): Prom
       type: 'file',
       stopAt: searchDir,
     })
-    if (found)
-      return found
+    if (found) return found
   }
 
   return null

@@ -1,5 +1,9 @@
 import type { FlowupArtifactManifest } from '../../share/flowup-artifact'
-import type { FlowupNodeRedField, FlowupPackageJson, FlowupPackageRecord } from '../../share/flowup-packages'
+import type {
+  FlowupNodeRedField,
+  FlowupPackageJson,
+  FlowupPackageRecord,
+} from '../../share/flowup-packages'
 import type { AssembleCommandOptions } from './command'
 import { existsSync } from 'node:fs'
 import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
@@ -9,7 +13,13 @@ import { readFlowupArtifact } from '../../share/flowup-artifact'
 import { loadFlowupAssembleConfig } from '../../share/flowup-assemble-config'
 import { scanFlowupPackages } from '../../share/flowup-packages'
 import { parseCsvList } from '../../share/paths'
-import { assertSafeAssembleOutput, commitStagedDirectory, createStagingDir, isPathInside, pathsOverlap } from '../../share/safe-fs'
+import {
+  assertSafeAssembleOutput,
+  commitStagedDirectory,
+  createStagingDir,
+  isPathInside,
+  pathsOverlap,
+} from '../../share/safe-fs'
 import { renderMitLicense } from '../../templates/license'
 import { runBuild } from '../build/impl'
 
@@ -43,12 +53,18 @@ interface PreparedPackage extends FlowupPackageRecord {
   targetDirName: string
 }
 
-export async function runAssemble(rawOptions: AssembleCommandOptions | AssembleOptions = {}): Promise<AssembleResult> {
+export async function runAssemble(
+  rawOptions: AssembleCommandOptions | AssembleOptions = {},
+): Promise<AssembleResult> {
   const loadedConfig = await loadFlowupAssembleConfig({
     cwd: rawOptions.cwd,
     config: rawOptions.config,
   })
-  const options = normalizeAssembleOptions(rawOptions, loadedConfig?.assemble, loadedConfig?.rootDir)
+  const options = normalizeAssembleOptions(
+    rawOptions,
+    loadedConfig?.assemble,
+    loadedConfig?.rootDir,
+  )
   const scanCwd = resolve(options.cwd)
   const scanResult = await scanFlowupPackages({
     cwd: scanCwd,
@@ -62,13 +78,19 @@ export async function runAssemble(rawOptions: AssembleCommandOptions | AssembleO
     throw new Error(`No flowup-built Node-RED nodes or plugins found under ${scopeLabel}.`)
   }
 
-  const outputDir = resolveAssembleOutputDir(scanResult.rootDir, scanResult.packages, options.output)
+  const outputDir = resolveAssembleOutputDir(
+    scanResult.rootDir,
+    scanResult.packages,
+    options.output,
+  )
   const outputDirRelative = relative(scanResult.rootDir, outputDir) || '.'
-  await assertSafeAssembleOutput(outputDir, scanResult.packages.map(pkg => pkg.dir))
+  await assertSafeAssembleOutput(
+    outputDir,
+    scanResult.packages.map(pkg => pkg.dir),
+  )
 
   if (!options.skipBuild) {
-    for (const pkg of scanResult.packages)
-      await runBuild({ cwd: pkg.dir, mode: 'all' })
+    for (const pkg of scanResult.packages) await runBuild({ cwd: pkg.dir, mode: 'all' })
   }
 
   const preparedPackages: PreparedPackage[] = []
@@ -77,7 +99,9 @@ export async function runAssemble(rawOptions: AssembleCommandOptions | AssembleO
   for (const pkg of scanResult.packages) {
     const distDir = resolve(pkg.dir, 'dist')
     if (!existsSync(distDir))
-      throw new Error(`Missing dist directory for ${pkg.relPath}. Run flowup build first or remove --skip-build.`)
+      throw new Error(
+        `Missing dist directory for ${pkg.relPath}. Run flowup build first or remove --skip-build.`,
+      )
 
     const { manifest: artifact, packageJson: builtPackageJson } = await readFlowupArtifact(distDir)
     const builtNodeRed = builtPackageJson['node-red']
@@ -108,8 +132,7 @@ export async function runAssemble(rawOptions: AssembleCommandOptions | AssembleO
     if (!options.clean && existsSync(outputDir))
       await cp(outputDir, stagingDir, { recursive: true, force: true })
 
-    for (const pkg of preparedPackages)
-      await copyPreparedPackage(pkg, stagingDir, options.name)
+    for (const pkg of preparedPackages) await copyPreparedPackage(pkg, stagingDir, options.name)
 
     await writeFile(
       join(stagingDir, 'package.json'),
@@ -126,13 +149,10 @@ export async function runAssemble(rawOptions: AssembleCommandOptions | AssembleO
     await writeFile(join(stagingDir, '.gitignore'), 'node_modules\n', 'utf8')
     await writeFile(join(stagingDir, '.npmignore'), '.flowup-*\n', 'utf8')
     const licensePath = join(stagingDir, 'LICENSE')
-    if (options.license === 'MIT')
-      await writeFile(licensePath, renderMitLicense(), 'utf8')
-    else
-      await rm(licensePath, { force: true })
+    if (options.license === 'MIT') await writeFile(licensePath, renderMitLicense(), 'utf8')
+    else await rm(licensePath, { force: true })
     await commitStagedDirectory(stagingDir, outputDir)
-  }
-  catch (error) {
+  } catch (error) {
     await rm(stagingDir, { recursive: true, force: true })
     throw error
   }
@@ -167,7 +187,7 @@ function normalizeAssembleOptions(
     license: rawOptions.license ?? configOptions?.license ?? 'MIT',
     packages: Array.isArray(rawOptions.packages)
       ? rawOptions.packages
-      : parseCsvList(rawOptions.packages) ?? configOptions?.packages ?? [],
+      : (parseCsvList(rawOptions.packages) ?? configOptions?.packages ?? []),
     clean: rawOptions.clean ?? configOptions?.clean ?? true,
     skipBuild: rawOptions.skipBuild ?? configOptions?.skipBuild ?? false,
   }
@@ -178,22 +198,19 @@ function resolveAssembleOutputDir(
   packages: FlowupPackageRecord[],
   explicitOutput: string | undefined,
 ): string {
-  if (explicitOutput)
-    return resolve(rootDir, explicitOutput)
+  if (explicitOutput) return resolve(rootDir, explicitOutput)
 
   const preferred = resolve(rootDir, 'dist/flowup-assemble')
-  const collidesWithSourceDist = packages.some(pkg => pathsOverlap(preferred, resolve(pkg.dir, 'dist')))
+  const collidesWithSourceDist = packages.some(pkg =>
+    pathsOverlap(preferred, resolve(pkg.dir, 'dist')),
+  )
 
-  if (!collidesWithSourceDist)
-    return preferred
+  if (!collidesWithSourceDist) return preferred
 
   return resolve(dirname(rootDir), `${basename(rootDir)}-flowup-assemble`)
 }
 
-function createUniqueTargetDirName(
-  pkg: FlowupPackageRecord,
-  usedTargetDirs: Set<string>,
-): string {
+function createUniqueTargetDirName(pkg: FlowupPackageRecord, usedTargetDirs: Set<string>): string {
   const preferred = sanitizeAssembleDirName(
     pkg.nodeRed.scope ?? basename(pkg.dir),
     `Node-RED scope for ${pkg.name}`,
@@ -210,8 +227,7 @@ function createUniqueTargetDirName(
   }
 
   let suffix = 2
-  while (usedTargetDirs.has(`${fallback}-${suffix}`))
-    suffix += 1
+  while (usedTargetDirs.has(`${fallback}-${suffix}`)) suffix += 1
 
   const finalName = `${fallback}-${suffix}`
   usedTargetDirs.add(finalName)
@@ -226,7 +242,9 @@ function sanitizeAssembleDirName(value: string, label: string): string {
     .replace(/[^\w.-]/g, '-')
 
   if (!sanitized || /^\.+$/.test(sanitized) || sanitized.endsWith('.'))
-    throw new Error(`${label} cannot produce a safe assemble directory name: ${JSON.stringify(value)}`)
+    throw new Error(
+      `${label} cannot produce a safe assemble directory name: ${JSON.stringify(value)}`,
+    )
 
   if (/^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(sanitized))
     throw new Error(`${label} uses a reserved assemble directory name: ${JSON.stringify(value)}`)
@@ -236,7 +254,10 @@ function sanitizeAssembleDirName(value: string, label: string): string {
 
 function buildAssembleManifest(
   packages: PreparedPackage[],
-  options: Pick<Required<AssembleOptions>, 'name' | 'version' | 'description' | 'author' | 'license'>,
+  options: Pick<
+    Required<AssembleOptions>,
+    'name' | 'version' | 'description' | 'author' | 'license'
+  >,
 ): Record<string, unknown> {
   const dependencies: Record<string, string> = {}
   const peerDependencies: Record<string, string> = {}
@@ -248,26 +269,44 @@ function buildAssembleManifest(
 
   for (const pkg of packages) {
     mergeDependencyMap(dependencies, pkg.builtPackageJson.dependencies, `${pkg.name} dependencies`)
-    mergeDependencyMap(peerDependencies, pkg.builtPackageJson.peerDependencies, `${pkg.name} peerDependencies`)
-    mergeDependencyMap(optionalDependencies, pkg.builtPackageJson.optionalDependencies, `${pkg.name} optionalDependencies`)
+    mergeDependencyMap(
+      peerDependencies,
+      pkg.builtPackageJson.peerDependencies,
+      `${pkg.name} peerDependencies`,
+    )
+    mergeDependencyMap(
+      optionalDependencies,
+      pkg.builtPackageJson.optionalDependencies,
+      `${pkg.name} optionalDependencies`,
+    )
 
     mergeNodeRedEntries(nodeRed.nodes!, pkg.builtNodeRed.nodes, pkg.targetDirName, pkg.name, 'node')
-    mergeNodeRedEntries(nodeRed.plugins!, pkg.builtNodeRed.plugins, pkg.targetDirName, pkg.name, 'plugin')
+    mergeNodeRedEntries(
+      nodeRed.plugins!,
+      pkg.builtNodeRed.plugins,
+      pkg.targetDirName,
+      pkg.name,
+      'plugin',
+    )
     mergeNodeRedVersion(nodeRed, pkg.builtNodeRed.version, pkg.name)
     mergeNodeRedDependencies(nodeRed, pkg.builtNodeRed.dependencies)
   }
 
   return stripUndefined({
-    'name': options.name,
-    'version': options.version,
-    'description': options.description || `Assembled ${packages.length} flowup-built Node-RED component package(s).`,
-    'author': options.author || undefined,
-    'license': options.license,
-    'type': 'commonjs',
-    'keywords': ['node-red', 'flowup', 'assemble'],
-    'dependencies': Object.keys(dependencies).length ? dependencies : undefined,
-    'peerDependencies': Object.keys(peerDependencies).length ? peerDependencies : undefined,
-    'optionalDependencies': Object.keys(optionalDependencies).length ? optionalDependencies : undefined,
+    name: options.name,
+    version: options.version,
+    description:
+      options.description ||
+      `Assembled ${packages.length} flowup-built Node-RED component package(s).`,
+    author: options.author || undefined,
+    license: options.license,
+    type: 'commonjs',
+    keywords: ['node-red', 'flowup', 'assemble'],
+    dependencies: Object.keys(dependencies).length ? dependencies : undefined,
+    peerDependencies: Object.keys(peerDependencies).length ? peerDependencies : undefined,
+    optionalDependencies: Object.keys(optionalDependencies).length
+      ? optionalDependencies
+      : undefined,
     'node-red': nodeRed,
   })
 }
@@ -277,13 +316,14 @@ function mergeDependencyMap(
   source: FlowupPackageJson['dependencies'],
   label: string,
 ): void {
-  if (!source)
-    return
+  if (!source) return
 
   for (const [name, range] of Object.entries(source)) {
     const existing = target[name]
     if (existing && existing !== range)
-      throw new Error(`Dependency version conflict for "${name}" in ${label}: "${existing}" vs "${range}"`)
+      throw new Error(
+        `Dependency version conflict for "${name}" in ${label}: "${existing}" vs "${range}"`,
+      )
 
     target[name] = range
   }
@@ -296,12 +336,13 @@ function mergeNodeRedEntries(
   packageName: string,
   kind: 'node' | 'plugin',
 ): void {
-  if (!source)
-    return
+  if (!source) return
 
   for (const [entryName, entryPath] of Object.entries(source)) {
     if (target[entryName])
-      throw new Error(`Duplicate ${kind} entry "${entryName}" while bundling package ${packageName}`)
+      throw new Error(
+        `Duplicate ${kind} entry "${entryName}" while bundling package ${packageName}`,
+      )
 
     const normalizedEntryPath = entryPath.replaceAll('\\', '/').replace(/^\.\//, '')
     target[entryName] = `${targetDirName}/${normalizedEntryPath}`
@@ -313,8 +354,7 @@ function mergeNodeRedVersion(
   version: string | undefined,
   packageName: string,
 ): void {
-  if (!version)
-    return
+  if (!version) return
   if (target.version && target.version !== version) {
     throw new Error(
       `Node-RED version conflict in ${packageName}: "${target.version}" vs "${version}"`,
@@ -323,9 +363,11 @@ function mergeNodeRedVersion(
   target.version = version
 }
 
-function mergeNodeRedDependencies(target: FlowupNodeRedField, dependencies: string[] | undefined): void {
-  if (!dependencies?.length)
-    return
+function mergeNodeRedDependencies(
+  target: FlowupNodeRedField,
+  dependencies: string[] | undefined,
+): void {
+  if (!dependencies?.length) return
   target.dependencies = [...new Set([...(target.dependencies ?? []), ...dependencies])].sort()
 }
 
@@ -347,7 +389,12 @@ async function copyPreparedPackage(
     await rm(aggregateResourcesDir, { recursive: true, force: true })
     await mkdir(aggregateResourcesDir, { recursive: true })
     await cp(resourcesDir, aggregateResourcesDir, { recursive: true, force: true })
-    await rewriteResourceReferences(targetDir, pkg.builtPackageJson.name ?? pkg.name, assembleName, pkg.targetDirName)
+    await rewriteResourceReferences(
+      targetDir,
+      pkg.builtPackageJson.name ?? pkg.name,
+      assembleName,
+      pkg.targetDirName,
+    )
   }
 }
 
@@ -373,8 +420,7 @@ async function rewriteResourceReferences(
       .replaceAll(sourceBase, aggregateBase)
       .replaceAll('__FLOWUP_RESOURCE_BASE__/', aggregateBase)
 
-    if (rewritten !== source)
-      await writeFile(filePath, rewritten, 'utf8')
+    if (rewritten !== source) await writeFile(filePath, rewritten, 'utf8')
   }
 }
 
@@ -382,14 +428,12 @@ async function listTextAssets(rootDir: string): Promise<string[]> {
   const output: string[] = []
   for (const entry of await readdir(rootDir, { withFileTypes: true })) {
     const absolutePath = resolve(rootDir, entry.name)
-    if (entry.isSymbolicLink())
-      continue
+    if (entry.isSymbolicLink()) continue
     if (entry.isDirectory()) {
-      output.push(...await listTextAssets(absolutePath))
+      output.push(...(await listTextAssets(absolutePath)))
       continue
     }
-    if (/\.(?:c?js|css|html|json)$/i.test(entry.name))
-      output.push(absolutePath)
+    if (/\.(?:c?js|css|html|json)$/i.test(entry.name)) output.push(absolutePath)
   }
   return output
 }
@@ -427,7 +471,5 @@ out of their generated directories.
 }
 
 function stripUndefined<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, entry]) => entry !== undefined),
-  ) as T
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as T
 }

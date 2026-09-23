@@ -18,17 +18,23 @@ export function getFrameworkDevDependencies(ctx: TemplateContext): string[] {
   const devDependencies: string[] = []
 
   if (isVueFramework(ctx)) {
-    devDependencies.push(`    "@vitejs/plugin-vue": "${TEMPLATE_DEPENDENCY_VERSIONS['@vitejs/plugin-vue']}"`)
+    devDependencies.push(
+      `    "@vitejs/plugin-vue": "${TEMPLATE_DEPENDENCY_VERSIONS['@vitejs/plugin-vue']}"`,
+    )
     devDependencies.push(`    "vue": "${TEMPLATE_DEPENDENCY_VERSIONS.vue}"`)
   }
 
   if (isSvelteFramework(ctx)) {
-    devDependencies.push(`    "@sveltejs/vite-plugin-svelte": "${TEMPLATE_DEPENDENCY_VERSIONS['@sveltejs/vite-plugin-svelte']}"`)
+    devDependencies.push(
+      `    "@sveltejs/vite-plugin-svelte": "${TEMPLATE_DEPENDENCY_VERSIONS['@sveltejs/vite-plugin-svelte']}"`,
+    )
     devDependencies.push(`    "svelte": "${TEMPLATE_DEPENDENCY_VERSIONS.svelte}"`)
   }
 
   if (ctx.tailwind) {
-    devDependencies.push(`    "@tailwindcss/vite": "${TEMPLATE_DEPENDENCY_VERSIONS['@tailwindcss/vite']}"`)
+    devDependencies.push(
+      `    "@tailwindcss/vite": "${TEMPLATE_DEPENDENCY_VERSIONS['@tailwindcss/vite']}"`,
+    )
     devDependencies.push(`    "tailwindcss": "${TEMPLATE_DEPENDENCY_VERSIONS.tailwindcss}"`)
   }
 
@@ -58,20 +64,19 @@ export function getFrameworkVitePluginSetup(ctx: TemplateContext): FrameworkPlug
 }
 
 export function renderFrameworkEditorContent(ctx: TemplateContext, tagName: string): string {
-  if (isVueFramework(ctx))
-    return `  <${tagName}></${tagName}>`
+  if (isVueFramework(ctx)) return `  <${tagName}></${tagName}>`
 
-  if (isSvelteFramework(ctx))
-    return '  <div class="flowup-svelte-root"></div>'
+  if (isSvelteFramework(ctx)) return '  <div class="flowup-svelte-root"></div>'
 
   return '  <div></div>'
 }
 
 export function renderFrameworkReadmeLines(ctx: TemplateContext): string[] {
-  const lines = ['- `@wry-smile/flowup/client` 提供通用的 hydrate store 与 Tailwind Shadow DOM bridge']
+  const lines = [
+    '- `@wry-smile/flowup/client` 提供通用的 hydrate store 与 Tailwind Shadow DOM bridge',
+  ]
 
-  if (isVueFramework(ctx))
-    lines.push('- Vue 模板会生成 `client/hydrate.ts`')
+  if (isVueFramework(ctx)) lines.push('- Vue 模板会生成 `client/hydrate.ts`')
 
   if (isSvelteFramework(ctx))
     lines.push('- Svelte 模板会生成 `client/App.svelte` 与 `client/hydrate.ts`')

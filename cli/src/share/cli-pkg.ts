@@ -22,8 +22,7 @@ export function readCliPackageJson(): CliPackageJson {
   ]
 
   for (const candidate of candidates) {
-    if (!existsSync(candidate))
-      continue
+    if (!existsSync(candidate)) continue
     try {
       const raw = JSON.parse(readFileSync(candidate, 'utf-8')) as {
         name?: string
@@ -31,8 +30,7 @@ export function readCliPackageJson(): CliPackageJson {
       }
       if (raw.name === CLI_PKG_NAME)
         return { name: raw.name, version: raw.version ?? FALLBACK_VERSION }
-    }
-    catch {
+    } catch {
       continue
     }
   }

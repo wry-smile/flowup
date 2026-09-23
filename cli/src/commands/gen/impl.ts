@@ -43,8 +43,7 @@ export function readOptionsFromEnv(): Partial<GenOptions> {
 }
 
 function parseLocalesFromEnv(input: string | undefined): LocaleCode[] | undefined {
-  if (!input)
-    return undefined
+  if (!input) return undefined
   const list = input
     .split(',')
     .map(s => s.trim())
@@ -68,18 +67,18 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
     options.framework = options.vue ? 'vue' : 'vanilla'
 
   if (options.framework && !['vanilla', 'svelte', 'vue'].includes(options.framework))
-    throw new Error(`Invalid --framework: ${options.framework}. Must be "vanilla", "svelte", or "vue".`)
+    throw new Error(
+      `Invalid --framework: ${options.framework}. Must be "vanilla", "svelte", or "vue".`,
+    )
 
   if (options.type && options.type !== 'node' && options.type !== 'plugin')
     throw new Error(`Invalid --type: ${options.type}. Must be "node" or "plugin".`)
 
-  if (options.name)
-    options.name = validateGeneratorName(options.name)
+  if (options.name) options.name = validateGeneratorName(options.name)
 
   if (options.locales) {
     const invalidLocales = options.locales.filter(locale => !(locale in SUPPORTED_LOCALES))
-    if (invalidLocales.length)
-      throw new Error(`Invalid locales: ${invalidLocales.join(', ')}`)
+    if (invalidLocales.length) throw new Error(`Invalid locales: ${invalidLocales.join(', ')}`)
   }
 
   if (options.type === 'plugin') {
@@ -88,12 +87,14 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
     options.vue = false
   }
 
-  if (options.framework === 'vanilla')
-    options.tailwind = false
+  if (options.framework === 'vanilla') options.tailwind = false
 
-  const allProvided = !!options.type && !!options.name && !!options.locales
-    && options.framework !== undefined
-    && (options.framework === 'vanilla' || options.tailwind !== undefined)
+  const allProvided =
+    !!options.type &&
+    !!options.name &&
+    !!options.locales &&
+    options.framework !== undefined &&
+    (options.framework === 'vanilla' || options.tailwind !== undefined)
   if (allProvided) {
     await doGenerate(options as GenResolved)
     return
@@ -101,15 +102,16 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
 
   if (options.nonInteractive) {
     const missing: string[] = []
-    if (!options.type)
-      missing.push('--type')
-    if (!options.name)
-      missing.push('--name')
-    if (!options.locales)
-      missing.push('--locales')
-    if (options.type !== 'plugin' && options.framework === undefined)
-      missing.push('--framework')
-    if (options.type !== 'plugin' && options.framework && options.framework !== 'vanilla' && options.tailwind === undefined)
+    if (!options.type) missing.push('--type')
+    if (!options.name) missing.push('--name')
+    if (!options.locales) missing.push('--locales')
+    if (options.type !== 'plugin' && options.framework === undefined) missing.push('--framework')
+    if (
+      options.type !== 'plugin' &&
+      options.framework &&
+      options.framework !== 'vanilla' &&
+      options.tailwind === undefined
+    )
       missing.push('--tailwind')
     throw new Error(`Non-interactive mode requires: ${missing.join(', ')}`)
   }
@@ -132,16 +134,13 @@ async function doGenerate(options: GenResolved): Promise<void> {
     tailwind: options.tailwind,
   })
 
-  const files: FileMap = options.type === 'node'
-    ? nodeTemplate(context)
-    : pluginTemplate(context)
+  const files: FileMap = options.type === 'node' ? nodeTemplate(context) : pluginTemplate(context)
 
   const generationRoot = resolve(process.cwd())
   const baseDir = resolve(generationRoot, options.name)
   if (!isPathInside(generationRoot, baseDir))
     throw new Error(`Target directory must stay inside the current directory: ${baseDir}`)
-  if (existsSync(baseDir))
-    throw new Error(`Target directory already exists: ${baseDir}`)
+  if (existsSync(baseDir)) throw new Error(`Target directory already exists: ${baseDir}`)
 
   const stagingDir = await createStagingDir(baseDir)
   if (existsSync(baseDir)) {
@@ -156,13 +155,14 @@ async function doGenerate(options: GenResolved): Promise<void> {
     for (const [relativePath, content] of Object.entries(files)) {
       const absolutePath = resolve(stagingDir, relativePath)
       if (!isPathInside(stagingDir, absolutePath))
-        throw new Error(`Generated file path must stay inside the target directory: ${relativePath}`)
+        throw new Error(
+          `Generated file path must stay inside the target directory: ${relativePath}`,
+        )
       await mkdir(dirname(absolutePath), { recursive: true })
       await writeFile(absolutePath, content, 'utf-8')
     }
     await commitStagedDirectory(stagingDir, baseDir, { replaceExisting: false })
-  }
-  catch (error) {
+  } catch (error) {
     await rm(stagingDir, { recursive: true, force: true })
     spinner.stop(`Failed to generate ${options.type} "${options.name}"`)
     throw error

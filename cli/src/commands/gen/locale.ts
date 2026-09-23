@@ -1,12 +1,12 @@
 export const SUPPORTED_LOCALES = {
-  'de': 'German',
+  de: 'German',
   'en-US': 'English (US)',
   'es-ES': 'Spanish',
-  'fr': 'French',
-  'ja': 'Japanese',
-  'ko': 'Korean',
+  fr: 'French',
+  ja: 'Japanese',
+  ko: 'Korean',
   'pt-BR': 'Portuguese (Brazil)',
-  'ru': 'Russian',
+  ru: 'Russian',
   'zh-CN': 'Chinese (Simplified)',
   'zh-TW': 'Chinese (Traditional)',
 } as const

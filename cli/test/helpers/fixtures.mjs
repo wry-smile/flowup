@@ -1,4 +1,3 @@
-/* eslint-disable antfu/no-import-dist */
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { lstat, mkdir, mkdtemp, readdir, readFile, readlink, rm, writeFile } from 'node:fs/promises'
@@ -57,8 +56,8 @@ export async function createBuiltPackage({
     'utf8',
   )
   await writeJson(join(packageDir, 'package.json'), {
-    'name': name,
-    'version': '1.0.0',
+    name: name,
+    version: '1.0.0',
     'node-red': {
       ...nodeRed,
       nodes: prefixEntryPaths(nodeRed.nodes),
@@ -66,11 +65,11 @@ export async function createBuiltPackage({
     },
   })
   await writeJson(join(distDir, 'package.json'), {
-    'name': name,
-    'version': '1.0.0',
-    'dependencies': dependencies,
-    'peerDependencies': peerDependencies,
-    'optionalDependencies': optionalDependencies,
+    name: name,
+    version: '1.0.0',
+    dependencies: dependencies,
+    peerDependencies: peerDependencies,
+    optionalDependencies: optionalDependencies,
     'node-red': nodeRed,
   })
 
@@ -101,8 +100,7 @@ export async function createBuiltPackage({
   await writeFileMap(join(distDir, 'icons'), icons)
   await writeFileMap(join(distDir, 'locales'), locales)
 
-  if (manifest)
-    await writeFlowupArtifactManifest(distDir, 'test')
+  if (manifest) await writeFlowupArtifactManifest(distDir, 'test')
 
   return { packageDir, distDir }
 }
@@ -117,9 +115,9 @@ export async function createBuildFixture({
   const cliEntryUrl = pathToFileURL(resolve(import.meta.dirname, '../../dist/index.js')).href
   await mkdir(rootDir, { recursive: true })
   await writeJson(join(rootDir, 'package.json'), {
-    'name': `flowup-${scope}`,
-    'version': '1.0.0',
-    'type': 'module',
+    name: `flowup-${scope}`,
+    version: '1.0.0',
+    type: 'module',
     'node-red': {
       scope,
       nodes: {
@@ -148,8 +146,7 @@ export async function createBuildFixture({
 }
 
 export async function snapshotDirectory(rootDir) {
-  if (!existsSync(rootDir))
-    return null
+  if (!existsSync(rootDir)) return null
 
   const entries = []
   await walk(rootDir, rootDir, entries)
@@ -196,8 +193,7 @@ async function writeTextFile(filePath, content) {
 }
 
 function prefixEntryPaths(entries) {
-  if (!entries)
-    return undefined
+  if (!entries) return undefined
   return Object.fromEntries(
     Object.entries(entries).map(([name, entryPath]) => [name, `dist/${entryPath}`]),
   )
