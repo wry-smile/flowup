@@ -35,7 +35,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/node-red": "catalog:",
-    "@wry-smile/flowup": "workspace:*",
+    "@wry-smile/flowup": "catalog:",
     "@wry-smile/utils": "catalog:",
     "bumpp": "catalog:",
     "node-red": "catalog:",

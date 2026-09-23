@@ -5,7 +5,5 @@
     "source.fixAll.oxc": "explicit",
     "source.organizeImports": "never"
   },
-  "cSpell.words": [
-    "Flowup"
-  ]
+  "cSpell.words": ["Flowup"]
 }

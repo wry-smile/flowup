@@ -1,37 +1,37 @@
 minimumReleaseAgeExclude:
   - '@types/node@26.0.1'
-
 shellEmulator: true
-
 trustPolicy: no-downgrade
-
 packages:
   - cli
-  - examples/nodes/*
-  - examples/plugins/*
-
+  - examples/*
 overrides:
   '@wry-smile/flowup': link:./cli
-
-catalog:
-  '@clack/prompts': ^1.6.0
-  '@types/js-yaml': ^4.0.9
-  '@types/micromatch': ^4.0.10
-  '@types/node': ^26.0.1
-  '@types/node-red': ^1.3.5
-  '@vitejs/plugin-vue': ^6.0.7
-  '@wry-smile/utils': ^1.1.3
-  bumpp: ^11.1.0
-  commander: ^15.0.0
-  find-up: ^8.0.0
-  js-yaml: ^5.1.0
-  micromatch: ^4.0.8
-  node-red: ^5.0.0
-  oxfmt: ^0.70.0
-  oxlint: ^1.85.0
-  tsdown: ^0.22.3
-  typescript: ^6.0.3
-  vite: ^8.1.0
-
 allowBuilds:
   esbuild: false
+catalog:
+  '@clack/prompts': ^1.8.1
+  '@types/jquery': ^4.0.1
+  '@types/js-yaml': ^4.0.9
+  '@types/micromatch': ^4.0.10
+  '@types/node': ^26.6.2
+  '@types/node-red': ^1.3.5
+  '@unocss/core': ^66.10.5
+  '@unocss/preset-wind4': ^66.10.5
+  '@vitejs/plugin-vue': ^6.0.9
+  '@wry-smile/flowup': ^2.0.0
+  '@wry-smile/utils': ^1.1.3
+  bumpp: ^12.3.0
+  chokidar: ^5.0.0
+  commander: ^15.0.0
+  find-up: ^8.0.0
+  js-yaml: ^5.4.2
+  micromatch: ^4.0.8
+  node-red: ^5.0.7
+  oxfmt: ^0.70.0
+  oxlint: ^1.85.0
+  tsdown: ^0.23.0
+  typescript: ^6.0.3
+  unocss: ^66.10.5
+  vite: ^8.3.0
+  vue: ^3.5.43
