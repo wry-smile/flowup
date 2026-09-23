@@ -41,8 +41,6 @@
   },
   "files": [
     "README.md",
-    "README.zh-CN.md",
-    "docs",
     "dist",
     "skills"
   ],

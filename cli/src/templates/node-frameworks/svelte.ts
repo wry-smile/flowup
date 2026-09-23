@@ -13,13 +13,13 @@ export function renderSvelteNodeClient(ctx: TemplateContext): string {
   return `import { mount, unmount } from "svelte";
 ${ctx.unocss ? 'import "virtual:uno.css";\n' : ''}import App from "./App.svelte";
 import { useHydrateStore } from "./hydrate";
-import { NODE_NAME, NODE_PALETTE_LABEL } from "../constant";
+import { NODE_NAME, NODE_PALETTE_LABEL, NODE_SCOPE } from "../constant";
 
 let app: ReturnType<typeof mount> | undefined;
 
 function getMountTarget(): HTMLElement | null {
   return document.querySelector(
-    \`[data-flowup-scope="\${NODE_NAME}"].flowup-svelte-root\`,
+    \`[data-flowup-scope="\${NODE_SCOPE}"].flowup-svelte-root\`,
   ) as HTMLElement | null;
 }
 

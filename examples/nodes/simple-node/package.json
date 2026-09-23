@@ -1,0 +1,38 @@
+{
+  "name": "flowup-simple-node",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "A Node-RED node built with Flowup.",
+  "license": "MIT",
+  "keywords": [
+    "node-red",
+    "flowup",
+    "node-red-node"
+  ],
+  "main": "./dist/simple-node.js",
+  "files": [
+    "dist",
+    "resources"
+  ],
+  "scripts": {
+    "build": "flowup build",
+    "dev": "flowup dev"
+  },
+  "devDependencies": {
+    "@types/jquery": "^4.0.1",
+    "@types/node-red": "^1.3.5",
+    "@wry-smile/flowup": "^2.0.0",
+    "node-red": "^4.1.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.0",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "vue": "^3.5.39",
+    "unocss": "^66.10.5"
+  },
+  "node-red": {
+    "scope": "simple-node",
+    "nodes": {
+      "simple-node": "dist/simple-node.js"
+    }
+  }
+}

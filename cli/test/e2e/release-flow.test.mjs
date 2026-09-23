@@ -39,7 +39,6 @@ test(
     assertTarballFiles(cliPack, [
       'LICENSE',
       'README.md',
-      'README.zh-CN.md',
       'dist/bin/flowup.js',
       'dist/index.d.ts',
       'dist/index.js',

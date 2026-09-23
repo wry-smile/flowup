@@ -1,5 +1,6 @@
 export const TEMPLATE_DEPENDENCY_VERSIONS = {
   '@types/jquery': '^4.0.1',
+  '@types/node': '^26.0.1',
   '@types/node-red': '^1.3.5',
   'node-red': '^4.1.0',
   '@vitejs/plugin-vue': '^6.0.7',

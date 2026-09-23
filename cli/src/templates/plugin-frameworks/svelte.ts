@@ -12,14 +12,14 @@ export function renderSveltePluginFiles(ctx: TemplateContext): FileMap {
 export function renderSveltePluginClient(ctx: TemplateContext): string {
   return `import { mount } from "svelte";
 ${ctx.unocss ? 'import "virtual:uno.css";\n' : ''}import App from "./App.svelte";
-import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME } from "../constant";
+import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME, PLUGIN_SCOPE } from "../constant";
 
 RED.plugins.registerPlugin(PLUGIN_NAME, {
   onadd() {
     if (RED.sidebar.containsTab(PLUGIN_NAME)) return;
 
     const target = document.createElement("div");
-    target.dataset.flowupScope = PLUGIN_NAME;
+    target.dataset.flowupScope = PLUGIN_SCOPE;
     target.className = "flowup-svelte-root";
     RED.sidebar.addTab({
       id: PLUGIN_NAME,

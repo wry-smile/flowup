@@ -35,13 +35,15 @@ Use a kebab-case name beginning with a letter. Valid examples include `my-node` 
 
 Supported package types are `node` and `plugin`. Supported client frameworks are `vanilla`, `vue`, and `svelte`; scoped UnoCSS applies only to Vue and Svelte templates.
 
+For multiple nodes or plugins in one package, run `flowup gen` and select the multi-entry wizard, or run `flowup gen package my-package`, enter that directory, then run `flowup gen add node sensor --framework vue --unocss` or `flowup gen add plugin dashboard`. Running `flowup gen` inside a generated multi-entry package opens the add-entry wizard. Flowup discovers `nodes/*/` and `plugins/*/` automatically; no entries manifest or config list is needed. Each child follows the single-entry layout with `runtime/index.ts`, `client/index.ts`, `client/editor.html`, `constant/`, `types/`, `icons/`, `resources/`, and `locales/`. Entries in the same group share one runtime bundle and one generated editor HTML. Framework dependencies and declarations are added only when a matching entry is generated; see the packaged `README.md`.
+
 ## Scoped Framework Styles
 
 Vue and Svelte templates mount as ordinary framework apps. With `--unocss`, the generated `flowup.config.ts` adds `UnoCSS({ presets: [presetFlowupWind4({ scope: '<package-name>' })] })`, and the client imports `virtual:uno.css`. Keep the mount root's `data-flowup-scope` value equal to the preset scope. Add the same attribute to the root of any teleported overlay outside that container.
 
-The preset scopes generated utilities, reset, and theme variables and namespaces generated `@property` names and animation keyframes. It does not isolate package-authored global CSS or `@font-face`; handle those explicitly if added. Avoid building utility names only through runtime string concatenation; use statically extractable classes or UnoCSS safelist entries. See `packages/nodes/simple-node` for a Vue example and scoped CSS tests.
+The preset scopes generated utilities, reset, and theme variables and namespaces generated `@property` names and animation keyframes. It does not isolate package-authored global CSS or `@font-face`; handle those explicitly if added. Avoid building utility names only through runtime string concatenation; use statically extractable classes or UnoCSS safelist entries.
 
-For migrations from an existing scoped editor or detailed UnoCSS setup, use the packaged `flowup-unocss` skill and `docs/unocss-migration.md`.
+For detailed UnoCSS setup, use the packaged `flowup-unocss` skill.
 
 ## Configure And Build
 

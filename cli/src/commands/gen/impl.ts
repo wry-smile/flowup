@@ -8,12 +8,14 @@ import * as p from '@clack/prompts'
 import { resolveCliVersion } from '../../share/cli-pkg'
 import { isInMonorepo } from '../../share/monorepo'
 import { parseBool } from '../../share/paths'
+import { selectOrExit } from '../../share/prompts'
 import { commitStagedDirectory, createStagingDir, isPathInside } from '../../share/safe-fs'
 import { nodeTemplate } from '../../templates/node'
 import { pluginTemplate } from '../../templates/plugin'
 import { collectMissing } from './collect'
 import { createContext } from './context'
 import { SUPPORTED_LOCALES } from './locale'
+import { isMultiEntryPackage, runAddEntryGenerator, runMultiPackageGenerator } from './multi'
 
 export type GenType = 'node' | 'plugin'
 
@@ -61,6 +63,33 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
     vue: rawOptions.vue ?? envOptions.vue,
     unocss: rawOptions.unocss ?? envOptions.unocss,
     nonInteractive: rawOptions.nonInteractive,
+  }
+
+  const bareInteractive =
+    !options.nonInteractive &&
+    options.type === undefined &&
+    options.name === undefined &&
+    options.locales === undefined &&
+    options.framework === undefined &&
+    options.vue === undefined &&
+    options.unocss === undefined
+  if (bareInteractive) {
+    if (isMultiEntryPackage()) {
+      await runAddEntryGenerator()
+      return
+    }
+    const kind = await selectOrExit<'single' | 'multi'>({
+      message: 'What do you want to generate?',
+      options: [
+        { value: 'single', label: 'Single node or plugin package' },
+        { value: 'multi', label: 'Package with multiple nodes and plugins' },
+      ],
+      initialValue: 'single',
+    })
+    if (kind === 'multi') {
+      await runMultiPackageGenerator()
+      return
+    }
   }
 
   if (!options.framework && options.vue !== undefined)

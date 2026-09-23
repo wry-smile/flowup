@@ -4,7 +4,7 @@ import type { FlowupConfig, FlowupNodeRedDevConfig } from '../../sdk/define-conf
 import type { DevCommandOptions } from './command'
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import process from 'node:process'
@@ -30,8 +30,8 @@ export async function runDev(options: DevCommandOptions = {}): Promise<void> {
 
   const initialConfig = await loadFlowupConfig(configFile)
   const packageRoot = resolve(dirname(configFile), initialConfig.root ?? '.')
-  const declaredDist = resolve(packageRoot, initialConfig.outDir ?? 'dist')
-  await resolvePreviewSettings(configFile, packageRoot, declaredDist)
+  validateNodeRedConfig(initialConfig.nodeRed ?? {})
+  resolveNodeRedEntry(packageRoot)
   const dist = await runBuild({ cwd, config: configFile, mode: 'all' })
 
   await new DevPreview(cwd, configFile, packageRoot, dist).start()
@@ -68,6 +68,8 @@ class DevPreview {
     this.watcher = watch([this.packageRoot, this.configFile], {
       ignoreInitial: true,
       atomic: true,
+      usePolling: true,
+      interval: 500,
       ignored: path => this.shouldIgnore(path),
     })
     this.watcher.on('all', (event, path) => {
@@ -240,6 +242,8 @@ async function resolvePreviewSettings(
   const nodeRed = flowup.nodeRed ?? {}
   validateNodeRedConfig(nodeRed)
   const redEntry = resolveNodeRedEntry(packageRoot)
+  const coreNodesDir = dirname(createRequire(redEntry).resolve('@node-red/nodes'))
+  const nodesIncludes = [...collectCoreNodeFileNames(coreNodesDir), basename(dist)]
   const userDir = resolve(packageRoot, nodeRed.userDir ?? '.flowup/node-red')
   const settingsFile = nodeRed.settingsFile
     ? resolve(dirname(configFile), nodeRed.settingsFile)
@@ -249,7 +253,15 @@ async function resolvePreviewSettings(
   if (isInside(dist, userDir))
     throw new Error('nodeRed.userDir must be outside the build output directory.')
 
-  const args = [redEntry, '--userDir', userDir, '-D', `nodesDir=${JSON.stringify(dist)}`]
+  const args = [
+    redEntry,
+    '--userDir',
+    userDir,
+    '-D',
+    `nodesDir=${JSON.stringify(dist)}`,
+    '-D',
+    `nodesIncludes=${JSON.stringify(nodesIncludes)}`,
+  ]
   if (settingsFile) args.push('--settings', settingsFile)
   if (nodeRed.port !== undefined) args.push('--port', String(nodeRed.port))
   if (nodeRed.host) args.push('-D', `uiHost=${JSON.stringify(nodeRed.host)}`)
@@ -262,6 +274,25 @@ async function resolvePreviewSettings(
     userDir,
     url: `http://${nodeRed.host ?? '127.0.0.1'}:${nodeRed.port ?? 1880}/`,
   }
+}
+
+function collectCoreNodeFileNames(root: string): string[] {
+  const names = new Set<string>()
+  const visit = (dir: string): void => {
+    const entries = readdirSync(dir, { withFileTypes: true })
+    const entryNames = new Set(entries.map(entry => entry.name))
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (!['node_modules', 'icons', 'locales', 'examples', 'test'].includes(entry.name))
+          visit(join(dir, entry.name))
+      } else if (entry.isFile() && /\.c?js$/.test(entry.name)) {
+        const template = entry.name.replace(/\.c?js$/, '.html')
+        if (entryNames.has(template)) names.add(entry.name)
+      }
+    }
+  }
+  visit(root)
+  return [...names].sort()
 }
 
 function validateNodeRedConfig(config: FlowupNodeRedDevConfig): void {

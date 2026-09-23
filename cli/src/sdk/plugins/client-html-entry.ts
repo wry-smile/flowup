@@ -8,7 +8,8 @@ type OutputChunk = Rolldown.OutputChunk
 
 export interface FlowupClientHtmlEntryPluginOptions {
   name: string
-  template: string
+  template?: string
+  templates?: string[]
   preservedAssetDirectories?: string[]
 }
 
@@ -18,8 +19,14 @@ export function flowupClientHtmlEntryPlugin(options: FlowupClientHtmlEntryPlugin
     apply: 'build',
     enforce: 'post',
     generateBundle(_, bundle) {
-      const templatePath = path.resolve(options.template)
-      const template = existsSync(templatePath) ? readFileSync(templatePath, 'utf8') : ''
+      const templatePaths = options.templates ?? (options.template ? [options.template] : [])
+      const template = templatePaths
+        .map(file => {
+          const templatePath = path.resolve(file)
+          if (!existsSync(templatePath)) this.error(`Client template not found: ${templatePath}`)
+          return readFileSync(templatePath, 'utf8').trim()
+        })
+        .join('\n\n')
       const entryChunk = findEntryChunk(bundle, options.name)
       if (!entryChunk) {
         this.error(`Client entry chunk not found: ${options.name}`)

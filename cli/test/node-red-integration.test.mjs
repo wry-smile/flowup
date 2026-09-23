@@ -6,7 +6,7 @@ import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
 import { pathToFileURL } from 'node:url'
-import { runAssemble } from '../dist/index.js'
+import { runAssemble } from '../dist/internal.js'
 import { createBuiltPackage, createTemporaryRoot, writeJson } from './helpers/fixtures.mjs'
 
 test(

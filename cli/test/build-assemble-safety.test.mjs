@@ -12,7 +12,7 @@ import {
   readFlowupArtifact,
   runAssemble,
   writeFlowupArtifactManifest,
-} from '../dist/index.js'
+} from '../dist/internal.js'
 
 test('assemble output rejects both parent and child overlap with a source package', async () => {
   const rootDir = await mkdtemp(join(tmpdir(), 'flowup-safe-path-'))

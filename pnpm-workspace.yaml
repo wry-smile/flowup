@@ -7,8 +7,8 @@ trustPolicy: no-downgrade
 
 packages:
   - cli
-  - packages/nodes/**
-  - packages/plugins/**
+  - examples/nodes/*
+  - examples/plugins/*
 
 overrides:
   '@wry-smile/flowup': link:./cli

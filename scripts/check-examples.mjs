@@ -6,12 +6,12 @@ import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
-import { runAssemble, runBuild } from '../cli/dist/index.js'
+import { runAssemble, runBuild } from '../cli/dist/internal.js'
 
 const execFileAsync = promisify(execFile)
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const nodeDir = join(rootDir, 'packages/nodes/simple-node')
-const pluginDir = join(rootDir, 'packages/plugins/simple-plugin')
+const nodeDir = join(rootDir, 'examples/nodes/simple-node')
+const pluginDir = join(rootDir, 'examples/plugins/simple-plugin')
 const temporaryDir = await mkdtemp(join(tmpdir(), 'flowup-examples-'))
 const outputDir = join(temporaryDir, 'assembled')
 

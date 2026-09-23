@@ -1,11 +1,11 @@
 import type { UserConfig } from 'vite'
-import type { FlowupConfig } from '../../sdk/define-config'
+import type { FlowupConfig, FlowupEntryGroup } from '../../sdk/define-config'
 import { existsSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { build, loadConfigFromFile } from 'vite'
-import { resolveFlowupViteConfig } from '../../sdk/define-config'
+import { getFlowupEntryGroups, resolveFlowupViteConfig } from '../../sdk/define-config'
 import { resolveCliVersion } from '../../share/cli-pkg'
 import { writeFlowupArtifactManifest } from '../../share/flowup-artifact'
 import { findViteConfig } from '../../share/monorepo'
@@ -26,9 +26,9 @@ interface ModeBuildPlan {
 }
 
 interface BuildPlan {
-  editor: ModeBuildPlan
+  editor: ModeBuildPlan[]
   finalOutDir: string
-  runtime: ModeBuildPlan
+  runtime: ModeBuildPlan[]
 }
 
 interface FlowupUserConfig extends UserConfig {
@@ -49,37 +49,58 @@ export async function runBuild(options: BuildOptions = {}): Promise<string> {
     return plan.finalOutDir
   }
 
-  const plan = await loadModeBuildPlan(cwd, configFile, mode)
-  await runPartialBuild(plan, mode)
-  return resolve(plan.rootDir, '.flowup', mode)
+  const groups = await loadBuildGroups(configFile)
+  const plans = await Promise.all(
+    groups.map(group => loadModeBuildPlan(cwd, configFile, mode, group)),
+  )
+  await runPartialBuild(plans, mode)
+  return resolve(plans[0].rootDir, '.flowup', mode)
 }
 
 async function resolveBuildPlan(cwd: string, configFile: string): Promise<BuildPlan> {
-  const runtime = await loadModeBuildPlan(cwd, configFile, 'runtime')
-  const editor = await loadModeBuildPlan(cwd, configFile, 'editor')
+  const groups = await loadBuildGroups(configFile)
+  const runtime = await Promise.all(
+    groups.map(group => loadModeBuildPlan(cwd, configFile, 'runtime', group)),
+  )
+  const editor = await Promise.all(
+    groups.map(group => loadModeBuildPlan(cwd, configFile, 'editor', group)),
+  )
 
-  if (runtime.rootDir !== editor.rootDir) {
-    throw new Error(
-      `Runtime and editor builds must use the same root directory: ${runtime.rootDir} vs ${editor.rootDir}`,
-    )
+  if ([...runtime, ...editor].some(plan => plan.rootDir !== runtime[0].rootDir)) {
+    throw new Error('Runtime and editor builds must use the same root directory.')
   }
-  if (runtime.outDir !== editor.outDir) {
-    throw new Error(
-      `Runtime and editor builds must use the same output directory: ${runtime.outDir} vs ${editor.outDir}`,
-    )
+  if ([...runtime, ...editor].some(plan => plan.outDir !== runtime[0].outDir)) {
+    throw new Error('Runtime and editor builds must use the same output directory.')
   }
 
   return {
     editor,
-    finalOutDir: runtime.outDir,
+    finalOutDir: runtime[0].outDir,
     runtime,
   }
+}
+
+async function loadBuildGroups(configFile: string): Promise<(FlowupEntryGroup | undefined)[]> {
+  const loadedConfig = await loadConfigFromFile(
+    { command: 'build', mode: 'runtime', isSsrBuild: true, isPreview: false },
+    configFile,
+    dirname(configFile),
+    'silent',
+    undefined,
+    'runner',
+  )
+  if (!loadedConfig) throw new Error(`Unable to load Flowup/Vite config: ${configFile}`)
+  const flowup = (loadedConfig.config as FlowupUserConfig).flowup
+  if (!flowup) return [undefined]
+  const groups = getFlowupEntryGroups(flowup, dirname(configFile))
+  return groups.length ? groups : [undefined]
 }
 
 async function loadModeBuildPlan(
   cwd: string,
   configFile: string,
   mode: Exclude<BuildMode, 'all'>,
+  group?: FlowupEntryGroup,
 ): Promise<ModeBuildPlan> {
   const loadedConfig = await loadConfigFromFile(
     {
@@ -99,7 +120,7 @@ async function loadModeBuildPlan(
 
   const loaded = loadedConfig.config as FlowupUserConfig
   const config = loaded.flowup
-    ? resolveFlowupViteConfig(loaded.flowup, mode, dirname(configFile))
+    ? resolveFlowupViteConfig(loaded.flowup, mode, dirname(configFile), group)
     : loaded
   const rootDir = resolve(loaded.flowup ? dirname(configFile) : cwd, config.root ?? '.')
   const outDir = resolve(rootDir, config.build?.outDir ?? 'dist')
@@ -147,8 +168,9 @@ async function runTransactionalBuild(plan: BuildPlan): Promise<void> {
   const stagingDir = await createStagingDir(plan.finalOutDir)
 
   try {
-    await runViteBuild(plan.runtime.config, 'runtime', stagingDir, true)
-    await runViteBuild(plan.editor.config, 'editor', stagingDir, false)
+    for (const [index, runtime] of plan.runtime.entries())
+      await runViteBuild(runtime.config, 'runtime', stagingDir, index === 0)
+    for (const editor of plan.editor) await runViteBuild(editor.config, 'editor', stagingDir, false)
     await writeFlowupArtifactManifest(stagingDir, resolveCliVersion())
     await commitStagedDirectory(stagingDir, plan.finalOutDir)
   } catch (error) {
@@ -158,14 +180,15 @@ async function runTransactionalBuild(plan: BuildPlan): Promise<void> {
 }
 
 async function runPartialBuild(
-  plan: ModeBuildPlan,
+  plans: ModeBuildPlan[],
   mode: Exclude<BuildMode, 'all'>,
 ): Promise<void> {
-  const outputDir = resolve(plan.rootDir, '.flowup', mode)
+  const outputDir = resolve(plans[0].rootDir, '.flowup', mode)
   const stagingDir = await createStagingDir(outputDir)
 
   try {
-    await runViteBuild(plan.config, mode, stagingDir, true)
+    for (const [index, plan] of plans.entries())
+      await runViteBuild(plan.config, mode, stagingDir, index === 0)
     await commitStagedDirectory(stagingDir, outputDir)
   } catch (error) {
     await rm(stagingDir, { recursive: true, force: true })

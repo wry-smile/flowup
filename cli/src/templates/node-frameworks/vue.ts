@@ -12,13 +12,13 @@ export function renderVueNodeClient(ctx: TemplateContext): string {
   return `import { createApp, type App as VueApp } from "vue";
 ${ctx.unocss ? 'import "virtual:uno.css";\n' : ''}import App from "./App.vue";
 import { useHydrateStore } from "./hydrate";
-import { NODE_NAME, NODE_PALETTE_LABEL } from "../constant";
+import { NODE_NAME, NODE_PALETTE_LABEL, NODE_SCOPE } from "../constant";
 
 let app: VueApp | undefined;
 
 function getMountTarget(): HTMLElement | null {
   return document.querySelector(
-    \`[data-flowup-scope="\${NODE_NAME}"].flowup-vue-root\`,
+    \`[data-flowup-scope="\${NODE_SCOPE}"].flowup-vue-root\`,
   );
 }
 

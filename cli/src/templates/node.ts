@@ -262,6 +262,7 @@ function renderTsconfigNode(): string {
 
 function renderConstants(ctx: TemplateContext): string {
   return `export const NODE_NAME = "${ctx.name}";
+export const NODE_SCOPE = "${ctx.name}";
 export const NODE_PALETTE_LABEL = "${ctx.name}";
 `
 }

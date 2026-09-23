@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
-import { runGenerator } from '../dist/index.js'
+import { runGenerator } from '../dist/internal.js'
 import { createTemporaryRoot } from './helpers/fixtures.mjs'
 
 test('generator rejects invalid and escaping names before writing files', async t => {

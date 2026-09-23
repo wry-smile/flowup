@@ -11,7 +11,7 @@ import {
   readFlowupArtifact,
   runAssemble,
   runBuild,
-} from '../dist/index.js'
+} from '../dist/internal.js'
 import {
   createBuildFixture,
   createBuiltPackage,

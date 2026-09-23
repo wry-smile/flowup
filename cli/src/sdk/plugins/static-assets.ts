@@ -6,6 +6,7 @@ import process from 'node:process'
 export interface FlowupStaticAssetsPluginOptions {
   cwd?: string
   dirs: string[]
+  mappedDirs?: Array<{ dir: string; outDir: string }>
 }
 
 export function flowupStaticAssetsPlugin(options: FlowupStaticAssetsPluginOptions): Plugin {
@@ -14,13 +15,17 @@ export function flowupStaticAssetsPlugin(options: FlowupStaticAssetsPluginOption
     apply: 'build',
     generateBundle() {
       const cwd = path.resolve(options.cwd ?? process.cwd())
-      for (const dir of options.dirs) {
+      const sources = [
+        ...options.dirs.map(dir => ({ dir, outDir: dir })),
+        ...(options.mappedDirs ?? []),
+      ]
+      for (const { dir, outDir } of sources) {
         const absDir = path.resolve(cwd, dir)
         if (!existsSync(absDir)) continue
 
         for (const file of walkFiles(absDir)) {
           const relFromDir = path.relative(absDir, file)
-          const relPath = normalizePath(path.join(dir, relFromDir))
+          const relPath = normalizePath(path.join(outDir, relFromDir))
           this.emitFile({
             type: 'asset',
             fileName: relPath,

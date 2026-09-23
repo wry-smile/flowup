@@ -24,6 +24,7 @@ export function pluginTemplate(ctx: TemplateContext): FileMap {
     'types/index.ts': renderTypes(ctx),
     'runtime/index.ts': renderRuntime(),
     'client/index.ts': renderClientEntry(ctx),
+    'client/editor.html': renderEditorHtml(ctx),
     ...renderFrameworkFiles(ctx),
     'types/globals.d.ts': renderClientGlobals(),
     'icons/.gitkeep': renderGitkeep('Palette icons for the plugin UI.'),
@@ -57,8 +58,7 @@ function renderIconsReadme(): string {
 Palette icons for this plugin. flowup build copies this directory into
 \`dist/icons/\` automatically.
 
-Reference icons from \`client/index.ts\` or \`client/editor.html\` using
-\`icons/\` (relative path).
+Reference icons from \`client/index.ts\` using \`icons/\` (relative path).
 `
 }
 
@@ -71,7 +71,7 @@ Node-RED (since 1.3) serves any file in this directory under
 For a scoped module (\`@scope/foo\`), the path becomes
 \`/resources/@scope/foo/<file>\`.
 
-Reference from your \`client/editor.html\` / \`client/help.html\` with
+Reference resources from your plugin client or \`client/editor.html\` with
 **relative** URLs (no leading \`/\`):
 
 \`\`\`html
@@ -207,6 +207,7 @@ function renderTsconfigNode(): string {
 
 function renderConstants(ctx: TemplateContext): string {
   return `export const PLUGIN_NAME = "${ctx.name}";
+export const PLUGIN_SCOPE = "${ctx.name}";
 export const PLUGIN_TAG_NAME = "flowup-${ctx.name}-plugin";
 export const PLUGIN_DISPLAY_NAME = "${ctx.properName}";
 `
@@ -247,6 +248,12 @@ RED.plugins.registerPlugin(PLUGIN_NAME, {
   onadd() {
   },
 });
+`
+}
+
+function renderEditorHtml(ctx: TemplateContext): string {
+  return `<!-- Flowup includes this template in the plugin's generated Node-RED editor HTML. -->
+<!-- Add editor markup for ${ctx.name} here. Flowup bundles client/index.ts into the same HTML file. -->
 `
 }
 

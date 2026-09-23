@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import test from 'node:test'
-import { normalizeArtifactPath, readFlowupArtifact, runAssemble } from '../dist/index.js'
+import { normalizeArtifactPath, readFlowupArtifact, runAssemble } from '../dist/internal.js'
 import { createBuiltPackage, createTemporaryRoot, snapshotDirectory } from './helpers/fixtures.mjs'
 
 test('assemble preserves nested entries and merges supported dependency groups', async t => {

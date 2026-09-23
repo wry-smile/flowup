@@ -7,6 +7,11 @@ export interface FlowupPackagePluginOptions {
   name: string
   cwd?: string
   type?: 'nodes' | 'plugins'
+  main?: string
+  entries?: {
+    nodes?: Record<string, string>
+    plugins?: Record<string, string>
+  }
   extra?: Record<string, unknown>
 }
 
@@ -27,7 +32,7 @@ export function flowupPackagePlugin(options: FlowupPackagePluginOptions): Plugin
         license: srcPkg.license ?? 'ISC',
         keywords: normalizeKeywords(srcPkg.keywords),
         type: 'commonjs',
-        main: `./${options.name}.js`,
+        main: `./${options.main ?? `${options.name}.js`}`,
         dependencies: srcPkg.dependencies,
         peerDependencies: srcPkg.peerDependencies,
         optionalDependencies: srcPkg.optionalDependencies,
@@ -60,12 +65,18 @@ function normalizeNodeRedField(
 ): Record<string, unknown> {
   if (nodeRed && typeof nodeRed === 'object') {
     const value = nodeRed as Record<string, unknown>
+    if (options.entries) {
+      const { nodes: _nodes, plugins: _plugins, ...metadata } = value
+      return { ...metadata, ...options.entries }
+    }
     return {
       ...value,
       ...normalizeEntryGroup(value.nodes, 'nodes'),
       ...normalizeEntryGroup(value.plugins, 'plugins'),
     }
   }
+
+  if (options.entries) return options.entries
 
   return {
     [options.type ?? 'nodes']: {

@@ -3,12 +3,53 @@ import type { GenOptions } from './impl'
 import process from 'node:process'
 import { hasArgvFlag, parseBool, parseCsvList, stripQuotes } from '../../share/paths'
 import { runGenerator } from './impl'
+import { addMultiEntry, runAddEntryGenerator, runMultiPackageGenerator } from './multi'
 
 export function registerGenCommand(program: Command): void {
-  program
-    .command('gen')
+  const gen = program.command('gen')
+  gen
+    .command('package [name]')
+    .description('Create a package for multiple nodes and plugins')
+    .action(async name => {
+      try {
+        await runMultiPackageGenerator(name)
+      } catch (error) {
+        console.error('Generator failed:', error)
+        process.exitCode = 1
+      }
+    })
+
+  gen
+    .command('add [type] [name]')
+    .description('Add a node or plugin to a generated multi-entry package')
+    .option('--framework <framework>', 'vanilla, svelte, or vue')
+    .option('--unocss', 'Import scoped UnoCSS in a Vue or Svelte entry')
+    .action(async (type, name, options, command: Command) => {
+      const parentOptions = command.parent?.opts() ?? {}
+      try {
+        const entry = {
+          type,
+          name,
+          framework: parentOptions.framework ?? options.framework,
+          locales: hasArgvFlag('--locales')
+            ? (parseCsvList(parentOptions.locales as string | undefined) as GenOptions['locales'])
+            : undefined,
+          unocss:
+            parentOptions.unocss === undefined
+              ? options.unocss
+              : (parseBool(parentOptions.unocss) ?? true),
+        }
+        if (type && name) await addMultiEntry(entry)
+        else await runAddEntryGenerator(entry)
+      } catch (error) {
+        console.error('Generator failed:', error)
+        process.exitCode = 1
+      }
+    })
+
+  gen
     .description(
-      'Scaffold a new Node-RED node or plugin in the current directory (cd into target dir first).',
+      'Interactively scaffold a single-entry or multi-entry Node-RED package, or add an entry.',
     )
     .option('--type <type>', 'Type to generate: node or plugin', value => {
       if (value !== 'node' && value !== 'plugin')

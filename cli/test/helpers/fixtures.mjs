@@ -4,7 +4,7 @@ import { lstat, mkdir, mkdtemp, readdir, readFile, readlink, rm, writeFile } fro
 import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { writeFlowupArtifactManifest } from '../../dist/index.js'
+import { writeFlowupArtifactManifest } from '../../dist/internal.js'
 
 export async function createTemporaryRoot(testContext, prefix = 'flowup-test-') {
   const rootDir = await mkdtemp(join(tmpdir(), prefix))
