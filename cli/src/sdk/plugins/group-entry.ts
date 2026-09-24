@@ -1,4 +1,5 @@
 import type { Plugin } from 'vite'
+import { readFileSync } from 'node:fs'
 
 export interface FlowupGroupEntry {
   runtime: string
@@ -13,9 +14,14 @@ export function flowupGroupEntryPlugin(
 ): Plugin {
   const id = `virtual:flowup-${kind}-${group}`
   const resolvedId = `\0${id}`
+  const clients = new Set(entries.map(entry => entry.client))
+  const hasUnoCSS =
+    kind === 'editor' &&
+    entries.some(entry => readFileSync(entry.client, 'utf8').includes('virtual:uno.css'))
 
   return {
     name: `flowup-${kind}-${group}-entry`,
+    enforce: 'pre',
     resolveId(source) {
       if (source === id) return resolvedId
     },
@@ -23,7 +29,10 @@ export function flowupGroupEntryPlugin(
       if (source !== resolvedId) return
 
       if (kind === 'editor') {
-        return entries.map(entry => `import ${JSON.stringify(entry.client)};`).join('\n')
+        return [
+          ...(hasUnoCSS ? ["import 'virtual:uno.css';"] : []),
+          ...entries.map(entry => `import ${JSON.stringify(entry.client)};`),
+        ].join('\n')
       }
 
       const imports = entries.map(
@@ -33,6 +42,11 @@ export function flowupGroupEntryPlugin(
       return [...imports, 'export default function initGroup(RED) {', ...registrations, '}'].join(
         '\n',
       )
+    },
+    transform(source, file) {
+      if (kind !== 'editor' || !clients.has(file)) return
+      const code = source.replace(/import\s*['"]virtual:uno\.css['"]\s*;?/g, '')
+      return code === source ? undefined : code
     },
   }
 }

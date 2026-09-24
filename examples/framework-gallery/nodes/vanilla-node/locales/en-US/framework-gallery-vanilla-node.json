@@ -1,0 +1,9 @@
+{
+  "framework-gallery-vanilla-node": {
+    "label": {
+      "name": "Name",
+      "placeholder": "Enter a display name",
+      "hint": "Shared runtime adds a trace ID and timestamp."
+    }
+  }
+}

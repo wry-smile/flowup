@@ -14,6 +14,7 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../.
 const cliDir = join(repositoryRoot, 'cli')
 const probeScript = join(repositoryRoot, 'cli/test/helpers/node-red-probe.mjs')
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
 
 test(
   'published CLI drives gen, build, assemble, pack, install, and Node-RED load',
@@ -86,6 +87,8 @@ test(
         'e2e-plugin',
         '--locales',
         'en-US',
+        '--framework',
+        'vanilla',
         '--non-interactive',
       ],
       { cwd: componentsDir },
@@ -203,7 +206,7 @@ test(
 
 async function packPackage(packageDir, packDir) {
   await mkdir(packDir, { recursive: true })
-  const { stdout } = await run(npmCommand, ['pack', '--json', '--pack-destination', packDir], {
+  const { stdout } = await run(pnpmCommand, ['pack', '--json', '--pack-destination', packDir], {
     cwd: packageDir,
   })
   const parsedResult = JSON.parse(stdout)
@@ -215,7 +218,7 @@ async function packPackage(packageDir, packDir) {
   assert.ok(result?.filename, `npm pack returned no filename for ${packageDir}`)
   return {
     ...result,
-    tarball: join(packDir, result.filename),
+    tarball: resolve(packDir, result.filename),
   }
 }
 

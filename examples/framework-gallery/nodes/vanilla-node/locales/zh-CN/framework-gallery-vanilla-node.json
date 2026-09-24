@@ -1,0 +1,9 @@
+{
+  "framework-gallery-vanilla-node": {
+    "label": {
+      "name": "名称",
+      "placeholder": "输入显示名称",
+      "hint": "共享运行时代码会添加追踪 ID 和时间戳。"
+    }
+  }
+}

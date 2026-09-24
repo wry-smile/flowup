@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["vite/client", "node", "jquery"],
+    "allowArbitraryExtensions": true,
+    "paths": {
+      "@/*": ["./*"],
+      "@shared/*": ["./shared/*"],
+      "@client-shared/*": ["./client-shared/*"],
+      "@runtime-shared/*": ["./runtime-shared/*"]
+    }
+  },
+  "exclude": [
+    "nodes/preact-node/client/**/*.tsx",
+    "nodes/solid-node/client/**/*.tsx",
+    "plugins/gallery-plugin/client/**/*.tsx"
+  ],
+  "include": [
+    "flowup.config.ts",
+    "nodes/**/*.ts",
+    "nodes/**/*.tsx",
+    "plugins/**/*.ts",
+    "plugins/**/*.tsx",
+    "client-shared/**/*",
+    "runtime-shared/**/*",
+    "shared/**/*",
+    "types/**/*.d.ts",
+    "nodes/**/*.vue",
+    "plugins/**/*.vue",
+    "nodes/**/*.svelte",
+    "plugins/**/*.svelte"
+  ]
+}

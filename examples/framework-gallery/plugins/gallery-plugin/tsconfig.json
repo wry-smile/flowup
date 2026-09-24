@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "jsxImportSource": "preact"
+  },
+  "exclude": [],
+  "include": [
+    "client/**/*.ts",
+    "client/**/*.tsx",
+    "constant/**/*.ts",
+    "types/**/*.ts",
+    "../../types/globals.d.ts",
+    "../../client-shared/**/*.ts",
+    "../../shared/**/*.ts"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "entry": "vanilla-node",
+  "framework": "vanilla",
+  "features": [
+    "i18n",
+    "icons",
+    "resources",
+    "shared code"
+  ]
+}

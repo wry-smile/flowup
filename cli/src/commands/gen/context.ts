@@ -1,7 +1,7 @@
 import type { LocaleCode } from './locale'
 import { toProperCase } from '../../share/paths'
 
-export type ClientFramework = 'vanilla' | 'svelte' | 'vue'
+export type ClientFramework = 'vanilla' | 'svelte' | 'vue' | 'preact' | 'solid'
 
 export interface TemplateContext {
   name: string
@@ -12,6 +12,8 @@ export interface TemplateContext {
   clientFramework: ClientFramework
   vue: boolean
   svelte: boolean
+  preact: boolean
+  solid: boolean
   unocss: boolean
 }
 
@@ -39,6 +41,8 @@ export function createContext(opts: CreateContextOptions): TemplateContext {
     clientFramework,
     vue: clientFramework === 'vue',
     svelte: clientFramework === 'svelte',
+    preact: clientFramework === 'preact',
+    solid: clientFramework === 'solid',
     unocss: opts.unocss ?? false,
   }
 }

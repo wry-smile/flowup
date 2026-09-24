@@ -55,7 +55,7 @@
     "test": "pnpm build && pnpm test:unit && pnpm test:integration",
     "test:e2e": "node --test test/e2e/*.test.mjs",
     "test:integration": "node --test test/node-red-integration.test.mjs",
-    "test:unit": "node --test test/assemble-boundaries.test.mjs test/build-assemble-failure-safety.test.mjs test/build-assemble-safety.test.mjs test/gen-safety.test.mjs",
+    "test:unit": "node --test test/assemble-boundaries.test.mjs test/build-assemble-failure-safety.test.mjs test/build-assemble-safety.test.mjs test/gen-safety.test.mjs test/framework-generation.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
@@ -74,6 +74,7 @@
     "commander": "catalog:",
     "find-up": "catalog:",
     "js-yaml": "catalog:",
+    "picocolors": "catalog:",
     "vite": "catalog:"
   },
   "devDependencies": {

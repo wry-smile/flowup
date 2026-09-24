@@ -1,0 +1,10 @@
+{
+  "entry": "svelte-node",
+  "framework": "svelte",
+  "features": [
+    "i18n",
+    "icons",
+    "resources",
+    "shared code"
+  ]
+}

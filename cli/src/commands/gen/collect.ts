@@ -1,6 +1,8 @@
 import type { ClientFramework } from './context'
 import type { GenOptions, GenResolved, GenType } from './impl'
 import type { LocaleCode } from './locale'
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { kebabCase } from '../../share/paths'
 import { confirmOrExit, multiselectOrExit, selectOrExit, textOrExit } from '../../share/prompts'
 import { DEFAULT_LOCALES, SUPPORTED_LOCALES } from './locale'
@@ -22,17 +24,7 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
   }
 
   if (options.name === undefined) {
-    const raw = await textOrExit({
-      message: `Enter the ${answers.type} name (kebab-case)?`,
-      defaultValue: '',
-      placeholder: 'my-special-node',
-      validate: value => {
-        if (!value || !value.trim()) return 'Name is required'
-        if (!/^[a-z][a-z0-9-]*$/.test(value.trim()))
-          return 'Use kebab-case: lowercase letters, digits, dashes (must start with a letter)'
-        return undefined
-      },
-    })
+    const raw = await promptEntryName(answers.type!, 'my-special-node')
     answers.name = kebabCase(raw)
   } else {
     answers.name = kebabCase(options.name)
@@ -52,30 +44,59 @@ export async function collectMissing(options: GenOptions): Promise<GenResolved> 
     answers.locales = options.locales
   }
 
-  if (options.framework === undefined) {
-    answers.framework = await selectOrExit<ClientFramework>({
-      message: 'Select client framework?',
-      options: [
-        { value: 'vanilla', label: 'Vanilla' },
-        { value: 'svelte', label: 'Svelte' },
-        { value: 'vue', label: 'Vue' },
-      ],
-      initialValue: 'vanilla',
-    })
-  } else {
-    answers.framework = options.framework
-  }
-
-  if (answers.framework === 'vanilla') {
-    answers.unocss = false
-  } else if (options.unocss === undefined) {
-    answers.unocss = await confirmOrExit({
-      message: 'Use scoped UnoCSS for styling?',
-      initialValue: false,
-    })
-  } else {
-    answers.unocss = options.unocss
-  }
+  const styling = await collectClientOptions(options)
+  answers.framework = styling.framework
+  answers.unocss = styling.unocss
 
   return answers as GenResolved
+}
+
+export async function promptEntryName(
+  kind: string,
+  placeholder: string,
+  roots?: string | string[],
+): Promise<string> {
+  return textOrExit({
+    message: `Enter the ${kind} name (kebab-case)`,
+    placeholder,
+    validate(value) {
+      const name = value?.trim()
+      if (!name) return 'Name is required'
+      if (!/^[a-z][a-z0-9-]*$/.test(name))
+        return 'Use kebab-case: lowercase letters, digits, and dashes.'
+      if (
+        roots &&
+        (Array.isArray(roots) ? roots : [roots]).some(root => existsSync(resolve(root, name)))
+      )
+        return `${kind} "${name}" already exists. Choose another name.`
+      return undefined
+    },
+  })
+}
+
+export async function collectClientOptions(
+  options: Pick<GenOptions, 'framework' | 'unocss'>,
+): Promise<{ framework: ClientFramework; unocss: boolean }> {
+  const framework =
+    options.framework ??
+    (await selectOrExit<ClientFramework>({
+      message: 'Select client framework',
+      options: [
+        { value: 'vanilla', label: 'Vanilla' },
+        { value: 'vue', label: 'Vue' },
+        { value: 'svelte', label: 'Svelte' },
+        { value: 'preact', label: 'Preact' },
+        { value: 'solid', label: 'Solid' },
+      ],
+      initialValue: 'vanilla',
+    }))
+  const unocss =
+    framework === 'vanilla'
+      ? false
+      : (options.unocss ??
+        (await confirmOrExit({
+          message: 'Use scoped UnoCSS for styling?',
+          initialValue: false,
+        })))
+  return { framework, unocss }
 }

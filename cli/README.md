@@ -18,8 +18,8 @@ Options:
 - `--type <node|plugin>`
 - `--name <kebab-case>`
 - `--locales <csv>`
-- `--framework <vanilla|svelte|vue>`
-- `--unocss [bool]` for scoped UnoCSS in Vue or Svelte templates
+- `--framework <vanilla|vue|svelte|preact|solid>`
+- `--unocss [bool]` for scoped UnoCSS in framework templates
 - `--non-interactive`
 
 If required options are missing, Flowup switches to interactive prompts.
@@ -30,9 +30,10 @@ For a Vue node with scoped atomic CSS:
 flowup gen --type node --name my-node --framework vue --unocss --non-interactive
 ```
 
-The same options work for a plugin or with `--framework svelte`. The generated
-Vue and Svelte clients mount inside a `data-flowup-scope` container. `--unocss` installs UnoCSS Wind4 and configures
-`presetFlowupWind4({ scope: 'my-node' })` in `flowup.config.ts`.
+The same options work for a plugin or with `--framework svelte`, `preact`, or `solid`. The generated
+framework clients mount inside a `data-flowup-scope` container. `--unocss` sets
+`UnoCSS({ presets: [presetFlowupWind4({ scope })] })` in `client.plugins`. The generated package owns the `unocss` dependency, so you can choose a compatible version.
+The preset needs `scope` explicitly because UnoCSS creates presets before Flowup resolves `defineConfig`.
 
 To generate several nodes or plugins in one package:
 
@@ -54,9 +55,13 @@ Flowup discovers `nodes/*/` and `plugins/*/` automatically. No entries manifest 
 
 Flowup reports a missing `client/editor.html` during the editor build.
 
-`gen add` updates the package's Node-RED mappings. When adding directories manually, update those mappings as well. The package initially has only common dependencies and TypeScript settings; adding a Vue, Svelte, or UnoCSS entry adds its required dependencies, declarations, and file patterns. Same-group framework and shared browser code is bundled once. Use `shared/`, `runtime-shared/`, and `client-shared/` for common code; modules used by both groups may appear in both bundles. Node types and plugin IDs use `<scope>-<entry-name>`, so entry names must be distinct across `nodes/` and `plugins/`.
+`gen add` updates Node-RED mappings, framework dependencies, and the generated `flowup.config.ts` after each entry. If you customized the config, Flowup preserves it and prints a suggested configuration. Run `pnpm install` after adding an entry. The generated config uses entry directory lists for Preact and Solid and sets aliases for `@` (package root), `@shared`, `@client-shared`, and `@runtime-shared`; the root `tsconfig.json` uses matching paths. Same-group framework and shared browser code is bundled once. Modules used by both groups may appear in both bundles. Node types and plugin IDs use `<scope>-<entry-name>`, so entry names must be distinct across `nodes/` and `plugins/`. TSX entries use `client/index.tsx` and a child `tsconfig.json` with their `jsxImportSource`. Preact TSX uses an explicit `preact({ include: [...] })` plugin. The generated package declares `@preact/preset-vite`; the package manager resolves its Babel peer dependency.
 
-Child `icons/` and `resources/` are emitted under `dist/icons/<entry-name>/` and `dist/resources/<entry-name>/`; locales are emitted under `dist/locales/`. Root asset directories are supported too.
+See [framework-gallery](../examples/framework-gallery/README.md) for a generated package with all five node frameworks, a Preact plugin, shared code, i18n, icons, resources, and scoped UnoCSS.
+
+Framework templates include `client/i18n.ts`, which uses `createEditorI18n(RED, '<package>/<node-red-entry>', NODE_NAME)` (or `PLUGIN_NAME`) to translate keys such as `t('label.name')` inside Vue, Svelte, Preact, and Solid components. Define those keys in each entry's `locales/<locale>/<entry>.json`; grouped builds merge the child catalogs into the group catalog Node-RED reads. Update the package and entry namespace if you rename either field in `package.json`.
+
+Child icon files are emitted flat under `dist/icons/` with the entry name prepended. For example, `nodes/sensor/icons/status.svg` becomes `dist/icons/sensor-status.svg`; set the Node-RED `icon` field to `sensor-status.svg`. Child resources remain under `dist/resources/<entry-name>/`. Child locale catalogs and help files are combined into `dist/locales/<locale>/<scope>-nodes.{json,html}` or `<scope>-plugins.{json,html}` for Node-RED's grouped entries. Root asset directories are supported too.
 
 Set `entries` in `flowup.config.ts` only to override paths or attach entry-specific Vite plugins. An explicit `entries` object replaces directory discovery. Package-level `client.plugins` and `runtime.config.plugins` apply to their respective builds; `clientPlugins` and `runtimePlugins` apply to the whole entry group, so filter files inside the plugin when needed.
 
@@ -115,7 +120,7 @@ development dependency.
 
 ```bash
 pnpm dev
-# or: flowup dev --cwd examples/nodes/my-node
+# or: flowup dev --cwd examples/my-node
 ```
 
 Configure the preview in `flowup.config.ts`:
@@ -178,7 +183,7 @@ export default defineConfig({
     output: 'dist/node-red-assemble',
     name: 'node-red-my-assemble',
     version: '1.0.0',
-    packages: ['examples/nodes/foo', 'examples/plugins/bar'],
+    packages: ['examples/foo', 'examples/bar'],
     skipBuild: false,
   },
 })
@@ -230,7 +235,7 @@ export default defineConfig({
 
 ### Scoped UnoCSS
 
-The generated editor imports `virtual:uno.css` and mounts under
+Each generated framework editor imports `virtual:uno.css` when UnoCSS is selected. Flowup deduplicates these imports in a multi-entry build. Framework apps mount under
 `data-flowup-scope="my-node"`. The Flowup Wind4 preset prefixes generated
 utility selectors with that scope, limits its reset and theme variables to the
 container, and gives generated `@property` registrations and animation
@@ -291,6 +296,6 @@ repository metadata before publishing your own package.
 - `createHydrateStore(...)`
 - `createVueHydrateStore(...)`
 
-Vue and Svelte templates use `presetFlowupWind4({ scope })` and mount inside a
-`data-flowup-scope` container. Flowup scopes the CSS produced by this preset;
+Framework templates configure `unocss/vite` with `presetFlowupWind4({ scope })` and mount inside a
+`data-flowup-scope` container. Flowup scopes the CSS using the package scope;
 custom global CSS remains the package author's responsibility.

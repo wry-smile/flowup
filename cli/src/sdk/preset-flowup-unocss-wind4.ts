@@ -2,6 +2,7 @@ import type { CSSProcessor } from '@unocss/core'
 import { presetWind4 } from '@unocss/preset-wind4'
 
 export interface FlowupWind4Options {
+  /** UnoCSS constructs presets before Flowup resolves defineConfig, so pass the same scope explicitly. */
   scope: string
 }
 

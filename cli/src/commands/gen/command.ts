@@ -14,7 +14,7 @@ export function registerGenCommand(program: Command): void {
       try {
         await runMultiPackageGenerator(name)
       } catch (error) {
-        console.error('Generator failed:', error)
+        console.error(`Generator failed: ${error instanceof Error ? error.message : String(error)}`)
         process.exitCode = 1
       }
     })
@@ -22,8 +22,8 @@ export function registerGenCommand(program: Command): void {
   gen
     .command('add [type] [name]')
     .description('Add a node or plugin to a generated multi-entry package')
-    .option('--framework <framework>', 'vanilla, svelte, or vue')
-    .option('--unocss', 'Import scoped UnoCSS in a Vue or Svelte entry')
+    .option('--framework <framework>', 'vanilla, svelte, vue, preact, or solid')
+    .option('--unocss', 'Import scoped UnoCSS in a framework entry')
     .action(async (type, name, options, command: Command) => {
       const parentOptions = command.parent?.opts() ?? {}
       try {
@@ -39,10 +39,16 @@ export function registerGenCommand(program: Command): void {
               ? options.unocss
               : (parseBool(parentOptions.unocss) ?? true),
         }
-        if (type && name) await addMultiEntry(entry)
+        if (
+          type &&
+          name &&
+          entry.framework !== undefined &&
+          (entry.framework === 'vanilla' || entry.unocss !== undefined)
+        )
+          await addMultiEntry(entry)
         else await runAddEntryGenerator(entry)
       } catch (error) {
-        console.error('Generator failed:', error)
+        console.error(`Generator failed: ${error instanceof Error ? error.message : String(error)}`)
         process.exitCode = 1
       }
     })
@@ -58,11 +64,17 @@ export function registerGenCommand(program: Command): void {
     })
     .option('--name <name>', 'Name of the node or plugin (kebab-case)')
     .option('--locales <locales>', 'Comma-separated list of locales (e.g., en-US,zh-CN)')
-    .option('--framework <framework>', 'Client framework: vanilla, svelte, or vue', value => {
-      if (value !== 'vanilla' && value !== 'svelte' && value !== 'vue')
-        throw new Error(`--framework must be "vanilla", "svelte", or "vue", got "${value}"`)
-      return value
-    })
+    .option(
+      '--framework <framework>',
+      'Client framework: vanilla, svelte, vue, preact, or solid',
+      value => {
+        if (!['vanilla', 'svelte', 'vue', 'preact', 'solid'].includes(value))
+          throw new Error(
+            `--framework must be vanilla, svelte, vue, preact, or solid, got "${value}"`,
+          )
+        return value
+      },
+    )
     .option(
       '--vue [bool]',
       'Deprecated compatibility option. Use --framework=vue or --framework=vanilla instead.',
@@ -70,7 +82,7 @@ export function registerGenCommand(program: Command): void {
     )
     .option(
       '--unocss [bool]',
-      'Enable scoped UnoCSS for Svelte or Vue templates. Pass --unocss=false to disable.',
+      'Enable scoped UnoCSS for framework templates. Pass --unocss=false to disable.',
       value => value,
     )
     .option(
@@ -83,7 +95,7 @@ export function registerGenCommand(program: Command): void {
         const resolved = toGenOptions(options)
         await runGenerator(resolved)
       } catch (error) {
-        console.error('Generator failed:', error)
+        console.error(`Generator failed: ${error instanceof Error ? error.message : String(error)}`)
         process.exitCode = 1
       }
     })

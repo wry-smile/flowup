@@ -5,6 +5,7 @@ import process from 'node:process'
 import { mergeConfig, defineConfig as viteDefineConfig } from 'vite'
 import { flowupClientHtmlEntryPlugin } from './plugins/client-html-entry'
 import { flowupGroupEntryPlugin, type FlowupGroupEntry } from './plugins/group-entry'
+import { flowupGroupLocalesPlugin } from './plugins/group-locales'
 import { flowupPackagePlugin } from './plugins/package'
 import { flowupStaticAssetsPlugin } from './plugins/static-assets'
 
@@ -145,7 +146,7 @@ export function resolveFlowupViteConfig(
     : path.resolve(root, config.runtime?.entry ?? 'runtime/index.ts')
   const clientEntry = group
     ? `virtual:flowup-editor-${group}`
-    : path.resolve(root, config.client?.entry ?? 'client/index.ts')
+    : path.resolve(root, config.client?.entry ?? defaultClientEntryPath(root, 'client'))
   const clientTemplates = group
     ? groupEntries.map(entry => entry.template)
     : [path.resolve(root, config.client?.template ?? 'client/editor.html')]
@@ -233,12 +234,25 @@ export function resolveFlowupViteConfig(
               dirs: ['icons', 'resources', 'locales'],
               mappedDirs: group
                 ? Object.keys(entries?.[group] ?? {}).flatMap(name => [
-                    { dir: `${group}/${name}/icons`, outDir: `icons/${name}` },
+                    {
+                      dir: `${group}/${name}/icons`,
+                      outDir: 'icons',
+                      fileNamePrefix: `${name}-`,
+                    },
                     { dir: `${group}/${name}/resources`, outDir: `resources/${name}` },
-                    { dir: `${group}/${name}/locales`, outDir: 'locales' },
                   ])
                 : [],
             }),
+            ...(group
+              ? [
+                  flowupGroupLocalesPlugin(
+                    root,
+                    group,
+                    entryName,
+                    Object.keys(entries?.[group] ?? {}),
+                  ),
+                ]
+              : []),
           ],
         },
         config.client?.config ?? {},
@@ -274,7 +288,7 @@ function resolveGroupEntries(
       ),
       client: path.resolve(
         root,
-        entry.client ?? defaultEntryPath(root, `${base}/client/index.ts`, `${base}/editor.ts`),
+        entry.client ?? defaultClientEntryPath(root, `${base}/client`, `${base}/editor.ts`),
       ),
       template: resolveEntryTemplate(root, base, entry.template),
     }
@@ -293,6 +307,13 @@ function defaultEntryPath(root: string, preferred: string, legacy: string): stri
   return existsSync(path.resolve(root, preferred)) || !existsSync(path.resolve(root, legacy))
     ? preferred
     : legacy
+}
+
+function defaultClientEntryPath(root: string, base: string, legacy?: string): string {
+  for (const file of [`${base}/index.ts`, `${base}/index.tsx`]) {
+    if (existsSync(path.resolve(root, file))) return file
+  }
+  return legacy && existsSync(path.resolve(root, legacy)) ? legacy : `${base}/index.ts`
 }
 
 function createPackageEntries(

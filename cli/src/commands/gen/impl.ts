@@ -14,6 +14,7 @@ import { nodeTemplate } from '../../templates/node'
 import { pluginTemplate } from '../../templates/plugin'
 import { collectMissing } from './collect'
 import { createContext } from './context'
+import { showGenerationGuide } from './feedback'
 import { SUPPORTED_LOCALES } from './locale'
 import { isMultiEntryPackage, runAddEntryGenerator, runMultiPackageGenerator } from './multi'
 
@@ -95,9 +96,12 @@ export async function runGenerator(rawOptions: GenOptions = {}): Promise<void> {
   if (!options.framework && options.vue !== undefined)
     options.framework = options.vue ? 'vue' : 'vanilla'
 
-  if (options.framework && !['vanilla', 'svelte', 'vue'].includes(options.framework))
+  if (
+    options.framework &&
+    !['vanilla', 'svelte', 'vue', 'preact', 'solid'].includes(options.framework)
+  )
     throw new Error(
-      `Invalid --framework: ${options.framework}. Must be "vanilla", "svelte", or "vue".`,
+      `Invalid --framework: ${options.framework}. Must be vanilla, svelte, vue, preact, or solid.`,
     )
 
   if (options.type && options.type !== 'node' && options.type !== 'plugin')
@@ -187,10 +191,11 @@ async function doGenerate(options: GenResolved): Promise<void> {
   }
 
   spinner.stop(`Generated ${Object.keys(files).length} files in ${baseDir}`)
-  p.log.step('Next steps:')
-  p.log.info(`  cd ${options.name}`)
-  p.log.info('  pnpm install')
-  p.log.info('  pnpm build')
+  showGenerationGuide(
+    `${options.type === 'node' ? 'Node' : 'Plugin'} ready`,
+    [baseDir],
+    [`cd ${options.name}`, 'pnpm install', 'pnpm build'],
+  )
 }
 
 function validateGeneratorName(value: string): string {

@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
-import { cp, mkdir } from 'node:fs/promises'
+import { cp, mkdir, symlink } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 import test from 'node:test'
 import { pathToFileURL } from 'node:url'
-import { runAssemble } from '../dist/internal.js'
+import { runAssemble, runBuild } from '../dist/internal.js'
 import { createBuiltPackage, createTemporaryRoot, writeJson } from './helpers/fixtures.mjs'
 
 test(
@@ -82,6 +82,18 @@ test(
     await cp(standaloneDistDir, join(userDir, 'node_modules', 'single-node-package'), {
       recursive: true,
     })
+    const galleryDir = resolve(import.meta.dirname, '../../examples/framework-gallery')
+    await runBuild({ cwd: galleryDir, mode: 'all' })
+    await cp(join(galleryDir, 'dist'), join(userDir, 'node_modules', 'flowup-framework-gallery'), {
+      recursive: true,
+    })
+    for (const dependency of ['date-fns', 'nanoid']) {
+      await symlink(
+        join(galleryDir, 'node_modules', dependency),
+        join(userDir, 'node_modules', dependency),
+        process.platform === 'win32' ? 'junction' : 'dir',
+      )
+    }
     await writeJson(join(userDir, 'package.json'), {
       name: 'flowup-node-red-integration',
       version: '1.0.0',
@@ -89,6 +101,7 @@ test(
       dependencies: {
         [assembleName]: '1.0.0',
         'single-node-package': '1.0.0',
+        'flowup-framework-gallery': '1.0.0',
       },
     })
 
@@ -138,6 +151,8 @@ test(
     assert.equal(typeof RED.nodes.getType('node-a'), 'function')
     assert.equal(typeof RED.nodes.getType('node-b'), 'function')
     assert.equal(typeof RED.nodes.getType('single-node'), 'function')
+    for (const framework of ['vanilla', 'vue', 'svelte', 'preact', 'solid'])
+      assert.equal(typeof RED.nodes.getType(`framework-gallery-${framework}-node`), 'function')
 
     const nodeList = await fetchJson(`${baseUrl}/nodes`, {
       headers: { accept: 'application/json' },
@@ -158,6 +173,13 @@ test(
     })
     assert.ok(
       pluginList.some(plugin => plugin.module === assembleName && plugin.name === 'plugin-a'),
+    )
+    assert.ok(
+      pluginList.some(
+        plugin =>
+          plugin.module === 'flowup-framework-gallery' &&
+          plugin.name === 'framework-gallery-plugins',
+      ),
     )
     const pluginConfig = await fetchText(`${baseUrl}/plugins/${assembleName}/plugin-a`)
     assert.match(pluginConfig, /data-flowup-plugin="plugin-a"/)
@@ -180,6 +202,24 @@ test(
       await fetchText(`${baseUrl}/resources/single-node-package/single.txt`),
       'resource-from-single-package\n',
     )
+
+    const galleryEditor = await fetchText(
+      `${baseUrl}/nodes/flowup-framework-gallery/framework-gallery-nodes`,
+    )
+    assert.match(galleryEditor, /framework-gallery-solid-node/)
+    assert.match(galleryEditor, /data-flowup-scope="framework-gallery"/)
+    assert.match(
+      await fetchText(`${baseUrl}/resources/flowup-framework-gallery/preact-node/badge.svg`),
+      /<svg/,
+    )
+    assert.match(
+      await fetchText(`${baseUrl}/icons/flowup-framework-gallery/solid-node-solid.svg`),
+      /<svg/,
+    )
+    const galleryMessages = await fetchJson(
+      `${baseUrl}/nodes/flowup-framework-gallery/framework-gallery-nodes/messages?lng=zh-CN`,
+    )
+    assert.equal(galleryMessages['framework-gallery-vanilla-node'].label.name, '名称')
   },
 )
 

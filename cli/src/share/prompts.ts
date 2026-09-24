@@ -6,15 +6,15 @@ function handleCancel<T>(value: T | symbol): T {
     p.cancel('Cancelled by user.')
     process.exit(0)
   }
-  return value
+  return value as T
 }
 
 export function textOrExit(options: Parameters<typeof p.text>[0]): Promise<string> {
-  return p.text(options).then(handleCancel)
+  return p.text(options).then(handleCancel<string>)
 }
 
 export function confirmOrExit(options: Parameters<typeof p.confirm>[0]): Promise<boolean> {
-  return p.confirm(options).then(handleCancel)
+  return p.confirm(options).then(handleCancel<boolean>)
 }
 
 export function selectOrExit<T>(options: Parameters<typeof p.select>[0]): Promise<T> {

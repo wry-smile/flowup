@@ -2,6 +2,10 @@ import type { FileMap, TemplateContext } from '../commands/gen/context'
 import {
   getFrameworkDevDependencies,
   getFrameworkVitePluginSetup,
+  getClientEntryPath,
+  renderFrameworkI18n,
+  isPreactFramework,
+  isSolidFramework,
   isSvelteFramework,
   isVueFramework,
   renderFrameworkReadmeLines,
@@ -9,6 +13,8 @@ import {
 import { getBaseTemplateDevDependencies } from './dependency-versions'
 import { renderMitLicense } from './license'
 import { renderSveltePluginClient, renderSveltePluginFiles } from './plugin-frameworks/svelte'
+import { renderPreactPluginClient, renderPreactPluginFiles } from './plugin-frameworks/preact'
+import { renderSolidPluginClient, renderSolidPluginFiles } from './plugin-frameworks/solid'
 import { renderVuePluginClient, renderVuePluginFiles } from './plugin-frameworks/vue'
 
 export function pluginTemplate(ctx: TemplateContext): FileMap {
@@ -18,13 +24,16 @@ export function pluginTemplate(ctx: TemplateContext): FileMap {
     LICENSE: renderMitLicense(),
     'flowup.config.ts': renderViteConfig(ctx),
     'tsconfig.json': renderTsconfigRoot(),
-    'tsconfig.app.json': renderTsconfigApp(),
+    'tsconfig.app.json': renderTsconfigApp(ctx),
     'tsconfig.node.json': renderTsconfigNode(),
     'constant/index.ts': renderConstants(ctx),
     'types/index.ts': renderTypes(ctx),
     'runtime/index.ts': renderRuntime(),
-    'client/index.ts': renderClientEntry(ctx),
+    [getClientEntryPath(ctx)]: renderClientEntry(ctx),
     'client/editor.html': renderEditorHtml(ctx),
+    ...(ctx.clientFramework !== 'vanilla'
+      ? { 'client/i18n.ts': renderFrameworkI18n(ctx, 'plugin') }
+      : {}),
     ...renderFrameworkFiles(ctx),
     'types/globals.d.ts': renderClientGlobals(),
     'icons/.gitkeep': renderGitkeep('Palette icons for the plugin UI.'),
@@ -34,7 +43,7 @@ export function pluginTemplate(ctx: TemplateContext): FileMap {
     ),
     'resources/README.md': renderResourcesReadme(),
     ...ctx.locales.reduce<FileMap>((acc, locale) => {
-      acc[`locales/${locale}/${ctx.name}.json`] = renderLocaleJson()
+      acc[`locales/${locale}/${ctx.name}.json`] = renderLocaleJson(ctx, locale)
       return acc
     }, {}),
     'README.md': renderReadme(ctx),
@@ -58,7 +67,7 @@ function renderIconsReadme(): string {
 Palette icons for this plugin. flowup build copies this directory into
 \`dist/icons/\` automatically.
 
-Reference icons from \`client/index.ts\` using \`icons/\` (relative path).
+Reference icons from \`client/index.ts\` using the icon filename only.
 `
 }
 
@@ -125,15 +134,22 @@ ${devDependencies}
 function renderViteConfig(ctx: TemplateContext): string {
   const { imports, plugins } = getFrameworkVitePluginSetup(ctx)
   const importBlock = imports.length ? `${imports.join('\n')}\n\n` : ''
-  const clientBlock = plugins.length
-    ? `  client: {\n    plugins: [${plugins.join(', ')}],\n  },`
-    : ''
+  const clientOptions = [
+    ...(plugins.length ? [`    plugins: [${plugins.join(', ')}],`] : []),
+    '    config: { resolve: { alias: sharedAlias } },',
+  ]
+  const clientBlock = clientOptions.length ? `  client: {\n${clientOptions.join('\n')}\n  },` : ''
 
-  return `${importBlock}import { defineConfig } from '@wry-smile/flowup'
+  return `${importBlock}import { defineConfig${ctx.unocss ? ', presetFlowupWind4' : ''} } from '@wry-smile/flowup'
+import { fileURLToPath } from 'node:url'
+
+const scope = '${ctx.name}'
+const sharedAlias = { '@': fileURLToPath(new URL('.', import.meta.url)) }
 
 export default defineConfig({
-  scope: '${ctx.name}',
+  scope,
   type: 'plugins',
+  runtime: { config: { resolve: { alias: sharedAlias } } },
 ${clientBlock}
 })
 `
@@ -150,7 +166,7 @@ function renderTsconfigRoot(): string {
 `
 }
 
-function renderTsconfigApp(): string {
+function renderTsconfigApp(ctx: TemplateContext): string {
   return `{
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
@@ -158,7 +174,8 @@ function renderTsconfigApp(): string {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": [
+    "paths": { "@/*": ["./*"] },
+${isPreactFramework(ctx) || isSolidFramework(ctx) ? `    "jsx": "preserve",\n    "jsxImportSource": "${isPreactFramework(ctx) ? 'preact' : 'solid-js'}",\n` : ''}    "types": [
       "vite/client",
       "jquery"
     ],
@@ -189,6 +206,7 @@ function renderTsconfigNode(): string {
     "lib": ["ES2023"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "paths": { "@/*": ["./*"] },
     "types": ["node"],
     "noEmit": true,
     "verbatimModuleSyntax": true,
@@ -241,6 +259,8 @@ export default function pluginInit(RED: NodeAPI): void {
 function renderClientEntry(ctx: TemplateContext): string {
   if (isVueFramework(ctx)) return renderVuePluginClient(ctx)
   if (isSvelteFramework(ctx)) return renderSveltePluginClient(ctx)
+  if (isPreactFramework(ctx)) return renderPreactPluginClient(ctx)
+  if (isSolidFramework(ctx)) return renderSolidPluginClient(ctx)
 
   return `import { PLUGIN_NAME } from "../constant";
 
@@ -260,6 +280,8 @@ function renderEditorHtml(ctx: TemplateContext): string {
 function renderFrameworkFiles(ctx: TemplateContext): FileMap {
   if (isVueFramework(ctx)) return renderVuePluginFiles(ctx)
   if (isSvelteFramework(ctx)) return renderSveltePluginFiles(ctx)
+  if (isPreactFramework(ctx)) return renderPreactPluginFiles(ctx)
+  if (isSolidFramework(ctx)) return renderSolidPluginFiles(ctx)
   return {}
 }
 
@@ -278,11 +300,17 @@ export {};
 `
 }
 
-function renderLocaleJson(): string {
-  return `{
-
-}
-`
+function renderLocaleJson(ctx: TemplateContext, locale: string): string {
+  const chinese = locale === 'zh-CN'
+  return `${JSON.stringify(
+    {
+      [ctx.name]: {
+        label: { title: chinese ? '插件面板' : 'Plugin panel' },
+      },
+    },
+    null,
+    2,
+  )}\n`
 }
 
 function renderReadme(ctx: TemplateContext): string {
@@ -290,7 +318,11 @@ function renderReadme(ctx: TemplateContext): string {
     ? '- Vue sidebar plugin'
     : isSvelteFramework(ctx)
       ? '- Svelte sidebar plugin'
-      : '- Plain TypeScript plugin registration'
+      : isPreactFramework(ctx)
+        ? '- Preact sidebar plugin'
+        : isSolidFramework(ctx)
+          ? '- Solid sidebar plugin'
+          : '- Plain TypeScript plugin registration'
   const unocssLine = ctx.unocss ? '\n- UnoCSS Wind4 with a Flowup scope' : ''
 
   return `# ${ctx.name}

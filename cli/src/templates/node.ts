@@ -2,6 +2,10 @@ import type { FileMap, TemplateContext } from '../commands/gen/context'
 import {
   getFrameworkDevDependencies,
   getFrameworkVitePluginSetup,
+  getClientEntryPath,
+  renderFrameworkI18n,
+  isPreactFramework,
+  isSolidFramework,
   isSvelteFramework,
   isVueFramework,
   renderFrameworkEditorContent,
@@ -10,6 +14,8 @@ import {
 import { getBaseTemplateDevDependencies } from './dependency-versions'
 import { renderMitLicense } from './license'
 import { renderSvelteNodeClient, renderSvelteNodeFiles } from './node-frameworks/svelte'
+import { renderPreactNodeClient, renderPreactNodeFiles } from './node-frameworks/preact'
+import { renderSolidNodeClient, renderSolidNodeFiles } from './node-frameworks/solid'
 import { renderVanillaNodeClient } from './node-frameworks/vanilla'
 import { renderVueNodeClient, renderVueNodeFiles } from './node-frameworks/vue'
 
@@ -25,8 +31,11 @@ export function nodeTemplate(ctx: TemplateContext): FileMap {
     'constant/index.ts': renderConstants(ctx),
     'types/index.ts': renderTypes(ctx),
     'runtime/index.ts': renderRuntime(ctx),
-    'client/index.ts': renderClientEntry(ctx),
+    [getClientEntryPath(ctx)]: renderClientEntry(ctx),
     'client/editor.html': renderEditorHtml(ctx),
+    ...(ctx.clientFramework !== 'vanilla'
+      ? { 'client/i18n.ts': renderFrameworkI18n(ctx, 'node') }
+      : {}),
     'types/globals.d.ts': renderClientGlobals(),
     ...renderFrameworkFiles(ctx),
     'icons/.gitkeep': renderGitkeep('Palette icons referenced by client/index.ts -> icon.'),
@@ -37,7 +46,7 @@ export function nodeTemplate(ctx: TemplateContext): FileMap {
     'resources/README.md': renderResourcesReadme(),
     ...ctx.locales.reduce<FileMap>((acc, locale) => {
       acc[`locales/${locale}/${ctx.name}.html`] = renderLocaleHelpHtml(ctx)
-      acc[`locales/${locale}/${ctx.name}.json`] = renderLocaleJson()
+      acc[`locales/${locale}/${ctx.name}.json`] = renderLocaleJson(ctx, locale)
       return acc
     }, {}),
     'README.md': renderReadme(ctx),
@@ -112,7 +121,7 @@ In \`client/index.ts\`:
 
 \`\`\`ts
 RED.nodes.registerType("${ctx.name}", {
-  icon: "icons/${ctx.name}.png",
+  icon: "${ctx.name}.png",
   // ...
 })
 \`\`\`
@@ -151,14 +160,21 @@ function renderViteConfig(ctx: TemplateContext): string {
   const { imports, plugins } = getFrameworkVitePluginSetup(ctx)
 
   const importBlock = imports.length ? `${imports.join('\n')}\n\n` : ''
-  const clientBlock = plugins.length
-    ? `  client: {\n    plugins: [${plugins.join(', ')}],\n  },`
-    : ''
+  const clientOptions = [
+    ...(plugins.length ? [`    plugins: [${plugins.join(', ')}],`] : []),
+    '    config: { resolve: { alias: sharedAlias } },',
+  ]
+  const clientBlock = clientOptions.length ? `  client: {\n${clientOptions.join('\n')}\n  },` : ''
 
-  return `${importBlock}import { defineConfig } from '@wry-smile/flowup'
+  return `${importBlock}import { defineConfig${ctx.unocss ? ', presetFlowupWind4' : ''} } from '@wry-smile/flowup'
+import { fileURLToPath } from 'node:url'
+
+const scope = '${ctx.name}'
+const sharedAlias = { '@': fileURLToPath(new URL('.', import.meta.url)) }
 
 export default defineConfig({
-  scope: '${ctx.name}',
+  scope,
+  runtime: { config: { resolve: { alias: sharedAlias } } },
 ${clientBlock}
 })
 `
@@ -176,7 +192,12 @@ function renderTsconfigRoot(): string {
 }
 
 function renderTsconfigApp(ctx: TemplateContext): string {
-  if (isVueFramework(ctx) || isSvelteFramework(ctx)) {
+  if (
+    isVueFramework(ctx) ||
+    isSvelteFramework(ctx) ||
+    isPreactFramework(ctx) ||
+    isSolidFramework(ctx)
+  ) {
     return `{
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
@@ -184,13 +205,15 @@ function renderTsconfigApp(ctx: TemplateContext): string {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "strict": true,
+    "jsx": "preserve",
+${isPreactFramework(ctx) || isSolidFramework(ctx) ? `    "jsxImportSource": "${isPreactFramework(ctx) ? 'preact' : 'solid-js'}",\n` : ''}    "strict": true,
     "isolatedModules": true,
     "types": [
       "vite/client",
       "jquery"
     ],
     "allowArbitraryExtensions": true,
+    "paths": { "@/*": ["./*"] },
     "noEmit": true,
     "skipLibCheck": true
   },
@@ -215,6 +238,7 @@ function renderTsconfigApp(ctx: TemplateContext): string {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "paths": { "@/*": ["./*"] },
     "types": [
       "vite/client",
       "jquery"
@@ -244,6 +268,7 @@ function renderTsconfigNode(): string {
     "lib": ["ES2023"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "paths": { "@/*": ["./*"] },
     "types": ["node"],
     "noEmit": true,
     "verbatimModuleSyntax": true,
@@ -269,6 +294,15 @@ export const NODE_PALETTE_LABEL = "${ctx.name}";
 
 function renderTypes(ctx: TemplateContext): string {
   return `import type { EditorNodeProperties, Node, NodeDef } from "node-red";
+
+export interface ${ctx.properName}Properties {
+  name?: string;
+}
+
+export type ${ctx.properName}ClientNodeProperties = Omit<
+  EditorNodeProperties,
+  keyof ${ctx.properName}Properties
+> & ${ctx.properName}Properties;
 
 declare global {
   interface ${ctx.properName}Properties {
@@ -321,6 +355,10 @@ function renderClientEntry(ctx: TemplateContext): string {
 
   if (isSvelteFramework(ctx)) return renderSvelteNodeClient(ctx)
 
+  if (isPreactFramework(ctx)) return renderPreactNodeClient(ctx)
+
+  if (isSolidFramework(ctx)) return renderSolidNodeClient(ctx)
+
   return renderVanillaNodeClient(ctx)
 }
 
@@ -328,6 +366,10 @@ function renderFrameworkFiles(ctx: TemplateContext): FileMap {
   if (isVueFramework(ctx)) return renderVueNodeFiles(ctx)
 
   if (isSvelteFramework(ctx)) return renderSvelteNodeFiles(ctx)
+
+  if (isPreactFramework(ctx)) return renderPreactNodeFiles(ctx)
+
+  if (isSolidFramework(ctx)) return renderSolidNodeFiles(ctx)
 
   return {}
 }
@@ -363,22 +405,36 @@ function renderLocaleHelpHtml(ctx: TemplateContext): string {
 `
 }
 
-function renderLocaleJson(): string {
-  return `{
-
-}
-`
+function renderLocaleJson(ctx: TemplateContext, locale: string): string {
+  const chinese = locale === 'zh-CN'
+  return `${JSON.stringify(
+    {
+      [ctx.name]: {
+        label: {
+          name: chinese ? '名称' : 'Name',
+        },
+      },
+    },
+    null,
+    2,
+  )}\n`
 }
 
 function renderReadme(ctx: TemplateContext): string {
   const uiStackLines: string[] = []
   if (isVueFramework(ctx)) uiStackLines.push('- **Vue** (SFC, .vue files)')
   if (isSvelteFramework(ctx)) uiStackLines.push('- **Svelte** (.svelte files)')
+  if (isPreactFramework(ctx)) uiStackLines.push('- **Preact** (TSX files)')
+  if (isSolidFramework(ctx)) uiStackLines.push('- **Solid** (TSX files)')
   if (ctx.unocss) uiStackLines.push('- **UnoCSS Wind4** (scoped atomic CSS)')
   if (uiStackLines.length === 0) uiStackLines.push('- Plain HTML + TypeScript (no UI framework)')
 
   const addOnSection =
-    isVueFramework(ctx) || isSvelteFramework(ctx) || ctx.unocss
+    isVueFramework(ctx) ||
+    isSvelteFramework(ctx) ||
+    isPreactFramework(ctx) ||
+    isSolidFramework(ctx) ||
+    ctx.unocss
       ? ''
       : `
 
@@ -397,11 +453,12 @@ pnpm add -D @vitejs/plugin-vue unocss
 \`\`\`ts
 import vue from '@vitejs/plugin-vue'
 import UnoCSS from 'unocss/vite'
-import { presetFlowupWind4 } from '@wry-smile/flowup'
+import { defineConfig, presetFlowupWind4 } from '@wry-smile/flowup'
 
+const scope = '${ctx.name}'
 export default defineConfig({
-  scope: '${ctx.name}',
-  client: { plugins: [vue(), UnoCSS({ presets: [presetFlowupWind4({ scope: '${ctx.name}' })] })] },
+  scope,
+  client: { plugins: [UnoCSS({ presets: [presetFlowupWind4({ scope })] }), vue()] },
 })
 \`\`\`
 `

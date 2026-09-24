@@ -87,13 +87,14 @@ function renderSveltePluginApp(ctx: TemplateContext): string {
   return `<script lang="ts">
 import { derived } from "svelte/store";
 import { useHydrateStore } from "./hydrate";
+import { t } from "./i18n";
 const hydrateStore = useHydrateStore();
 const name = derived(hydrateStore.state, $state => $state.name ?? "${ctx.name}");
 </script>
 
 <div class="flowup-plugin-panel">
   <h3>{$name}</h3>
-  <p>Svelte plugin scaffold for ${ctx.name}.</p>
+  <p>{t('label.title')}</p>
 </div>
 
 <style>

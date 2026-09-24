@@ -61,6 +61,7 @@ function renderVuePluginApp(ctx: TemplateContext): string {
   return `<script lang="ts" setup>
 import { computed } from "vue";
 import { useHydrateStore } from "./hydrate";
+import { t } from "./i18n";
 const hydrateStore = useHydrateStore();
 const { name } = hydrateStore.refs;
 const title = computed(() => name.value || "${ctx.name}");
@@ -69,7 +70,7 @@ const title = computed(() => name.value || "${ctx.name}");
 <template>
   <div class="flowup-plugin-panel${ctx.unocss ? ' rounded-lg p-4' : ''}">
     <h3>{{ title }}</h3>
-    <p>Vue plugin scaffold for ${ctx.name}.</p>
+    <p>{{ t('label.title') }}</p>
   </div>
 </template>
 

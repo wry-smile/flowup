@@ -1,0 +1,10 @@
+{
+  "entry": "gallery-plugin",
+  "framework": "gallery",
+  "features": [
+    "i18n",
+    "icons",
+    "resources",
+    "shared code"
+  ]
+}

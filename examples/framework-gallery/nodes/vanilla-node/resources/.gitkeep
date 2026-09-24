@@ -1,0 +1,2 @@
+# Static resources served by Node-RED editor at /resources/<module>/<file>.
+# Drop your files into this directory and re-run `flowup build`.

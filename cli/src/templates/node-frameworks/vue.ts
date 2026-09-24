@@ -12,6 +12,7 @@ export function renderVueNodeClient(ctx: TemplateContext): string {
   return `import { createApp, type App as VueApp } from "vue";
 ${ctx.unocss ? 'import "virtual:uno.css";\n' : ''}import App from "./App.vue";
 import { useHydrateStore } from "./hydrate";
+import { t } from "./i18n";
 import { NODE_NAME, NODE_PALETTE_LABEL, NODE_SCOPE } from "../constant";
 
 let app: VueApp | undefined;
@@ -92,7 +93,7 @@ const title = computed(() => name.value || "${ctx.name}");
 <template>
   <div class="flowup-panel${ctx.unocss ? ' rounded-lg p-4' : ''}">
     <h3>{{ title }}</h3>
-    <p>Vue editor scaffold for ${ctx.name}.</p>
+    <p>{{ t('label.description') }}</p>
   </div>
 </template>
 

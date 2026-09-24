@@ -13,6 +13,7 @@ export function renderSvelteNodeClient(ctx: TemplateContext): string {
   return `import { mount, unmount } from "svelte";
 ${ctx.unocss ? 'import "virtual:uno.css";\n' : ''}import App from "./App.svelte";
 import { useHydrateStore } from "./hydrate";
+import { t } from "./i18n";
 import { NODE_NAME, NODE_PALETTE_LABEL, NODE_SCOPE } from "../constant";
 
 let app: ReturnType<typeof mount> | undefined;
@@ -129,7 +130,7 @@ function handleNameInput(event: Event): void {
 <div class="form-row">
   <label for="node-input-name">
     <i class="icon-tag"></i>
-    Name
+    {t('label.name')}
   </label>
   <input
     id="node-input-name"
