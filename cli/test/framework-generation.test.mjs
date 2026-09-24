@@ -55,10 +55,14 @@ for (const framework of ['preact', 'solid']) {
         await readFile(join(dir, 'tsconfig.app.json'), 'utf8'),
         new RegExp(`"jsxImportSource": "${framework === 'solid' ? 'solid-js' : 'preact'}"`),
       )
+      const hydrate = await readFile(join(dir, 'client/hydrate.ts'), 'utf8')
       assert.match(
-        await readFile(join(dir, 'client/i18n.ts'), 'utf8'),
-        new RegExp(`createEditorI18n\\(RED, 'flowup-${framework}-${type}/${framework}-${type}'`),
+        hydrate,
+        new RegExp(`createClientI18n\\(RED, 'flowup-${framework}-${type}/${framework}-${type}'`),
       )
+      assert.match(hydrate, /export const \$t =/)
+      assert.match(hydrate, /export const DEFAULT_HYDRATE_STATE/)
+      await assert.rejects(readFile(join(dir, 'client/i18n.ts'), 'utf8'))
       assert.ok(packageJson.devDependencies[framework === 'solid' ? 'vite-plugin-solid' : 'preact'])
       assert.match(await readFile(join(dir, 'flowup.config.ts'), 'utf8'), /presetFlowupWind4\(\{ scope \}\)/)
       if (framework === 'preact') assert.ok(packageJson.devDependencies['@preact/preset-vite'])
@@ -96,12 +100,16 @@ test('mixed multi-entry package keeps config explicit and gives setup instructio
     const client = await readFile(join(dir, path, 'client/index.tsx'), 'utf8')
     assert.match(client, /import ['"]virtual:uno\.css['"]/)
     assert.match(await readFile(join(dir, path, 'tsconfig.json'), 'utf8'), /jsxImportSource/)
+    const hydrate = await readFile(join(dir, path, 'client/hydrate.ts'), 'utf8')
     assert.match(
-      await readFile(join(dir, path, 'client/i18n.ts'), 'utf8'),
+      hydrate,
       new RegExp(
-        `createEditorI18n\\(RED, 'flowup-mixed-frameworks/mixed-frameworks-${path.startsWith('nodes') ? 'nodes' : 'plugins'}'`,
+        `createClientI18n\\(RED, 'flowup-mixed-frameworks/mixed-frameworks-${path.startsWith('nodes') ? 'nodes' : 'plugins'}'`,
       ),
     )
+    assert.match(hydrate, /export const \$t =/)
+    assert.match(hydrate, /export const DEFAULT_HYDRATE_STATE/)
+    await assert.rejects(readFile(join(dir, path, 'client/i18n.ts'), 'utf8'))
   }
   const config = await readFile(join(dir, 'flowup.config.ts'), 'utf8')
   assert.doesNotMatch(config, /readdirSync|readFileSync/)

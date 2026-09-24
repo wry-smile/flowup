@@ -1,7 +1,18 @@
 {
   "framework-gallery-gallery-plugin": {
     "label": {
-      "name": "Name"
+      "title": "Plugin panel",
+      "name": "Display name",
+      "features": "Explore features",
+      "description": "Explore the plugin client feature examples."
+    },
+    "panel": {
+      "configuration": "Plugin Configuration",
+      "savedOnDone": "Edit the local example state in this plugin panel",
+      "persisted": "local state",
+      "stateInspector": "State inspector",
+      "editorDraft": "Plugin panel state",
+      "doneAndDeploy": "This example state lives in the current editor session."
     }
   }
 }

@@ -5,6 +5,8 @@ export type ClientFramework = 'vanilla' | 'svelte' | 'vue' | 'preact' | 'solid'
 
 export interface TemplateContext {
   name: string
+  scope: string
+  resourceEntry: string
   properName: string
   locales: LocaleCode[]
   flowupVersion: string
@@ -21,6 +23,8 @@ export type FileMap = Record<string, string>
 
 export interface CreateContextOptions {
   name: string
+  scope?: string
+  resourceEntry?: string
   locales: LocaleCode[]
   flowupVersion: string
   inMonorepo?: boolean
@@ -34,6 +38,8 @@ export function createContext(opts: CreateContextOptions): TemplateContext {
 
   return {
     name: opts.name,
+    scope: opts.scope ?? opts.name,
+    resourceEntry: opts.resourceEntry ?? '',
     properName: toProperCase(opts.name),
     locales: opts.locales,
     flowupVersion: opts.flowupVersion,

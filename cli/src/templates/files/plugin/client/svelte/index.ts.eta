@@ -1,0 +1,25 @@
+import { mount } from 'svelte'
+<% if (it.ctx.unocss) { -%>
+import 'virtual:uno.css'
+<% } else { -%>
+import './config-panel.css'
+<% } -%>
+import App from './App.svelte'
+import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME, PLUGIN_SCOPE } from '../constant'
+
+RED.plugins.registerPlugin(PLUGIN_NAME, {
+  onadd() {
+    if (RED.sidebar.containsTab(PLUGIN_NAME)) return
+    const target = document.createElement('div')
+    target.dataset.flowupScope = PLUGIN_SCOPE
+    target.className = 'flowup-svelte-root'
+    RED.sidebar.addTab({
+      id: PLUGIN_NAME,
+      name: PLUGIN_DISPLAY_NAME,
+      label: PLUGIN_DISPLAY_NAME,
+      iconClass: 'fa fa-puzzle-piece',
+      content: target,
+    })
+    mount(App, { target })
+  },
+})

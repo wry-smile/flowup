@@ -1,0 +1,18 @@
+{
+  "<%= it.name %>": {
+    "label": {
+      "name": "<%= it.chinese ? '名称' : 'Name' %>",
+      "title": "<%= it.chinese ? '节点编辑面板' : 'Node editor' %>",
+      "features": "<%= it.chinese ? '查看功能示例' : 'Explore features' %>",
+      "description": "<%= it.chinese ? '配置节点并预览功能示例。' : 'Configure this node and explore the feature examples.' %>"
+    },
+    "panel": {
+      "configuration": "<%= it.chinese ? '节点配置' : 'Node Configuration' %>",
+      "savedOnDone": "<%= it.chinese ? 'Done 保存到流程草稿，Deploy 后持久化' : 'Node-RED saves on Done and persists on Deploy' %>",
+      "persisted": "<%= it.chinese ? '已持久化' : 'persisted' %>",
+      "stateInspector": "<%= it.chinese ? '状态检查器' : 'State inspector' %>",
+      "editorDraft": "<%= it.chinese ? 'Node-RED 编辑器草稿' : 'Node-RED editor draft' %>",
+      "doneAndDeploy": "<%= it.chinese ? 'Done 将值写入流程草稿；Deploy 后保存流程。' : 'Done writes values to the flow draft; Deploy persists the flow.' %>"
+    }
+  }
+}

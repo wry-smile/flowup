@@ -33,6 +33,22 @@
     "./client": {
       "types": "./dist/client.d.ts",
       "import": "./dist/client.js"
+    },
+    "./client/preact": {
+      "types": "./dist/client/preact.d.ts",
+      "import": "./dist/client/preact.js"
+    },
+    "./client/solid": {
+      "types": "./dist/client/solid.d.ts",
+      "import": "./dist/client/solid.js"
+    },
+    "./client/svelte": {
+      "types": "./dist/client/svelte.d.ts",
+      "import": "./dist/client/svelte.js"
+    },
+    "./client/vue": {
+      "types": "./dist/client/vue.d.ts",
+      "import": "./dist/client/vue.js"
     }
   },
   "main": "./dist/index.js",
@@ -59,9 +75,21 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
+    "@preact/signals": ">=2.0.0",
+    "solid-js": ">=1.9.0",
+    "svelte": ">=5.0.0",
     "vue": ">=3.5.0"
   },
   "peerDependenciesMeta": {
+    "@preact/signals": {
+      "optional": true
+    },
+    "solid-js": {
+      "optional": true
+    },
+    "svelte": {
+      "optional": true
+    },
     "vue": {
       "optional": true
     }
@@ -72,14 +100,17 @@
     "@unocss/preset-wind4": "catalog:",
     "chokidar": "catalog:",
     "commander": "catalog:",
+    "eta": "catalog:",
     "find-up": "catalog:",
     "js-yaml": "catalog:",
     "picocolors": "catalog:",
     "vite": "catalog:"
   },
   "devDependencies": {
+    "@preact/signals": "^2.3.1",
     "bumpp": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "unplugin-raw": "catalog:"
   }
 }

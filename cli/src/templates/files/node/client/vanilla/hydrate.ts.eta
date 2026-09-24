@@ -1,0 +1,19 @@
+import { createClientI18n, createHydrateStore } from '@wry-smile/flowup/client'
+import { <%= it.i18nConstant %> } from '../constant'
+import type { <%= it.ctx.properName %>Properties } from '../types'
+
+export const $t = createClientI18n(RED, '<%= it.i18nNamespace %>', <%= it.i18nConstant %>)
+
+export const DEFAULT_HYDRATE_STATE: <%= it.ctx.properName %>Properties = {
+    name: undefined,
+    framework: '<%= it.ctx.clientFramework[0].toUpperCase() + it.ctx.clientFramework.slice(1) %>',
+    mode: 'normal',
+    enabled: true,
+    price: 12,
+    quantity: 2,
+    items: ['<%= it.ctx.clientFramework[0].toUpperCase() + it.ctx.clientFramework.slice(1) %>', 'Vue', 'Solid'],
+}
+
+export function createVanillaHydrateStore() {
+  return createHydrateStore(DEFAULT_HYDRATE_STATE)
+}

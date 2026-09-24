@@ -19,7 +19,8 @@
   "scripts": {
     "build": "pnpm -F @wry-smile/flowup build",
     "check": "pnpm lint && pnpm typecheck && pnpm build && pnpm test:unit && pnpm test:integration && pnpm check:examples && pnpm test:e2e",
-    "check:examples": "node scripts/check-examples.mjs",
+    "check:examples": "tsx scripts/check-examples/index.ts",
+    "demo:gen": "pnpm build && tsx scripts/demo-cli-generation/index.ts",
     "gen:node": "cd examples && flowup gen --type node",
     "gen:plugin": "cd examples && flowup gen --type plugin",
     "lint": "pnpm -F @wry-smile/flowup lint",
@@ -41,6 +42,7 @@
     "node-red": "catalog:",
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }

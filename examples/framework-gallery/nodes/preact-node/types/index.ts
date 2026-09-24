@@ -2,26 +2,34 @@ import type { EditorNodeProperties, Node, NodeDef } from 'node-red'
 
 export interface FrameworkGalleryPreactNodeProperties {
   name?: string
+  framework: string
+  mode: string
+  enabled: boolean
+  price: number
+  quantity: number
+  items: string[]
 }
 
 export type FrameworkGalleryPreactNodeClientNodeProperties = Omit<
   EditorNodeProperties,
   keyof FrameworkGalleryPreactNodeProperties
-> & FrameworkGalleryPreactNodeProperties
+> &
+  FrameworkGalleryPreactNodeProperties
 
 declare global {
   interface FrameworkGalleryPreactNodeProperties {
     name?: string
+    framework: string
+    mode: string
+    enabled: boolean
+    price: number
+    quantity: number
+    items: string[]
   }
 
-  type FrameworkGalleryPreactNodeNodeDef = Omit<
-    NodeDef,
-    keyof FrameworkGalleryPreactNodeProperties
-  > &
-    FrameworkGalleryPreactNodeProperties
+  type FrameworkGalleryPreactNodeNodeDef = NodeDef & FrameworkGalleryPreactNodeProperties
 
-  type FrameworkGalleryPreactNodeNode = Omit<Node, keyof FrameworkGalleryPreactNodeProperties> &
-    FrameworkGalleryPreactNodeProperties
+  type FrameworkGalleryPreactNodeNode = Node & FrameworkGalleryPreactNodeProperties
 
   type FrameworkGalleryPreactNodeClientNodeProperties = Omit<
     EditorNodeProperties,
@@ -29,3 +37,5 @@ declare global {
   > &
     FrameworkGalleryPreactNodeProperties
 }
+
+export {}

@@ -5,5 +5,11 @@
     "source.fixAll.oxc": "explicit",
     "source.organizeImports": "never"
   },
-  "cSpell.words": ["Flowup"]
+  "cSpell.words": ["Flowup"],
+  "files.associations": {
+    "*.eta": "eta"
+  },
+  "[eta]": {
+    "editor.formatOnSave": true
+  }
 }

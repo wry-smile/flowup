@@ -1,0 +1,41 @@
+import type { EditorNodeProperties, Node, NodeDef } from 'node-red'
+
+export interface <%= it.ctx.properName %>Properties {
+  name?: string
+  framework: string
+  mode: string
+  enabled: boolean
+  price: number
+  quantity: number
+  items: string[]
+}
+
+export type <%= it.ctx.properName %>ClientNodeProperties = Omit<
+  EditorNodeProperties,
+  keyof <%= it.ctx.properName %>Properties
+> &
+  <%= it.ctx.properName %>Properties
+
+declare global {
+  interface <%= it.ctx.properName %>Properties {
+    name?: string
+    framework: string
+    mode: string
+    enabled: boolean
+    price: number
+    quantity: number
+    items: string[]
+  }
+
+  type <%= it.ctx.properName %>NodeDef = NodeDef & <%= it.ctx.properName %>Properties
+
+  type <%= it.ctx.properName %>Node = Node & <%= it.ctx.properName %>Properties
+
+  type <%= it.ctx.properName %>ClientNodeProperties = Omit<
+    EditorNodeProperties,
+    keyof <%= it.ctx.properName %>Properties
+  > &
+    <%= it.ctx.properName %>Properties
+}
+
+export {}

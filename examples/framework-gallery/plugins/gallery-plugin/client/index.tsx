@@ -5,7 +5,6 @@ import App from './App'
 import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME, PLUGIN_SCOPE } from '../constant'
 
 declare const RED: EditorRED
-
 RED.plugins.registerPlugin(PLUGIN_NAME, {
   onadd() {
     if (RED.sidebar.containsTab(PLUGIN_NAME)) return

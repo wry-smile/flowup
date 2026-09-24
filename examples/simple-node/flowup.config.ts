@@ -1,12 +1,12 @@
+import { defineConfig, presetFlowupWind4 } from '@wry-smile/flowup'
 import vue from '@vitejs/plugin-vue'
 import UnoCSS from 'unocss/vite'
-import { presetFlowupWind4 } from '@wry-smile/flowup'
 
-import { defineConfig } from '@wry-smile/flowup'
+const scope = 'simple-node'
 
 export default defineConfig({
-  scope: 'simple-node',
+  scope,
   client: {
-    plugins: [vue(), UnoCSS({ presets: [presetFlowupWind4({ scope: 'simple-node' })] })],
+    plugins: [vue(), UnoCSS({ presets: [presetFlowupWind4({ scope })] })],
   },
 })

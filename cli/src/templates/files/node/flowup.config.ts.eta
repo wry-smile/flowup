@@ -1,0 +1,41 @@
+<%
+const imports = []
+const plugins = []
+if (it.ctx.unocss) {
+  imports.push("import UnoCSS from 'unocss/vite'")
+  plugins.push('UnoCSS({ presets: [presetFlowupWind4({ scope })] })')
+}
+if (it.ctx.clientFramework === 'vue') {
+  imports.push("import vue from '@vitejs/plugin-vue'")
+  plugins.push('vue()')
+}
+if (it.ctx.clientFramework === 'svelte') {
+  imports.push("import { svelte } from '@sveltejs/vite-plugin-svelte'")
+  plugins.push('svelte()')
+}
+if (it.ctx.clientFramework === 'preact') {
+  imports.push("import { preact } from '@preact/preset-vite'")
+  plugins.push("preact({ include: ['**/client/**/*.{jsx,tsx}'] })")
+}
+if (it.ctx.clientFramework === 'solid') {
+  imports.push("import solid from 'vite-plugin-solid'")
+  plugins.push('solid()')
+}
+-%>
+import { defineConfig<%= it.ctx.unocss ? ', presetFlowupWind4' : '' %> } from '@wry-smile/flowup'
+<%= imports.join('\n') %>
+import { fileURLToPath } from 'node:url'
+
+const scope = '<%= it.ctx.name %>'
+const sharedAlias = { '@': fileURLToPath(new URL('.', import.meta.url)) }
+
+export default defineConfig({
+  scope,
+  runtime: { config: { resolve: { alias: sharedAlias } } },
+  client: {
+    plugins: [
+<%= plugins.map(plugin => '      ' + plugin).join(',\n') %><%= plugins.length ? ',' : '' %>
+    ],
+    config: { resolve: { alias: sharedAlias } },
+  },
+})

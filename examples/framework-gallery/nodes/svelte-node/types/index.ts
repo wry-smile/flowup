@@ -1,18 +1,35 @@
 import type { EditorNodeProperties, Node, NodeDef } from 'node-red'
 
+export interface FrameworkGallerySvelteNodeProperties {
+  name?: string
+  framework: string
+  mode: string
+  enabled: boolean
+  price: number
+  quantity: number
+  items: string[]
+}
+
+export type FrameworkGallerySvelteNodeClientNodeProperties = Omit<
+  EditorNodeProperties,
+  keyof FrameworkGallerySvelteNodeProperties
+> &
+  FrameworkGallerySvelteNodeProperties
+
 declare global {
   interface FrameworkGallerySvelteNodeProperties {
     name?: string
+    framework: string
+    mode: string
+    enabled: boolean
+    price: number
+    quantity: number
+    items: string[]
   }
 
-  type FrameworkGallerySvelteNodeNodeDef = Omit<
-    NodeDef,
-    keyof FrameworkGallerySvelteNodeProperties
-  > &
-    FrameworkGallerySvelteNodeProperties
+  type FrameworkGallerySvelteNodeNodeDef = NodeDef & FrameworkGallerySvelteNodeProperties
 
-  type FrameworkGallerySvelteNodeNode = Omit<Node, keyof FrameworkGallerySvelteNodeProperties> &
-    FrameworkGallerySvelteNodeProperties
+  type FrameworkGallerySvelteNodeNode = Node & FrameworkGallerySvelteNodeProperties
 
   type FrameworkGallerySvelteNodeClientNodeProperties = Omit<
     EditorNodeProperties,
@@ -20,3 +37,5 @@ declare global {
   > &
     FrameworkGallerySvelteNodeProperties
 }
+
+export {}

@@ -1,0 +1,37 @@
+<script lang="ts">
+  import { derived } from 'svelte/store'
+  import type { <%= it.ctx.properName %>Properties } from '../types'
+  import { $t as translate, useHydrateStore } from './hydrate'
+  import BehaviorPanel from './components/BehaviorPanel.svelte'
+  import ConfigurationPanel from './components/ConfigurationPanel.svelte'
+  import IntegrationPanel from './components/IntegrationPanel.svelte'
+  import LifecyclePanel from './components/LifecyclePanel.svelte'
+
+  const hydrateStore = useHydrateStore()
+  const panelState = derived(hydrateStore.state, value => value as <%= it.ctx.properName %>Properties)
+  function patch<K extends keyof <%= it.ctx.properName %>Properties>(
+    key: K,
+    value: <%= it.ctx.properName %>Properties[K],
+  ) {
+    hydrateStore.patch(key, value)
+  }
+</script>
+
+<main class="grid gap-3 bg-slate-50 p-3" data-flowup-scope="<%= it.ctx.scope %>">
+  <ConfigurationPanel state={$panelState} onPatch={patch} />
+  <BehaviorPanel items={$panelState.items} onPatchItems={items => patch('items', items)} />
+  <LifecyclePanel />
+  <IntegrationPanel />
+  <details class="overflow-hidden rounded-xl border border-dashed border-slate-300 bg-white">
+    <summary>
+      {translate('panel.stateInspector')}
+      <span>{translate('panel.editorDraft')}</span>
+    </summary>
+    <p class="mt-0.5 text-[10px] text-slate-500">{translate('panel.doneAndDeploy')}</p>
+    <pre
+      class="max-h-44 overflow-auto border-t border-slate-200 p-3 text-[9px] leading-4 whitespace-pre-wrap text-slate-500"
+    >
+      {JSON.stringify($panelState, null, 2)}
+    </pre>
+  </details>
+</main>

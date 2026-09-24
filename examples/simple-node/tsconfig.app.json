@@ -5,13 +5,11 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "paths": { "@/*": ["./*"] },
+    "types": ["vite/client", "jquery"],
     "strict": true,
     "isolatedModules": true,
-    "types": [
-      "vite/client",
-      "jquery"
-    ],
-    "allowArbitraryExtensions": true,
     "noEmit": true,
     "skipLibCheck": true
   },

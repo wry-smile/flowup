@@ -1,6 +1,6 @@
 import type { EditorRED } from 'node-red'
 
-export function createEditorI18n(
+export function createClientI18n(
   red: Pick<EditorRED, '_'>,
   moduleNamespace: string,
   entryName: string,

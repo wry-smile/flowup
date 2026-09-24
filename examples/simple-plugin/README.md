@@ -5,12 +5,19 @@ A Node-RED editor plugin scaffolded with [flowup](https://github.com/wry-smile/f
 ## UI Stack
 
 - Vue sidebar plugin
+
 - UnoCSS Wind4 with a Flowup scope
 
-- `@wry-smile/flowup/client` 提供通用的 hydrate store
-- Vue 模板会生成 `client/hydrate.ts`
-- UnoCSS 样式限定在 `data-flowup-scope` 容器内；弹出层挂载节点也需设置相同属性
-- 可复用常量会生成到 `constant/index.ts`
+
+- `@wry-smile/flowup/client` provides the shared hydrate store.
+
+- Vue templates include `client/hydrate.ts`.
+
+
+
+- UnoCSS styles are scoped to `data-flowup-scope`; popup mount nodes need the same attribute.
+
+- Shared constants are generated in `constant/index.ts`.
 
 ## Layout
 
@@ -29,15 +36,12 @@ simple-plugin/
 
 ## Build and Package
 
-```bash
+```
 pnpm install
 pnpm build
 npm pack --dry-run
 ```
 
-Run `pnpm dev` to build and preview this plugin in Node-RED. Source changes
-rebuild the package and restart Node-RED. The preview uses `dist/` as
-`nodesDir`; configure it with `nodeRed` in
-`flowup.config.ts`.
+Run `pnpm dev` to build and preview this plugin in Node-RED. Source changes rebuild the package and restart Node-RED. The preview uses `dist/` as `nodesDir`; configure it with `nodeRed` in `flowup.config.ts`.
 
 A full build generates `dist/flowup.manifest.json` for `flowup assemble`.

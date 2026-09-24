@@ -1,0 +1,73 @@
+import type { FrameworkGalleryVanillaNodeProperties } from '../../types'
+
+type State = Partial<FrameworkGalleryVanillaNodeProperties>
+
+export function mountBehaviorPanel(
+  root: HTMLElement,
+  state: State,
+  patch: (key: keyof FrameworkGalleryVanillaNodeProperties, value: unknown) => void,
+): () => void {
+  root.innerHTML = `<section class="overflow-hidden rounded-xl border border-slate-200 bg-white"><header class="flex items-center justify-between gap-3 border-b border-slate-200 px-3.5 py-2.5"><div><h2 class="m-0 text-xs font-semibold">02 · Reactive Behavior</h2><p class="mt-0.5 text-[10px] text-slate-500">State, rendering and component communication</p></div><span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">runtime only</span></header><div class="border-t border-slate-200 px-3.5 py-3 flex items-center justify-between gap-2"><div><p class="text-[11px] font-medium text-slate-900">Local counter</p><p class="text-[10px] text-slate-500">State + click events</p></div><div class="flex items-center justify-between gap-2"><button class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50 active:scale-[0.98] size-8 px-0" data-decrement type="button">−</button><strong data-count>0</strong><button class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50 active:scale-[0.98] size-8 px-0" data-increment type="button">+</button></div></div><div class="border-t border-slate-200 px-3.5 py-3"><div class="flex items-center justify-between gap-2"><div><p class="text-[11px] font-medium text-slate-900">Conditional list</p><p class="text-[10px] text-slate-500">Keyed rendering + add/remove</p></div><div class="flex items-center justify-between gap-2"><label class="text-[10px] text-slate-500"><input data-show-list type="checkbox" checked /> Show</label><button class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]" data-add type="button">+ Add</button></div></div><ul class="mt-2.5 flex flex-wrap gap-1.5" data-list></ul></div><div class="border-t border-slate-200 px-3.5 py-3 flex items-center justify-between gap-2"><div><p class="text-[11px] font-medium text-slate-900">Child component</p><p class="text-[10px] text-slate-500">Parent value → child · child event → parent</p></div><div class="flex items-center gap-2 rounded-lg bg-violet-50 px-2.5 py-1.5 text-violet-700"><span>Value</span><strong data-child-value>3</strong><button class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]" data-child-increment type="button">Emit +1</button></div></div></section>`
+  let count = 0
+  let childValue = 3
+  const countText = root.querySelector<HTMLElement>('[data-count]')!
+  const childText = root.querySelector<HTMLElement>('[data-child-value]')!
+  const showList = root.querySelector<HTMLInputElement>('[data-show-list]')!
+  const list = root.querySelector<HTMLUListElement>('[data-list]')!
+  const items = () => state.items ?? []
+  function renderItems() {
+    list.hidden = !showList.checked
+    list.replaceChildren()
+    for (const [index, item] of items().entries()) {
+      const row = document.createElement('li')
+      const text = document.createElement('span')
+      const remove = document.createElement('button')
+      text.textContent = item
+      row.className =
+        'inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] text-slate-600'
+      remove.type = 'button'
+      remove.className = 'border-0 bg-transparent text-slate-400 hover:text-rose-600'
+      remove.textContent = '×'
+      remove.setAttribute('aria-label', `Remove ${item}`)
+      remove.addEventListener('click', () => {
+        state.items = items().filter((_, current) => current !== index)
+        patch('items', state.items)
+        renderItems()
+      })
+      row.append(text, remove)
+      list.append(row)
+    }
+  }
+  const add = root.querySelector<HTMLButtonElement>('[data-add]')!
+  const onAdd = () => {
+    state.items = [...items(), `Item ${items().length + 1}`]
+    patch('items', state.items)
+    renderItems()
+  }
+  const onShow = () => renderItems()
+  const onIncrement = () => {
+    count++
+    countText.textContent = String(count)
+  }
+  const onDecrement = () => {
+    count--
+    countText.textContent = String(count)
+  }
+  const onChildIncrement = () => {
+    childValue++
+    childText.textContent = String(childValue)
+  }
+  add.addEventListener('click', onAdd)
+  showList.addEventListener('change', onShow)
+  root.querySelector('[data-increment]')!.addEventListener('click', onIncrement)
+  root.querySelector('[data-decrement]')!.addEventListener('click', onDecrement)
+  root.querySelector('[data-child-increment]')!.addEventListener('click', onChildIncrement)
+  renderItems()
+  return () => {
+    add.removeEventListener('click', onAdd)
+    showList.removeEventListener('change', onShow)
+    root.querySelector('[data-increment]')?.removeEventListener('click', onIncrement)
+    root.querySelector('[data-decrement]')?.removeEventListener('click', onDecrement)
+    root.querySelector('[data-child-increment]')?.removeEventListener('click', onChildIncrement)
+  }
+}

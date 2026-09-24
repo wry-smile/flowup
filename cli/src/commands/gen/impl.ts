@@ -10,8 +10,8 @@ import { isInMonorepo } from '../../share/monorepo'
 import { parseBool } from '../../share/paths'
 import { selectOrExit } from '../../share/prompts'
 import { commitStagedDirectory, createStagingDir, isPathInside } from '../../share/safe-fs'
-import { nodeTemplate } from '../../templates/node'
-import { pluginTemplate } from '../../templates/plugin'
+import { nodeTemplate } from '../../templates/renderers/node'
+import { pluginTemplate } from '../../templates/renderers/plugin'
 import { collectMissing } from './collect'
 import { createContext } from './context'
 import { showGenerationGuide } from './feedback'
@@ -156,7 +156,8 @@ async function doGenerate(options: GenResolved): Promise<void> {
     unocss: options.unocss,
   })
 
-  const files: FileMap = options.type === 'node' ? nodeTemplate(context) : pluginTemplate(context)
+  const files: FileMap =
+    options.type === 'node' ? await nodeTemplate(context) : await pluginTemplate(context)
 
   const generationRoot = resolve(process.cwd())
   const baseDir = resolve(generationRoot, options.name)
@@ -193,7 +194,7 @@ async function doGenerate(options: GenResolved): Promise<void> {
   spinner.stop(`Generated ${Object.keys(files).length} files in ${baseDir}`)
   showGenerationGuide(
     `${options.type === 'node' ? 'Node' : 'Plugin'} ready`,
-    [baseDir],
+    [`Generated in ./${options.name}/`],
     [`cd ${options.name}`, 'pnpm install', 'pnpm build'],
   )
 }

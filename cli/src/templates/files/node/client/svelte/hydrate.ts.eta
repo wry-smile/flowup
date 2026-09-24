@@ -1,0 +1,23 @@
+import { createClientI18n } from '@wry-smile/flowup/client'
+import { createSvelteHydrateStore } from '@wry-smile/flowup/client/svelte'
+import { <%= it.i18nConstant %> } from '../constant'
+
+export const $t = createClientI18n(RED, '<%= it.i18nNamespace %>', <%= it.i18nConstant %>)
+
+export interface HydrateStoreState extends <%= it.ctx.properName %>ClientNodeProperties {}
+
+export const DEFAULT_HYDRATE_STATE: HydrateStoreState = {
+    name: undefined,
+    framework: 'Svelte',
+    mode: 'normal',
+    enabled: true,
+    price: 12,
+    quantity: 2,
+    items: ['Svelte', 'Vue', 'Solid'],
+}
+
+const store = createSvelteHydrateStore(DEFAULT_HYDRATE_STATE)
+
+export function useHydrateStore() {
+  return store
+}

@@ -1,0 +1,17 @@
+import { createClientI18n } from '@wry-smile/flowup/client'
+import { createPreactHydrateStore } from '@wry-smile/flowup/client/preact'
+import { <%= it.i18nConstant %> } from '../constant'
+import type { <%= it.ctx.properName %>Properties } from '../types'
+
+export const $t = createClientI18n(RED, '<%= it.i18nNamespace %>', <%= it.i18nConstant %>)
+
+export const DEFAULT_HYDRATE_STATE: <%= it.ctx.properName %>Properties = {
+  name: undefined,
+  framework: 'Preact',
+  mode: 'normal',
+  enabled: true,
+  price: 12,
+  quantity: 2,
+  items: ['Preact', 'Vue', 'Solid'],
+}
+export const store = createPreactHydrateStore(DEFAULT_HYDRATE_STATE)

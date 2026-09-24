@@ -1,10 +1,10 @@
 import { defineConfig, presetFlowupWind4 } from '@wry-smile/flowup'
-import UnoCSS from 'unocss/vite'
 import { preact } from '@preact/preset-vite'
-import vue from '@vitejs/plugin-vue'
+import { fileURLToPath } from 'node:url'
+import UnoCSS from 'unocss/vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import solid from 'vite-plugin-solid'
-import { fileURLToPath } from 'node:url'
+import vue from '@vitejs/plugin-vue'
 
 const scope = 'framework-gallery'
 const sharedAlias = {
@@ -38,7 +38,9 @@ export default defineConfig({
       }),
       vue(),
       svelte(),
-      solid({ include: ['**/nodes/solid-node/client/**/*.{jsx,tsx}'] }),
+      solid({
+        include: ['**/nodes/solid-node/client/**/*.{jsx,tsx}'],
+      }),
     ],
   },
 })

@@ -1,0 +1,6 @@
+<% if (it.kind === 'node') { %><script type="text/html" data-template-name="<%= it.ctx.name %>">
+<%= it.content %>
+</script>
+<% } else { %><!-- Flowup includes this template in the plugin's generated Node-RED editor HTML. -->
+<!-- Add editor markup for <%= it.ctx.name %> here. Flowup bundles client/index.ts into the same HTML file. -->
+<% } %>

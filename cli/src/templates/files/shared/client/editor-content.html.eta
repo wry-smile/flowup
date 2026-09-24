@@ -1,0 +1,11 @@
+<% if (it.ctx.clientFramework === 'vue') { %>
+  <div data-flowup-scope="<%= it.ctx.name %>" class="flowup-vue-root"></div>
+<% } else if (it.ctx.clientFramework === 'svelte') { %>
+  <div data-flowup-scope="<%= it.ctx.name %>" class="flowup-svelte-root"></div>
+<% } else if (it.ctx.clientFramework === 'preact') { %>
+  <div data-flowup-scope="<%= it.ctx.name %>" class="flowup-preact-root"></div>
+<% } else if (it.ctx.clientFramework === 'solid') { %>
+  <div data-flowup-scope="<%= it.ctx.name %>" class="flowup-solid-root"></div>
+<% } else { %>
+  <div data-flowup-scope="<%= it.ctx.name %>" class="flowup-vanilla-root"></div>
+<% } %>

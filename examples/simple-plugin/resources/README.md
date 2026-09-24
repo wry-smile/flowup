@@ -1,17 +1,3 @@
 # resources
 
-Node-RED (since 1.3) serves any file in this directory under
-`/resources/<module-name>/<file>` so the editor can load it.
-
-For a scoped module (`@scope/foo`), the path becomes
-`/resources/@scope/foo/<file>`.
-
-Reference resources from your plugin client or `client/editor.html` with
-**relative** URLs (no leading `/`):
-
-```html
-<img src="resources/<module-name>/banner.png" />
-<script src="resources/<module-name>/library.js"></script>
-```
-
-See https://nodered.org/docs/creating-nodes/resources
+Node-RED (since 1.3) serves files under `/resources/<module-name>/<file>`. Use relative URLs in `client/editor.html` or the client code so the browser resolves them against the editor URL. See https://nodered.org/docs/creating-nodes/resources.

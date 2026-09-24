@@ -1,0 +1,55 @@
+# <%= it.ctx.name %>
+
+A Node-RED editor plugin scaffolded with [flowup](https://github.com/wry-smile/flowup).
+
+## UI Stack
+
+<% if (it.ctx.clientFramework === 'vue') { %>- Vue sidebar plugin
+<% } else if (it.ctx.clientFramework === 'svelte') { %>- Svelte sidebar plugin
+<% } else if (it.ctx.clientFramework === 'preact') { %>- Preact sidebar plugin
+<% } else if (it.ctx.clientFramework === 'solid') { %>- Solid sidebar plugin
+<% } else { %>- Plain TypeScript plugin registration
+<% } %>
+<% if (it.ctx.unocss) { %>- UnoCSS Wind4 with a Flowup scope
+<% } %>
+
+<% if (it.ctx.clientFramework !== 'vanilla' || it.ctx.unocss) { %>- `@wry-smile/flowup/client` provides shared editor helpers.
+<% if (it.ctx.clientFramework !== 'vanilla') { %>- `@wry-smile/flowup/client/<%= it.ctx.clientFramework %>` provides the framework-specific hydrate adapter.
+<% } %>
+<% } %>
+<% if (it.ctx.clientFramework === 'vue') { %>- Vue templates include `client/hydrate.ts`.
+<% } %>
+<% if (it.ctx.clientFramework === 'svelte') { %>- Svelte templates include `client/App.svelte` and `client/hydrate.ts`.
+<% } %>
+<% if (it.ctx.clientFramework === 'preact' || it.ctx.clientFramework === 'solid') { %>- <%= it.ctx.clientFramework %> templates include TSX components and editor mount logic.
+<% } %>
+<% if (it.ctx.unocss) { %>- UnoCSS styles are scoped to `data-flowup-scope`; popup mount nodes need the same attribute.
+<% } %>
+- Shared constants are generated in `constant/index.ts`.
+
+## Layout
+
+```
+<%= it.ctx.name %>/
+├── package.json
+├── flowup.config.ts
+├── constant/
+├── runtime/
+├── client/
+├── types/
+├── locales/
+├── icons/
+└── resources/
+```
+
+## Build and Package
+
+```
+pnpm install
+pnpm build
+npm pack --dry-run
+```
+
+Run `pnpm dev` to build and preview this plugin in Node-RED. Source changes rebuild the package and restart Node-RED. The preview uses `dist/` as `nodesDir`; configure it with `nodeRed` in `flowup.config.ts`.
+
+A full build generates `dist/flowup.manifest.json` for `flowup assemble`.

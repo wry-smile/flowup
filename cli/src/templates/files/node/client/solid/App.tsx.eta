@@ -1,0 +1,37 @@
+import { createStore } from 'solid-js/store'
+import type { <%= it.ctx.properName %>Properties } from '../types'
+import { store, $t } from './hydrate'
+import BehaviorPanel from './components/BehaviorPanel'
+import ConfigurationPanel from './components/ConfigurationPanel'
+import IntegrationPanel from './components/IntegrationPanel'
+import LifecyclePanel from './components/LifecyclePanel'
+
+export default function App() {
+  const [state, setState] = createStore(store.getSnapshot() as <%= it.ctx.properName %>Properties)
+  function patch<K extends keyof <%= it.ctx.properName %>Properties>(
+    key: K,
+    value: <%= it.ctx.properName %>Properties[K],
+  ) {
+    store.patch(key, value)
+    setState(key, value)
+  }
+
+  return (
+    <main class="grid gap-3 bg-slate-50 p-3" data-flowup-scope="<%= it.ctx.scope %>">
+      <ConfigurationPanel state={state} onPatch={patch} />
+      <BehaviorPanel items={state.items} onPatchItems={items => patch('items', items)} />
+      <LifecyclePanel />
+      <IntegrationPanel />
+      <details class="overflow-hidden rounded-xl border border-dashed border-slate-300 bg-white">
+        <summary>
+          {$t('panel.stateInspector')}
+          <span>{$t('panel.editorDraft')}</span>
+        </summary>
+        <p class="mt-0.5 text-[10px] text-slate-500">{$t('panel.doneAndDeploy')}</p>
+        <pre class="max-h-44 overflow-auto border-t border-slate-200 p-3 text-[9px] leading-4 whitespace-pre-wrap text-slate-500">
+          {JSON.stringify(state, null, 2)}
+        </pre>
+      </details>
+    </main>
+  )
+}

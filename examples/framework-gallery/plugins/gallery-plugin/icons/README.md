@@ -1,1 +1,1 @@
-Icons for framework-gallery-gallery-plugin. Reference a file from the editor as icons/gallery-plugin/<file>.
+Icons for framework-gallery-gallery-plugin. A source file named icon.svg is emitted as dist/icons/gallery-plugin-icon.svg. Set the Node-RED client icon to 'gallery-plugin-icon.svg' (the filename only).

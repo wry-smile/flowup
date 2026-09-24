@@ -15,5 +15,11 @@ export default defineConfig({
         allow: ['virtual:uno.css'],
       },
     ],
+    'typescript/no-this-alias': [
+      'error',
+      {
+        allowedNames: ['self', 'node'],
+      },
+    ],
   },
 })

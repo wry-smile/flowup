@@ -1,6 +1,3 @@
 # icons
 
-Palette icons for this plugin. flowup build copies this directory into
-`dist/icons/` automatically.
-
-Reference icons from `client/index.ts` using `icons/` (relative path).
+The starter includes `icons/icon.svg` as a sample static icon. Plugins do not have a palette icon, so use `resources/badge.svg` in the sidebar UI. flowup build copies this directory into `dist/icons/` automatically.

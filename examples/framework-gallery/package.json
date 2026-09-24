@@ -21,23 +21,52 @@
       "framework-gallery-plugins": "dist/framework-gallery-plugins.js"
     }
   },
+  "flowup": {
+    "entries": {
+      "nodes/vue-node": {
+        "framework": "vue",
+        "unocss": true
+      },
+      "nodes/preact-node": {
+        "framework": "preact",
+        "unocss": true
+      },
+      "nodes/solid-node": {
+        "framework": "solid",
+        "unocss": true
+      },
+      "nodes/svelte-node": {
+        "framework": "svelte",
+        "unocss": true
+      },
+      "nodes/vanilla-node": {
+        "framework": "vanilla",
+        "unocss": false
+      },
+      "plugins/gallery-plugin": {
+        "framework": "preact",
+        "unocss": true
+      }
+    }
+  },
   "devDependencies": {
+    "@preact/signals": "^2.3.1",
+    "@types/jquery": "catalog:",
+    "@types/node": "catalog:",
+    "@types/node-red": "catalog:",
+    "@wry-smile/flowup": "catalog:",
+    "node-red": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
+    "vue": "catalog:",
+    "unocss": "catalog:",
     "@preact/preset-vite": "^2.10.6",
-    "@sveltejs/vite-plugin-svelte": "^7.2.0",
-    "@types/jquery": "^4.0.1",
-    "@types/node": "^26.0.1",
-    "@types/node-red": "^1.3.5",
-    "@vitejs/plugin-vue": "^6.0.7",
-    "@wry-smile/flowup": "workspace:*",
-    "node-red": "^4.1.0",
     "preact": "^10.29.8",
     "solid-js": "^1.9.15",
-    "svelte": "^5.56.4",
-    "typescript": "^6.0.3",
-    "unocss": "^66.10.5",
-    "vite": "^8.1.0",
     "vite-plugin-solid": "^2.11.14",
-    "vue": "^3.5.39"
+    "@sveltejs/vite-plugin-svelte": "^7.2.0",
+    "svelte": "^5.56.4"
   },
   "dependencies": {
     "date-fns": "^4.4.0",

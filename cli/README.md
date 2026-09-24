@@ -294,7 +294,14 @@ repository metadata before publishing your own package.
 `@wry-smile/flowup/client` exposes reusable helpers for Node-RED editor UIs:
 
 - `createHydrateStore(...)`
-- `createVueHydrateStore(...)`
+- `createClientI18n(...)`
+
+Framework-specific hydrate adapters are exported from isolated entry points:
+
+- `@wry-smile/flowup/client/preact` (optional peer: `@preact/signals`)
+- `@wry-smile/flowup/client/solid` (optional peer: `solid-js`)
+- `@wry-smile/flowup/client/svelte` (optional peer: `svelte`)
+- `@wry-smile/flowup/client/vue` (optional peer: `vue`)
 
 Framework templates configure `unocss/vite` with `presetFlowupWind4({ scope })` and mount inside a
 `data-flowup-scope` container. Flowup scopes the CSS using the package scope;

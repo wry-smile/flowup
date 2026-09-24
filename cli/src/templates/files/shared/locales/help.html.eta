@@ -1,0 +1,3 @@
+<script type="text/x-red" data-help-name="<%= it.name %>">
+  <p>Node description goes here.</p>
+</script>

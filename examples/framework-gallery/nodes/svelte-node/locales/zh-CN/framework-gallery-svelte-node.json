@@ -1,7 +1,18 @@
 {
   "framework-gallery-svelte-node": {
     "label": {
-      "name": "名称"
+      "name": "名称",
+      "title": "节点编辑面板",
+      "features": "查看功能示例",
+      "description": "配置节点并预览功能示例。"
+    },
+    "panel": {
+      "configuration": "节点配置",
+      "savedOnDone": "Done 保存到流程草稿，Deploy 后持久化",
+      "persisted": "已持久化",
+      "stateInspector": "状态检查器",
+      "editorDraft": "Node-RED 编辑器草稿",
+      "doneAndDeploy": "Done 将值写入流程草稿；Deploy 后保存流程。"
     }
   }
 }

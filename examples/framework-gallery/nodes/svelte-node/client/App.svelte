@@ -1,27 +1,37 @@
 <script lang="ts">
-import { derived } from "svelte/store";
-import { useHydrateStore } from "./hydrate";
-import { t } from './i18n'
-import { features, resourceUrl, tones } from '@client-shared/showcase'
-const hydrateStore = useHydrateStore();
-const name = derived(hydrateStore.state, $state => $state.name ?? "");
-let selected = 0
-let showFeatures = false
+  import { derived } from 'svelte/store'
+  import type { FrameworkGallerySvelteNodeProperties } from '../types'
+  import { $t as translate, useHydrateStore } from './hydrate'
+  import BehaviorPanel from './components/BehaviorPanel.svelte'
+  import ConfigurationPanel from './components/ConfigurationPanel.svelte'
+  import IntegrationPanel from './components/IntegrationPanel.svelte'
+  import LifecyclePanel from './components/LifecyclePanel.svelte'
 
-function handleNameInput(event: Event): void {
-  const value = (event.currentTarget as HTMLInputElement).value.trim();
-  hydrateStore.patch("name", value || undefined);
-}
+  const hydrateStore = useHydrateStore()
+  const panelState = derived(hydrateStore.state, value => value as FrameworkGallerySvelteNodeProperties)
+  function patch<K extends keyof FrameworkGallerySvelteNodeProperties>(
+    key: K,
+    value: FrameworkGallerySvelteNodeProperties[K],
+  ) {
+    hydrateStore.patch(key, value)
+  }
 </script>
 
-<section class="grid gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 shadow-sm dark:border-rose-800 dark:bg-slate-900">
-  <div class="flex items-center gap-3"><img class="h-10 w-10 rounded-full" src={resourceUrl('svelte-node', 'badge.svg')} alt="Svelte badge" /><h3 class="text-lg font-bold text-rose-900 dark:text-rose-100">Svelte editor</h3></div>
-  <label class="grid gap-1 text-sm font-medium" for="node-input-name">{t('label.name')}
-    <input id="node-input-name" class="rounded-lg border border-rose-300 bg-white px-3 py-2 focus:ring-2 focus:ring-rose-400" type="text" placeholder="Name" value={$name} on:input={handleNameInput} />
-  </label>
-  <div class="flex flex-wrap gap-2" role="group" aria-label="Color tone">
-    {#each tones as tone, index}<button type="button" class="rounded-full px-3 py-1 text-sm ring-1 hover:opacity-80 {tone.className}" aria-pressed={selected === index} on:click={() => selected = index}>{tone.label}</button>{/each}
-  </div>
-  <button type="button" class="w-fit rounded-lg bg-rose-600 px-3 py-2 text-white hover:bg-rose-700" aria-expanded={showFeatures} on:click={() => showFeatures = !showFeatures}>Toggle features</button>
-  {#if showFeatures}<ul class="list-disc rounded-lg bg-white p-4 pl-8 text-sm">{#each features as feature}<li>{feature}</li>{/each}</ul>{/if}
-</section>
+<main class="grid gap-3 bg-slate-50 p-3" data-flowup-scope="framework-gallery">
+  <ConfigurationPanel state={$panelState} onPatch={patch} />
+  <BehaviorPanel items={$panelState.items} onPatchItems={items => patch('items', items)} />
+  <LifecyclePanel />
+  <IntegrationPanel />
+  <details class="overflow-hidden rounded-xl border border-dashed border-slate-300 bg-white">
+    <summary>
+      {translate('panel.stateInspector')}
+      <span>{translate('panel.editorDraft')}</span>
+    </summary>
+    <p class="mt-0.5 text-[10px] text-slate-500">{translate('panel.doneAndDeploy')}</p>
+    <pre
+      class="max-h-44 overflow-auto border-t border-slate-200 p-3 text-[9px] leading-4 whitespace-pre-wrap text-slate-500"
+    >
+      {JSON.stringify($panelState, null, 2)}
+    </pre>
+  </details>
+</main>

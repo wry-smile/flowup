@@ -20,7 +20,7 @@ import {
   isPathInside,
   pathsOverlap,
 } from '../../share/safe-fs'
-import { renderMitLicense } from '../../templates/license'
+import { renderMitLicense } from '../../templates/renderers/license'
 import { runBuild } from '../build/impl'
 
 export interface AssembleOptions {

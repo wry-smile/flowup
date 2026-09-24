@@ -1,1 +1,1 @@
-Icons for framework-gallery-solid-node. Reference a file from the editor as icons/solid-node/<file>.
+Icons for framework-gallery-solid-node. A source file named icon.svg is emitted as dist/icons/solid-node-icon.svg. Set the Node-RED client icon to 'solid-node-icon.svg' (the filename only).

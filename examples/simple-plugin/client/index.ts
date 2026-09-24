@@ -1,12 +1,11 @@
 import { createApp } from 'vue'
 import 'virtual:uno.css'
 import App from './App.vue'
-import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME, PLUGIN_SCOPE } from '../constant/index.js'
+import { PLUGIN_DISPLAY_NAME, PLUGIN_NAME, PLUGIN_SCOPE } from '../constant'
 
 RED.plugins.registerPlugin(PLUGIN_NAME, {
   onadd() {
     if (RED.sidebar.containsTab(PLUGIN_NAME)) return
-
     const target = document.createElement('div')
     target.dataset.flowupScope = PLUGIN_SCOPE
     target.className = 'flowup-vue-root'

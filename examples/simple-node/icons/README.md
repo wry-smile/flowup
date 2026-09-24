@@ -1,23 +1,3 @@
 # icons
 
-Palette icons for this node. Node-RED reads the file referenced by the
-`icon` field you optionally configure in `client/index.ts` from this directory.
-
-## Convention
-
-- File name: `icons/simple-node.png` (recommended)
-- Size: 24×24 px or 32×32 px recommended
-- Format: PNG (with alpha)
-
-## Referencing from the client
-
-In `client/index.ts`:
-
-```ts
-RED.nodes.registerType("simple-node", {
-  icon: "icons/simple-node.png",
-  // ...
-})
-```
-
-flowup build copies this directory into `dist/icons/` automatically.
+The starter includes `icons/icon.svg` as a sample static icon. For nodes it is registered as the palette icon in `client/index.ts`; replace it with your own 32×32 SVG or PNG. flowup build copies this directory into `dist/icons/` automatically.

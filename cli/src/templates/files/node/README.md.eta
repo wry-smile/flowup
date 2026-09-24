@@ -1,0 +1,93 @@
+# <%= it.ctx.name %>
+
+A Node-RED custom node scaffolded with [flowup](https://github.com/wry-smile/flowup).
+
+## UI Stack
+
+<% if (it.ctx.clientFramework === 'vue') { %>- **Vue** (SFC, .vue files)
+<% } else if (it.ctx.clientFramework === 'svelte') { %>- **Svelte** (.svelte files)
+<% } else if (it.ctx.clientFramework === 'preact') { %>- **Preact** (TSX files)
+<% } else if (it.ctx.clientFramework === 'solid') { %>- **Solid** (TSX files)
+<% } else { %>- Plain HTML + TypeScript (no UI framework)
+<% } %>
+<% if (it.ctx.unocss) { %>- **UnoCSS Wind4** (scoped atomic CSS)
+<% } %>
+
+## Client Helpers
+
+<% if (it.ctx.clientFramework !== 'vanilla' || it.ctx.unocss) { %>- `@wry-smile/flowup/client` provides shared editor helpers.
+<% if (it.ctx.clientFramework !== 'vanilla') { %>- `@wry-smile/flowup/client/<%= it.ctx.clientFramework %>` provides the framework-specific hydrate adapter.
+<% } %>
+<% } %>
+<% if (it.ctx.clientFramework === 'vue') { %>- Vue templates include `client/hydrate.ts`.
+<% } %>
+<% if (it.ctx.clientFramework === 'svelte') { %>- Svelte templates include `client/App.svelte` and `client/hydrate.ts`.
+<% } %>
+<% if (it.ctx.clientFramework === 'preact' || it.ctx.clientFramework === 'solid') { %>- <%= it.ctx.clientFramework %> templates include TSX components and editor mount logic.
+<% } %>
+<% if (it.ctx.unocss) { %>- UnoCSS styles are scoped to `data-flowup-scope`; popup mount nodes need the same attribute.
+<% } %>
+- Shared constants are generated in `constant/index.ts`.
+
+## Layout
+
+```
+<%= it.ctx.name %>/
+├── package.json
+├── flowup.config.ts
+├── constant/
+├── runtime/
+├── client/
+├── types/
+├── locales/
+├── icons/
+└── resources/
+```
+
+## Build
+
+```
+pnpm install
+pnpm build
+```
+
+## Preview in Node-RED
+
+```
+pnpm dev
+```
+
+Flowup builds the package and starts Node-RED with `nodesDir` pointing at `dist/`. Source changes trigger a rebuild and one restart after the final successful build. Configure the preview with `nodeRed` in `flowup.config.ts`.
+
+Produces `dist/<%= it.ctx.name %>.js`, `dist/<%= it.ctx.name %>.html`, locales, icons, resources, and `flowup.manifest.json`.
+
+## Package
+
+```
+pnpm build
+npm pack --dry-run
+```
+
+<% if (it.ctx.clientFramework === 'vanilla' && !it.ctx.unocss) { %>
+## Optional: Vue / UnoCSS
+
+This starter uses plain HTML and TypeScript by default. To add Vue or UnoCSS:
+
+```bash
+pnpm add -D @vitejs/plugin-vue unocss
+```
+
+Then import and add the plugins in `flowup.config.ts`:
+
+```ts
+import vue from '@vitejs/plugin-vue'
+import UnoCSS from 'unocss/vite'
+import { defineConfig, presetFlowupWind4 } from '@wry-smile/flowup'
+
+const scope = '<%= it.ctx.name %>'
+export default defineConfig({
+  scope,
+  client: { plugins: [UnoCSS({ presets: [presetFlowupWind4({ scope })] }), vue()] },
+})
+```
+<% } %>

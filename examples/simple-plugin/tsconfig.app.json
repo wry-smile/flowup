@@ -5,10 +5,8 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": [
-      "vite/client",
-      "jquery"
-    ],
+    "paths": { "@/*": ["./*"] },
+    "types": ["vite/client", "jquery"],
     "strict": true,
     "isolatedModules": true,
     "noEmit": true,

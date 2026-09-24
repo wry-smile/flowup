@@ -1,7 +1,18 @@
 {
   "framework-gallery-gallery-plugin": {
     "label": {
-      "name": "名称"
+      "title": "插件面板",
+      "name": "显示名称",
+      "features": "查看功能示例",
+      "description": "探索插件客户端的功能示例。"
+    },
+    "panel": {
+      "configuration": "插件配置",
+      "savedOnDone": "在此插件面板中修改本地示例状态",
+      "persisted": "本地状态",
+      "stateInspector": "状态检查器",
+      "editorDraft": "插件面板状态",
+      "doneAndDeploy": "此示例状态仅保存在当前编辑器会话。"
     }
   }
 }

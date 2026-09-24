@@ -1,0 +1,18 @@
+{
+  "name": "flowup-<%= it.ctx.name %>",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "A Node-RED node built with Flowup.",
+  "license": "MIT",
+  "keywords": ["node-red", "flowup", "node-red-node"],
+  "main": "./dist/<%= it.ctx.name %>.js",
+  "files": ["dist", "resources"],
+  "scripts": { "build": "flowup build", "dev": "flowup dev" },
+  "devDependencies": {
+<%= it.dependencies %>
+  },
+  "node-red": {
+    "scope": "<%= it.ctx.name %>",
+    "nodes": { "<%= it.ctx.name %>": "dist/<%= it.ctx.name %>.js" }
+  }
+}

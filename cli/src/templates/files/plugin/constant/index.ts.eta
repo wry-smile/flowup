@@ -1,0 +1,4 @@
+export const PLUGIN_NAME = '<%= it.ctx.name %>'
+export const PLUGIN_SCOPE = '<%= it.ctx.name %>'
+export const PLUGIN_TAG_NAME = 'flowup-<%= it.ctx.name %>-plugin'
+export const PLUGIN_DISPLAY_NAME = '<%= it.ctx.properName %>'

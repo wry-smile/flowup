@@ -1,0 +1,18 @@
+{
+  "<%= it.name %>": {
+    "label": {
+      "title": "<%= it.chinese ? '插件面板' : 'Plugin panel' %>",
+      "name": "<%= it.chinese ? '显示名称' : 'Display name' %>",
+      "features": "<%= it.chinese ? '查看功能示例' : 'Explore features' %>",
+      "description": "<%= it.chinese ? '探索插件客户端的功能示例。' : 'Explore the plugin client feature examples.' %>"
+    },
+    "panel": {
+      "configuration": "<%= it.chinese ? '插件配置' : 'Plugin Configuration' %>",
+      "savedOnDone": "<%= it.chinese ? '在此插件面板中修改本地示例状态' : 'Edit the local example state in this plugin panel' %>",
+      "persisted": "<%= it.chinese ? '本地状态' : 'local state' %>",
+      "stateInspector": "<%= it.chinese ? '状态检查器' : 'State inspector' %>",
+      "editorDraft": "<%= it.chinese ? '插件面板状态' : 'Plugin panel state' %>",
+      "doneAndDeploy": "<%= it.chinese ? '此示例状态仅保存在当前编辑器会话。' : 'This example state lives in the current editor session.' %>"
+    }
+  }
+}

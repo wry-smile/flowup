@@ -87,6 +87,7 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+.flowup-demo/
 
 # Gatsby files
 .cache/

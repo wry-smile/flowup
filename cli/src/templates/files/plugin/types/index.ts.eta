@@ -1,0 +1,28 @@
+export interface <%= it.ctx.properName %>Properties {
+  name?: string
+  framework: string
+  mode: string
+  enabled: boolean
+  price: number
+  quantity: number
+  items: string[]
+}
+
+export type <%= it.ctx.properName %>ClientNodeProperties = <%= it.ctx.properName %>Properties
+
+declare global {
+  interface <%= it.ctx.properName %>Properties {
+    name?: string
+    framework: string
+    mode: string
+    enabled: boolean
+    price: number
+    quantity: number
+    items: string[]
+  }
+
+  interface <%= it.ctx.properName %>ClientNodeProperties extends <%= it.ctx.properName %>Properties {
+  }
+}
+
+export {}

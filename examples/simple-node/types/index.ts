@@ -1,20 +1,41 @@
-import type { EditorNodeProperties, Node, NodeDef } from "node-red";
+import type { EditorNodeProperties, Node, NodeDef } from 'node-red'
+
+export interface SimpleNodeProperties {
+  name?: string
+  framework: string
+  mode: string
+  enabled: boolean
+  price: number
+  quantity: number
+  items: string[]
+}
+
+export type SimpleNodeClientNodeProperties = Omit<
+  EditorNodeProperties,
+  keyof SimpleNodeProperties
+> &
+  SimpleNodeProperties
 
 declare global {
   interface SimpleNodeProperties {
-    name?: string;
+    name?: string
+    framework: string
+    mode: string
+    enabled: boolean
+    price: number
+    quantity: number
+    items: string[]
   }
 
-  type SimpleNodeNodeDef = Omit<NodeDef, keyof SimpleNodeProperties>
-    & SimpleNodeProperties;
+  type SimpleNodeNodeDef = NodeDef & SimpleNodeProperties
 
-  type SimpleNodeNode = Omit<Node, keyof SimpleNodeProperties>
-    & SimpleNodeProperties;
+  type SimpleNodeNode = Node & SimpleNodeProperties
 
   type SimpleNodeClientNodeProperties = Omit<
     EditorNodeProperties,
     keyof SimpleNodeProperties
-  > & SimpleNodeProperties;
+  > &
+    SimpleNodeProperties
 }
 
-export {};
+export {}

@@ -1,0 +1,25 @@
+export function mountDialog() {
+  const root = document.getElementById('dialogRoot')
+  if (!root) return () => {}
+  document.body.append(root)
+  const close = () => {
+    root.style.display = 'none'
+  }
+  root
+    .querySelectorAll('[data-dialog-close]')
+    .forEach(button => button.addEventListener('click', close))
+  const openButton = document.getElementById('openDialog')
+  const open = () => {
+    root.style.display = 'block'
+  }
+  openButton?.addEventListener('click', open)
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') close()
+  }
+  document.addEventListener('keydown', onKey)
+  return () => {
+    document.removeEventListener('keydown', onKey)
+    openButton?.removeEventListener('click', open)
+    root.remove()
+  }
+}

@@ -1,20 +1,41 @@
-import type { EditorNodeProperties, Node, NodeDef } from "node-red";
+import type { EditorNodeProperties, Node, NodeDef } from 'node-red'
+
+export interface FrameworkGalleryVanillaNodeProperties {
+  name?: string
+  framework: string
+  mode: string
+  enabled: boolean
+  price: number
+  quantity: number
+  items: string[]
+}
+
+export type FrameworkGalleryVanillaNodeClientNodeProperties = Omit<
+  EditorNodeProperties,
+  keyof FrameworkGalleryVanillaNodeProperties
+> &
+  FrameworkGalleryVanillaNodeProperties
 
 declare global {
   interface FrameworkGalleryVanillaNodeProperties {
-    name?: string;
+    name?: string
+    framework: string
+    mode: string
+    enabled: boolean
+    price: number
+    quantity: number
+    items: string[]
   }
 
-  type FrameworkGalleryVanillaNodeNodeDef = Omit<NodeDef, keyof FrameworkGalleryVanillaNodeProperties>
-    & FrameworkGalleryVanillaNodeProperties;
+  type FrameworkGalleryVanillaNodeNodeDef = NodeDef & FrameworkGalleryVanillaNodeProperties
 
-  type FrameworkGalleryVanillaNodeNode = Omit<Node, keyof FrameworkGalleryVanillaNodeProperties>
-    & FrameworkGalleryVanillaNodeProperties;
+  type FrameworkGalleryVanillaNodeNode = Node & FrameworkGalleryVanillaNodeProperties
 
   type FrameworkGalleryVanillaNodeClientNodeProperties = Omit<
     EditorNodeProperties,
     keyof FrameworkGalleryVanillaNodeProperties
-  > & FrameworkGalleryVanillaNodeProperties;
+  > &
+    FrameworkGalleryVanillaNodeProperties
 }
 
-export {};
+export {}

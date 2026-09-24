@@ -10,10 +10,13 @@ import { resolveCliVersion } from '../../share/cli-pkg'
 import { isInMonorepo } from '../../share/monorepo'
 import { confirmOrExit, multiselectOrExit, selectOrExit } from '../../share/prompts'
 import { commitStagedDirectory, createStagingDir, isPathInside } from '../../share/safe-fs'
-import { TEMPLATE_DEPENDENCY_VERSIONS } from '../../templates/dependency-versions'
-import { renderSvelteTypes, renderVueTypes } from '../../templates/framework-assets'
-import { nodeTemplate } from '../../templates/node'
-import { pluginTemplate } from '../../templates/plugin'
+import { TEMPLATE_DEPENDENCY_VERSIONS } from '../../templates/renderers/dependency-versions'
+import {
+  renderSvelteTypes,
+  renderVueTypes,
+} from '../../templates/renderers/client/framework-assets'
+import { nodeTemplate } from '../../templates/renderers/node'
+import { pluginTemplate } from '../../templates/renderers/plugin'
 import { createContext } from './context'
 import { showGenerationGuide } from './feedback'
 import { collectClientOptions, promptEntryName } from './collect'
@@ -68,29 +71,33 @@ function renderMultiPackageConfig(scope: string, entries: GeneratedEntries = {})
   ]
   const solidEntries = list
     .filter(([, entry]) => entry.framework === 'solid')
-    .map(([path]) => `        '**/${path}/client/**/*.{jsx,tsx}',`)
+    .map(([path]) => `          '**/${path}/client/**/*.{jsx,tsx}',`)
   const preactEntries = list
     .filter(([, entry]) => entry.framework === 'preact')
-    .map(([path]) => `        '**/${path}/client/**/*.{jsx,tsx}',`)
+    .map(([path]) => `          '**/${path}/client/**/*.{jsx,tsx}',`)
   const plugins = [
     ...(list.some(([, entry]) => entry.unocss)
       ? ['      UnoCSS({ presets: [presetFlowupWind4({ scope })] }),']
       : []),
     ...(preactEntries.length
-      ? [`      preact({ include: [\n${preactEntries.join('\n')}\n      ] }),`]
+      ? [
+          `      preact({\n        include: [\n${preactEntries.join('\n')}\n        ],\n      }),`,
+        ]
       : []),
     ...(frameworks.has('vue') ? ['      vue(),'] : []),
     ...(frameworks.has('svelte') ? ['      svelte(),'] : []),
     ...(solidEntries.length
-      ? [`      solid({ include: [\n${solidEntries.join('\n')}\n      ] }),`]
+      ? [
+          `      solid({\n        include: [\n${solidEntries.join('\n')}\n        ],\n      }),`,
+        ]
       : []),
   ]
   const alias = `{
-      '@': fileURLToPath(new URL('.', import.meta.url)),
-      '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
-      '@client-shared': fileURLToPath(new URL('./client-shared', import.meta.url)),
-      '@runtime-shared': fileURLToPath(new URL('./runtime-shared', import.meta.url)),
-    }`
+  '@': fileURLToPath(new URL('.', import.meta.url)),
+  '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
+  '@client-shared': fileURLToPath(new URL('./client-shared', import.meta.url)),
+  '@runtime-shared': fileURLToPath(new URL('./runtime-shared', import.meta.url)),
+}`
   return `${imports.join('\n')}
 
 const scope = '${scope}'
@@ -318,7 +325,7 @@ export async function addMultiEntry(options: AddEntryOptions): Promise<void> {
       `Entry "${name}" already exists in this package, or its path is unsafe. Choose another name.`,
     )
 
-  const files = renderEntryFiles(
+  const files = await renderEntryFiles(
     type,
     name,
     scope,
@@ -363,6 +370,7 @@ export async function addMultiEntry(options: AddEntryOptions): Promise<void> {
     typeFile = resolve(root, 'types/svelte.d.ts')
     typeContent = renderSvelteTypes()
   } else if (framework === 'preact') {
+    dependencies['@preact/signals'] = TEMPLATE_DEPENDENCY_VERSIONS['@preact/signals']
     dependencies['@preact/preset-vite'] = TEMPLATE_DEPENDENCY_VERSIONS['@preact/preset-vite']
     dependencies.preact = TEMPLATE_DEPENDENCY_VERSIONS.preact
   } else if (framework === 'solid') {
@@ -407,23 +415,25 @@ export async function addMultiEntry(options: AddEntryOptions): Promise<void> {
     p.note(renderMultiPackageConfig(scope, nextEntries).trim(), 'Suggested generated config')
 }
 
-function renderEntryFiles(
+async function renderEntryFiles(
   type: MultiEntryType,
   name: string,
   scope: string,
   framework: ClientFramework,
   unocss: boolean,
   locales: LocaleCode[],
-): FileMap {
+): Promise<FileMap> {
   const id = `${scope}-${name}`
   const context = createContext({
     name: id,
+    scope,
+    resourceEntry: name,
     locales,
     flowupVersion: resolveCliVersion(),
     clientFramework: framework,
     unocss,
   })
-  const template = type === 'node' ? nodeTemplate(context) : pluginTemplate(context)
+  const template = type === 'node' ? await nodeTemplate(context) : await pluginTemplate(context)
   const files: FileMap = {}
   if (framework === 'preact' || framework === 'solid') {
     files['tsconfig.json'] = json({
@@ -455,7 +465,10 @@ function renderEntryFiles(
     let content = source
     if (filename === 'constant/index.ts') {
       const constantName = type === 'node' ? 'NODE_SCOPE' : 'PLUGIN_SCOPE'
-      content = content.replace(`${constantName} = "${id}"`, `${constantName} = "${scope}"`)
+      content = content.replace(
+        new RegExp(`${constantName}\\s*=\\s*['"]${id}['"]`),
+        `${constantName} = '${scope}'`,
+      )
     }
     if (filename === 'client/editor.html') {
       content = content.replaceAll(`data-flowup-scope="${id}"`, `data-flowup-scope="${scope}"`)
@@ -464,8 +477,6 @@ function renderEntryFiles(
         `flowup-${scope}/${scope}-${groupFor(type)}:`,
       )
     }
-    if (filename === 'client/i18n.ts')
-      content = content.replace(`flowup-${id}/${id}`, `flowup-${scope}/${scope}-${groupFor(type)}`)
     files[filename] = content
   }
   files['icons/README.md'] =

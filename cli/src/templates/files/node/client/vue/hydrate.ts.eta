@@ -1,0 +1,22 @@
+import { createClientI18n } from '@wry-smile/flowup/client'
+import { createVueHydrateStore } from '@wry-smile/flowup/client/vue'
+import { <%= it.i18nConstant %> } from '../constant'
+
+export const $t = createClientI18n(RED, '<%= it.i18nNamespace %>', <%= it.i18nConstant %>)
+
+export interface HydrateStoreState extends <%= it.ctx.properName %>ClientNodeProperties {}
+
+export const DEFAULT_HYDRATE_STATE: HydrateStoreState = {
+    name: undefined,
+    framework: 'Vue',
+    mode: 'normal',
+    enabled: true,
+    price: 12,
+    quantity: 2,
+    items: ['Vue', 'React', 'Solid'],
+}
+
+const hydrate = createVueHydrateStore(DEFAULT_HYDRATE_STATE)
+export function useHydrateStore() {
+  return hydrate
+}

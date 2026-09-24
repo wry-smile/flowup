@@ -1,7 +1,18 @@
 {
   "framework-gallery-vue-node": {
     "label": {
-      "name": "Name"
+      "name": "Name",
+      "title": "Node editor",
+      "features": "Explore features",
+      "description": "Configure this node and explore the feature examples."
+    },
+    "panel": {
+      "configuration": "Node Configuration",
+      "savedOnDone": "Node-RED saves on Done and persists on Deploy",
+      "persisted": "persisted",
+      "stateInspector": "State inspector",
+      "editorDraft": "Node-RED editor draft",
+      "doneAndDeploy": "Done writes values to the flow draft; Deploy persists the flow."
     }
   }
 }

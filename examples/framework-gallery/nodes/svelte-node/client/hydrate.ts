@@ -1,43 +1,23 @@
-import { createHydrateStore } from "@wry-smile/flowup/client";
-import { writable } from "svelte/store";
+import { createClientI18n } from '@wry-smile/flowup/client'
+import { createSvelteHydrateStore } from '@wry-smile/flowup/client/svelte'
+import { NODE_NAME } from '../constant'
+
+export const $t = createClientI18n(RED, 'flowup-framework-gallery/framework-gallery-nodes', NODE_NAME)
 
 export interface HydrateStoreState extends FrameworkGallerySvelteNodeClientNodeProperties {}
 
-export function getDefaultHydrateStoreState(): HydrateStoreState {
-  return {
+export const DEFAULT_HYDRATE_STATE: HydrateStoreState = {
     name: undefined,
-  };
+    framework: 'Svelte',
+    mode: 'normal',
+    enabled: true,
+    price: 12,
+    quantity: 2,
+    items: ['Svelte', 'Vue', 'Solid'],
 }
 
-const store = createHydrateStore(
-  getDefaultHydrateStoreState(),
-);
-
-const state = writable<HydrateStoreState>(getDefaultHydrateStoreState());
-
-function syncState(): void {
-  state.set(store.getSnapshot() as HydrateStoreState);
-}
-
-syncState();
+const store = createSvelteHydrateStore(DEFAULT_HYDRATE_STATE)
 
 export function useHydrateStore() {
-  return {
-    state,
-    hydrate(source: Partial<HydrateStoreState>) {
-      store.hydrate(source);
-      syncState();
-    },
-    patch<K extends keyof HydrateStoreState>(key: K, value: HydrateStoreState[K]) {
-      store.patch(key, value);
-      syncState();
-    },
-    commit(target: Partial<HydrateStoreState>) {
-      store.commit(target);
-    },
-    reset() {
-      store.reset();
-      syncState();
-    },
-  };
+  return store
 }
