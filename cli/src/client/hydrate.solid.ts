@@ -1,39 +1,62 @@
-import { batch, createSignal } from 'solid-js'
+import { batch, createRoot, createSignal } from 'solid-js'
 
-import { createHydrateRefs, HydrateCore } from './hydrate.core'
+import { cloneHydrateValue, getHydrateKeys, HydrateCore } from './hydrate.core'
 
+import type { Accessor, Setter } from 'solid-js'
 import type { HydrateRef, HydrateRefs, HydrateStore } from './hydrate.core'
 
-export type SolidHydrateRefs<T extends object> = HydrateRefs<T>
+export type SolidHydrateRef<T> = [Accessor<T>, Setter<T>]
 
-export type SolidHydrateStore<T extends object> = HydrateStore<T, SolidHydrateRefs<T>>
+export type SolidHydrateRefs<T extends object> = {
+  [K in keyof T]-?: SolidHydrateRef<T[K]>
+}
 
-function createSolidHydrateRef<T>(initialValue: T): HydrateRef<T> {
-  const [getValue, setValue] = createSignal(initialValue)
-
-  return {
-    get value() {
-      return getValue()
-    },
-
-    set value(value) {
-      // 避免 T 本身是 function 时被 Solid 当 updater。
-      setValue(() => value)
-    },
-  }
+export type SolidHydrateStore<T extends object> = Omit<HydrateStore<T>, 'refs' | 'patch'> & {
+  readonly refs: SolidHydrateRefs<T>
 }
 
 export function createSolidHydrateStore<T extends object>(defaults: T): SolidHydrateStore<T> {
-  const refs = createHydrateRefs<T, SolidHydrateRefs<T>>(
-    defaults,
-    <K extends keyof T>(_key: K, value: T[K]) => {
-      return createSolidHydrateRef(value)
-    },
-  )
+  return createRoot(() => {
+    const refs = {} as SolidHydrateRefs<T>
+    const coreRefs = {} as HydrateRefs<T>
 
-  return new HydrateCore(defaults, refs, {
-    transaction: fn => {
-      batch(fn)
-    },
+    for (const key of getHydrateKeys(defaults)) {
+      const [getValue, setValue] = createSignal(cloneHydrateValue(defaults[key]))
+
+      Object.defineProperty(refs, key, {
+        enumerable: true,
+        configurable: false,
+        value: [getValue, setValue],
+      })
+
+      const coreRef: HydrateRef<T[typeof key]> = {
+        get value() {
+          return getValue()
+        },
+        set value(value) {
+          // Solid treats functions as updater callbacks; preserve them as data values.
+          setValue(() => value)
+        },
+      }
+
+      Object.defineProperty(coreRefs, key, {
+        enumerable: true,
+        configurable: false,
+        value: coreRef,
+      })
+    }
+
+    const core = new HydrateCore(defaults, coreRefs, {
+      transaction: fn => batch(fn),
+    })
+
+    return {
+      state: core.state,
+      refs,
+      hydrate: core.hydrate,
+      commit: core.commit,
+      reset: core.reset,
+      getSnapshot: core.getSnapshot,
+    }
   })
 }

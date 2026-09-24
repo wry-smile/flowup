@@ -2,6 +2,7 @@ import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 
 import type { OptionValue } from '../../select/src/types'
 import type { TreeOption, TreeSelectProps } from './types'
+import { Icon } from '../../icons'
 const popupClass =
   'absolute left-0 right-0 top-[38px] z-50 overflow-hidden rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) shadow-[0_3px_10px_rgba(0,0,0,.16)]'
 const optionClass =
@@ -83,15 +84,7 @@ function TreeBranch(props: {
       <>
         <span class="flex-1">{props.option.label}</span>
         <Show when={selected()}>
-          <svg
-            class="size-3.5 text-(--fui-text-muted)"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-          >
-            <path d="m4 10 4 4 8-8" />
-          </svg>
+          <Icon name="check" class="size-3.5 text-(--fui-text-muted)" />
         </Show>
       </>
     )
@@ -131,13 +124,10 @@ function TreeBranch(props: {
                 class="flex h-[30px] w-full items-center px-1.5 text-left hover:bg-(--fui-surface-hover)"
                 style={{ 'padding-left': `${6 + depth() * 16}px` }}
               >
-                <svg
+                <Icon
+                  name="chevron-right"
                   class={`mr-0.5 size-4 text-(--fui-interactive) transition-transform ${expanded() ? 'rotate-90' : ''}`}
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M7 5l6 5-6 5V5z" />
-                </svg>
+                />
                 <span class={depth() === 0 ? 'font-medium' : ''}>{props.option.label}</span>
               </button>
             }
@@ -151,13 +141,10 @@ function TreeBranch(props: {
                 class="inline-flex h-[31px] w-8 shrink-0 items-center justify-center hover:bg-(--fui-surface-hover)"
                 style={{ 'margin-left': `${6 + depth() * 16}px` }}
               >
-                <svg
+                <Icon
+                  name="chevron-right"
                   class={`size-4 text-(--fui-interactive) transition-transform ${expanded() ? 'rotate-90' : ''}`}
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M7 5l6 5-6 5V5z" />
-                </svg>
+                />
               </button>
               <button
                 type="button"
@@ -203,6 +190,7 @@ export function TreeSelect(props: TreeSelectProps) {
   let searchInput!: HTMLInputElement
   let container!: HTMLDivElement
   const selected = () => props.value ?? localValue()
+  const hasValue = () => selected() !== '' && selected() !== undefined
   const selectedPath = (): string => {
     const path = findPathByValue(props.options, selected())
     if (path) return path
@@ -239,45 +227,55 @@ export function TreeSelect(props: TreeSelectProps) {
     setOpen(false)
     setQuery('')
   }
+
+  function clear(event: MouseEvent) {
+    event.stopPropagation()
+    setLocalValue('')
+    props.onChange?.('')
+    setQuery('')
+    setOpen(false)
+  }
   return (
-    <div ref={element => (container = element)} id={props.id} class="relative w-full">
+    <div ref={element => (container = element)} id={props.id} class="group relative w-full">
       <button
         type="button"
         aria-haspopup="tree"
         data-fui-status={props.status}
         aria-expanded={open()}
+        aria-busy={props.loading}
+        disabled={props.disabled}
         onClick={() => {
           const next = !open()
           setOpen(next)
           if (next) queueMicrotask(() => searchInput?.focus())
         }}
-        class={`flex h-(--fui-control-height) w-full items-center rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) px-2.5 text-[14px] outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-focus)`}
+        class={`flex h-(--fui-control-height) w-full items-center rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) px-2.5 text-[14px] outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-focus) disabled:cursor-not-allowed disabled:opacity-60`}
       >
         <span class="min-w-0 flex-1 truncate text-left">
           {selectedPath() || props.placeholder || 'Select...'}
         </span>
-        <svg
-          class="size-4 shrink-0 text-(--fui-interactive)"
-          viewBox="0 0 20 20"
-          fill="currentColor"
+        <Show
+          when={props.loading}
+          fallback={<Icon name="chevron-down" class="size-4 shrink-0 text-(--fui-interactive)" />}
         >
-          <path d="M5 7l5 6 5-6H5z" />
-        </svg>
+          <Icon name="spinner" class="size-4 shrink-0 animate-spin text-(--fui-interactive)" />
+        </Show>
       </button>
+      <Show when={props.clearable && hasValue() && !props.loading && !props.disabled}>
+        <button
+          type="button"
+          aria-label={props.clearLabel ?? 'Clear selection'}
+          onClick={clear}
+          class="absolute top-1/2 right-8 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded bg-(--fui-surface) text-(--fui-text-muted) opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:text-(--fui-text) focus-visible:opacity-100"
+        >
+          <Icon name="close" class="size-3.5" />
+        </button>
+      </Show>
       <Show when={open()}>
         <div class={popupClass}>
           <div class="border-b border-(--fui-border-soft) p-1.5">
             <div class="flex h-[30px] items-center rounded-[2px] border border-(--fui-border) px-2 focus-within:border-(--fui-interactive)">
-              <svg
-                class="mr-1.5 size-3.5 shrink-0 text-(--fui-text-subtle)"
-                viewBox="0 0 20 20"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.7"
-              >
-                <circle cx="8.5" cy="8.5" r="5.5" />
-                <path d="m13 13 4 4" />
-              </svg>
+              <Icon name="search" class="mr-1.5 size-3.5 shrink-0 text-(--fui-text-subtle)" />
               <input
                 ref={element => (searchInput = element)}
                 value={query()}
@@ -287,24 +285,39 @@ export function TreeSelect(props: TreeSelectProps) {
               />
             </div>
           </div>
-          <div role="tree" class="fui-scrollbar max-h-[280px] overflow-y-auto py-1 text-[13px]">
-            <For each={props.options}>
-              {option => (
-                <TreeBranch
-                  option={option}
-                  parentPath=""
-                  query={query}
-                  selectedPath={selectedPath}
-                  expandedPaths={expandedPaths}
-                  toggleExpand={toggleExpand}
-                  onSelect={choose}
-                  allowBranchSelection={props.allowBranchSelection ?? true}
-                  renderOption={props.renderOption}
-                />
-              )}
-            </For>
+          <div
+            role="tree"
+            aria-busy={props.loading}
+            class="fui-scrollbar max-h-[280px] overflow-y-auto py-1 text-[13px]"
+          >
+            <Show when={props.loading}>
+              <div role="status" class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)">
+                {props.loadingLabel ?? 'Loading...'}
+              </div>
+            </Show>
+            <Show when={!props.loading}>
+              <For each={props.options}>
+                {option => (
+                  <TreeBranch
+                    option={option}
+                    parentPath=""
+                    query={query}
+                    selectedPath={selectedPath}
+                    expandedPaths={expandedPaths}
+                    toggleExpand={toggleExpand}
+                    onSelect={choose}
+                    allowBranchSelection={props.allowBranchSelection ?? true}
+                    renderOption={props.renderOption}
+                  />
+                )}
+              </For>
+            </Show>
             <Show
-              when={query() && !props.options.some(option => treeHasMatch(option, '', query()))}
+              when={
+                !props.loading &&
+                query() &&
+                !props.options.some(option => treeHasMatch(option, '', query()))
+              }
             >
               <div class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)">
                 {props.emptyLabel ?? 'No matching options'}

@@ -78,6 +78,9 @@ import template75 from '../files/components/solid/theme.css.eta?raw'
 import template76 from '../files/components/solid/tree-select/index.ts?raw'
 import template77 from '../files/components/solid/tree-select/src/index.tsx?raw'
 import template78 from '../files/components/solid/tree-select/src/types.ts?raw'
+import template79 from '../files/components/solid/icons/index.ts?raw'
+import template80 from '../files/components/solid/icons/src/index.tsx?raw'
+import template81 from '../files/components/solid/icons/src/types.ts?raw'
 
 export const solidComponentTemplates: Record<string, string> = {
   'alert/index.ts': template0,
@@ -110,6 +113,9 @@ export const solidComponentTemplates: Record<string, string> = {
   'icon-button/index.ts': template27,
   'icon-button/src/index.tsx': template28,
   'icon-button/src/types.ts': template29,
+  'icons/index.ts': template79,
+  'icons/src/index.tsx': template80,
+  'icons/src/types.ts': template81,
   'input-group/index.ts': template30,
   'input-group/src/index.tsx': template31,
   'input-group/src/types.ts': template32,
@@ -172,6 +178,7 @@ export const solidComponentNames = [
   'drawer',
   'form-row',
   'icon-button',
+  'icons',
   'input',
   'input-group',
   'input-number',

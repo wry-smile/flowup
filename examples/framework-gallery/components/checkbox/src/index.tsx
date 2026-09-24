@@ -1,6 +1,7 @@
 import { Show, createSignal } from 'solid-js'
 
 import type { CheckboxProps } from './types'
+import { Icon } from '../../icons'
 
 export function Checkbox(props: CheckboxProps) {
   const [localChecked, setLocalChecked] = createSignal(props.checked ?? false)
@@ -27,15 +28,7 @@ export function Checkbox(props: CheckboxProps) {
         class="mr-2 flex size-[16px] shrink-0 items-center justify-center rounded-[2px] border border-(--fui-text-disabled) bg-(--fui-surface) peer-checked:border-(--fui-interactive) peer-checked:bg-(--fui-interactive)"
       >
         <Show when={checked()}>
-          <svg
-            class="size-[11px] text-white"
-            viewBox="0 0 20 20"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="3"
-          >
-            <path d="m4 10 4 4 8-8" />
-          </svg>
+          <Icon name="check" class="size-[11px] text-white" />
         </Show>
       </span>
       {props.label}

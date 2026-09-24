@@ -4,7 +4,10 @@ import type { OptionValue, SelectOption, SelectProps } from '../../select/src/ty
 
 export type { SelectOption }
 
-export interface AsyncSearchSelectProps extends Omit<SelectProps, 'options' | 'onChange'> {
+export interface AsyncSearchSelectProps extends Omit<
+  SelectProps,
+  'options' | 'onChange' | 'loading'
+> {
   loadOptions: (query: string, signal: AbortSignal) => Promise<SelectOption[]>
   onChange?: (value: OptionValue, option: SelectOption) => void
   valueLabel?: string

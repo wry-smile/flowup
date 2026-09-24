@@ -19,6 +19,7 @@ export interface MultiSelectProps {
   status?: 'warning' | 'error'
   searchPlaceholder?: string
   clearLabel?: string
+  clearable?: boolean
   emptyLabel?: string
   selectedCountText?: (count: number) => string
 }

@@ -1,6 +1,7 @@
 import { createSignal, Show } from 'solid-js'
 
 import type { CollapseProps } from './types'
+import { Icon } from '../../icons'
 export function Collapse(props: CollapseProps) {
   const [expanded, setExpanded] = createSignal(props.open ?? props.defaultOpen ?? false)
   const isOpen = () => props.open ?? expanded()
@@ -19,13 +20,10 @@ export function Collapse(props: CollapseProps) {
         onClick={toggle}
         class="flex h-[36px] w-full items-center bg-(--fui-surface-soft) px-2.5 text-left text-[13px] font-medium hover:bg-(--fui-surface-hover)"
       >
-        <svg
+        <Icon
+          name="chevron-right"
           class={`mr-1 size-4 transition-transform ${isOpen() ? 'rotate-90' : ''}`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path d="M7 5l6 5-6 5V5z" />
-        </svg>
+        />
         {props.title}
         <span class="ml-auto text-[11px] font-normal text-(--fui-text-subtle)">{props.extra}</span>
       </button>

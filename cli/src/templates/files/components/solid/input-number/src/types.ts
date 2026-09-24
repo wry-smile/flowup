@@ -7,6 +7,9 @@ export interface InputNumberProps {
   precision?: number
   increaseLabel?: string
   decreaseLabel?: string
+  clearable?: boolean
+  clearLabel?: string
+  onClear?: () => void
   unit?: string
   disabled?: boolean
   status?: 'warning' | 'error'

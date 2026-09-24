@@ -14,6 +14,11 @@ export interface SelectProps {
   options: SelectOption[]
   value?: OptionValue
   placeholder?: string
+  loading?: boolean
+  loadingLabel?: string
+  disabled?: boolean
+  clearable?: boolean
+  clearLabel?: string
   onChange?: (value: OptionValue) => void
   renderOption?: (option: SelectOption, selected: boolean) => JSX.Element
   status?: 'warning' | 'error'

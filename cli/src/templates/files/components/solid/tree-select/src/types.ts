@@ -16,6 +16,11 @@ export interface TreeSelectProps {
   placeholder?: string
   filterPlaceholder?: string
   emptyLabel?: string
+  loading?: boolean
+  loadingLabel?: string
+  disabled?: boolean
+  clearable?: boolean
+  clearLabel?: string
   onChange?: (value: OptionValue) => void
   expandMode?: 'multiple' | 'accordion'
   allowBranchSelection?: boolean

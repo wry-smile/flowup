@@ -2,6 +2,7 @@ import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
 
 import type { OptionValue } from '../../select/src/types'
 import type { MultiSelectProps } from './types'
+import { Icon } from '../../icons'
 const popupClass =
   'absolute left-0 right-0 top-[38px] z-40 overflow-hidden rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) shadow-[0_3px_10px_rgba(0,0,0,.16)]'
 
@@ -65,7 +66,7 @@ export function MultiSelect(props: MultiSelectProps) {
         aria-controls={props.id ? `${props.id}-popup` : undefined}
         onClick={togglePopup}
         onKeyDown={event => (event.key === 'Enter' || event.key === ' ') && togglePopup()}
-        class={`flex min-h-(--fui-control-height) w-full cursor-default items-center rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) px-1.5 py-[3px] outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-focus)`}
+        class={`group flex min-h-(--fui-control-height) w-full cursor-default items-center rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) px-1.5 py-[3px] outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-focus)`}
       >
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
           <Show when={selected().length === 0}>
@@ -88,35 +89,33 @@ export function MultiSelect(props: MultiSelectProps) {
                     }}
                     class="ml-1 flex size-[18px] items-center justify-center rounded-[2px] text-(--fui-interactive) hover:bg-(--fui-surface-selected) hover:text-(--fui-text)"
                   >
-                    ×
+                    <Icon name="close" class="size-3" />
                   </button>
                 </span>
               )
             }}
           </For>
         </div>
-        <svg
-          class="ml-1 size-4 shrink-0 text-(--fui-interactive)"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path d="M5 7l5 6 5-6H5z" />
-        </svg>
+        <Show when={props.clearable && selected().length > 0}>
+          <button
+            type="button"
+            aria-label={props.clearLabel ?? 'Clear selection'}
+            onClick={event => {
+              event.stopPropagation()
+              update([])
+            }}
+            class="mr-1 flex size-5 shrink-0 items-center justify-center rounded text-(--fui-text-muted) opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-(--fui-surface-selected) hover:text-(--fui-text) focus-visible:opacity-100"
+          >
+            <Icon name="close" class="size-3.5" />
+          </button>
+        </Show>
+        <Icon name="chevron-down" class="ml-1 size-4 shrink-0 text-(--fui-interactive)" />
       </div>
       <Show when={open()}>
         <div id={props.id ? `${props.id}-popup` : undefined} class={popupClass}>
           <div class="border-b border-(--fui-border-soft) p-1.5">
             <div class="flex h-[30px] items-center rounded-[2px] border border-(--fui-border) px-2 focus-within:border-(--fui-interactive)">
-              <svg
-                class="mr-1.5 size-3.5 text-(--fui-text-subtle)"
-                viewBox="0 0 20 20"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.7"
-              >
-                <circle cx="8.5" cy="8.5" r="5.5" />
-                <path d="m13 13 4 4" />
-              </svg>
+              <Icon name="search" class="mr-1.5 size-3.5 text-(--fui-text-subtle)" />
               <input
                 ref={element => (searchInput = element)}
                 value={query()}
@@ -158,15 +157,10 @@ export function MultiSelect(props: MultiSelectProps) {
                     <span
                       class={`mr-2 flex size-[15px] shrink-0 items-center justify-center rounded-[2px] border ${checked() ? 'border-(--fui-interactive) bg-(--fui-interactive)' : 'border-(--fui-text-disabled) bg-(--fui-surface)'}`}
                     >
-                      <svg
+                      <Icon
+                        name="check"
                         class={`size-[11px] text-white ${checked() ? '' : 'hidden'}`}
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <path d="m4 10 4 4 8-8" />
-                      </svg>
+                      />
                     </span>
                     <span class="text-[13px]">
                       {props.renderOption ? props.renderOption(option, checked()) : option.label}
