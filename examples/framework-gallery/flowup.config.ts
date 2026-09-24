@@ -23,10 +23,6 @@ export default defineConfig({
   client: {
     config: {
       resolve: { alias: sharedAlias },
-      build: {
-        minify: false,
-        cssMinify: false,
-      },
     },
     plugins: [
       UnoCSS({ presets: [presetFlowupWind4({ scope })] }),

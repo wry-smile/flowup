@@ -55,11 +55,11 @@ Flowup discovers `nodes/*/` and `plugins/*/` automatically. No entries manifest 
 
 Flowup reports a missing `client/editor.html` during the editor build.
 
-`gen add` updates Node-RED mappings, framework dependencies, and the generated `flowup.config.ts` after each entry. If you customized the config, Flowup preserves it and prints a suggested configuration. Run `pnpm install` after adding an entry. The generated config uses entry directory lists for Preact and Solid and sets aliases for `@` (package root), `@shared`, `@client-shared`, and `@runtime-shared`; the root `tsconfig.json` uses matching paths. Same-group framework code and UnoCSS output share one editor build, so identical modules and utility rules are deduplicated within that group. Nodes and plugins are separate builds, so code and utility rules used by both groups can appear in both outputs. Node types and plugin IDs use `<scope>-<entry-name>`, so entry names must be distinct across `nodes/` and `plugins/`. TSX entries use `client/index.tsx` and a child `tsconfig.json` with their `jsxImportSource`. Preact TSX uses an explicit `preact({ include: [...] })` plugin. The generated package declares `@preact/preset-vite`; the package manager resolves its Babel peer dependency.
+`gen add` updates Node-RED mappings, framework dependencies, and the generated `flowup.config.ts` after each entry. If you customized the config, Flowup preserves it and prints a suggested configuration. Run `pnpm install` after adding an entry. The generated config uses entry directory lists for Preact and Solid and sets aliases for `@` (package root), `@shared`, `@client-shared`, and `@runtime-shared`; the root `tsconfig.json` uses matching paths. Same-group entries share an editor build, so modules and UnoCSS output used by multiple entries in that group can be deduplicated there. Nodes and plugins are separate builds, so code, framework runtimes, and utility CSS used by both groups can appear in both HTML outputs. Flowup does not extract a shared browser script or stylesheet across Node-RED groups. Node types and plugin IDs use `<scope>-<entry-name>`, so entry names must be distinct across `nodes/` and `plugins/`. TSX entries use `client/index.tsx` and a child `tsconfig.json` with their `jsxImportSource`. Preact TSX uses an explicit `preact({ include: [...] })` plugin. The generated package declares `@preact/preset-vite`; the package manager resolves its Babel peer dependency.
 
 See [framework-gallery](../examples/framework-gallery/README.md) for a generated package with all five node frameworks, a Preact plugin, shared code, i18n, icons, resources, and scoped UnoCSS.
 
-Framework templates include `client/i18n.ts`, which uses `createEditorI18n(RED, '<package>/<node-red-entry>', NODE_NAME)` (or `PLUGIN_NAME`) to translate keys such as `t('label.name')` inside Vue, Svelte, Preact, and Solid components. Define those keys in each entry's `locales/<locale>/<entry>.json`; grouped builds merge the child catalogs into the group catalog Node-RED reads. Update the package and entry namespace if you rename either field in `package.json`.
+Framework templates define `$t` in `client/hydrate.ts` using `createClientI18n(RED, '<package>/<node-red-entry>', NODE_NAME)` (or `PLUGIN_NAME`). Use `$t('label.name')` inside Vue, Svelte, Preact, and Solid components. Define the keys in each entry's `locales/<locale>/<entry>.json`; grouped builds merge the child catalogs into the catalog Node-RED reads. Update the namespace if you rename the package or Node-RED entry in `package.json`.
 
 Child icon files are emitted flat under `dist/icons/` with the entry name prepended. For example, `nodes/sensor/icons/status.svg` becomes `dist/icons/sensor-status.svg`; set the Node-RED `icon` field to `sensor-status.svg`. Child resources remain under `dist/resources/<entry-name>/`. Child locale catalogs and help files are combined into `dist/locales/<locale>/<scope>-nodes.{json,html}` or `<scope>-plugins.{json,html}` for Node-RED's grouped entries. Root asset directories are supported too.
 
@@ -93,6 +93,12 @@ The default `all` mode runs the runtime and editor builds as one transaction.
 It writes to a temporary sibling directory and replaces `dist/` only after the
 runtime, editor, package metadata, and artifact manifest have all been
 validated.
+
+Vite minifies production editor output by default. The generated editor script
+and CSS are inlined into the Node-RED HTML file; gzip size estimates transfer
+size, while the uncompressed size describes the browser payload after
+decompression. Custom `client.config.build` settings can override Vite's
+defaults.
 
 Runtime dependencies imported by the node code are bundled into the runtime. Generated configs set `runtime.config.ssr.noExternal: true`; Flowup also applies this default when loading existing Flowup configs.
 
@@ -237,7 +243,7 @@ export default defineConfig({
 
 ### Scoped UnoCSS
 
-Each generated framework editor imports `virtual:uno.css` when UnoCSS is selected. Flowup deduplicates these imports in a multi-entry build. Framework apps mount under
+Each generated framework editor imports `virtual:uno.css` when UnoCSS is selected. Flowup combines these imports in a multi-entry group build. The production editor build uses Vite's minification defaults. Framework apps mount under
 `data-flowup-scope="my-node"`. The Flowup Wind4 preset prefixes generated
 utility selectors with that scope, limits its reset and theme variables to the
 container, and gives generated `@property` registrations and animation

@@ -2,7 +2,7 @@ import { NODE_NAME, NODE_PALETTE_LABEL, NODE_SCOPE } from '../constant'
 import type { FrameworkGalleryVanillaNodeProperties } from '../types'
 import { DEFAULT_HYDRATE_STATE, createVanillaHydrateStore } from './hydrate'
 import { mountConfigPanel } from './components/mount-config-panel'
-import './config-panel.css'
+import 'virtual:uno.css'
 
 const store = createVanillaHydrateStore()
 let dispose: (() => void) | undefined
