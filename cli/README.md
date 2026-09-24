@@ -57,9 +57,10 @@ Install editable Node-RED editor components into a generated package. The comman
 flowup gen component
 # or skip the prompts:
 flowup gen component button search-select dialog --framework solid
+flowup gen component all --framework solid
 ```
 
-Single-entry packages install source in `client/components/`. Multi-entry packages install it in the root `components/` directory, alongside `nodes/` and `plugins/`, so SolidJS entries in either group can share it. Import installed components through `@ui`:
+The interactive picker includes an **Install all components** option. You can also pass `all` to install the full set directly. Single-entry packages install source in `client/components/`. Multi-entry packages install it in the root `components/` directory, alongside `nodes/` and `plugins/`, so SolidJS entries in either group can share it. Import installed components through `@ui`:
 
 ```tsx
 import { Button, SearchSelect } from '@ui'

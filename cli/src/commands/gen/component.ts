@@ -1,11 +1,15 @@
 import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs'
-import { cp, readFile, rm, writeFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { dirname, join, resolve } from 'node:path'
 import process from 'node:process'
 import pc from 'picocolors'
-import { resolveCliPackageRoot } from '../../share/cli-pkg'
 import { multiselectOrExit, selectOrExit } from '../../share/prompts'
 import { commitStagedDirectory, createStagingDir, isPathInside } from '../../share/safe-fs'
+import { renderEta } from '../../templates/renderers/eta'
+import {
+  solidComponentNames,
+  solidComponentTemplates,
+} from '../../templates/renderers/component-assets'
 import { isMultiEntryPackage } from './multi'
 import { showGenerationGuide } from './feedback'
 
@@ -18,6 +22,7 @@ export interface ComponentOptions {
 const COMPONENT_FRAMEWORK = 'solid'
 const COMPONENT_IMPORT = "import './theme.css'"
 const SHARED_COMPONENT_INCLUDE = "'**/components/**/*.{jsx,tsx}',"
+const ALL_COMPONENTS = '__all_components__'
 
 export async function runComponentGenerator(options: ComponentOptions = {}): Promise<void> {
   const framework =
@@ -30,18 +35,19 @@ export async function runComponentGenerator(options: ComponentOptions = {}): Pro
   if (framework !== COMPONENT_FRAMEWORK)
     throw new Error(`No installable components for ${framework}. SolidJS is currently supported.`)
 
-  const templateRoot = getTemplateRoot(framework)
-  const available = readdirSync(templateRoot, { withFileTypes: true })
-    .filter(entry => entry.isDirectory() && /^[a-z][a-z0-9-]*$/.test(entry.name))
-    .map(entry => entry.name)
-    .sort()
-  const selected = options.names?.length
+  const available = solidComponentNames
+  const selection = options.names?.length
     ? options.names
     : await multiselectOrExit<string>({
         message: 'Select components to install',
-        options: available.map(name => ({ value: name, label: name })),
+        options: [
+          { value: ALL_COMPONENTS, label: 'Install all components' },
+          ...available.map(name => ({ value: name, label: name })),
+        ],
         required: true,
       })
+  const selected =
+    selection.includes(ALL_COMPONENTS) || selection.includes('all') ? available : selection
   for (const name of selected)
     if (!available.includes(name)) throw new Error(`Unknown SolidJS component: ${name}`)
 
@@ -68,7 +74,7 @@ export async function runComponentGenerator(options: ComponentOptions = {}): Pro
         .filter(entry => entry.isDirectory())
         .map(entry => entry.name)
     : []
-  const resolved = resolveDependencies(selected, templateRoot)
+  const resolved = resolveDependencies(selected)
   const added = resolved.filter(name => !existing.includes(name))
   const configSource = await readFile(configPath, 'utf8')
   const nextConfig = prepareConfig(configSource, multi)
@@ -99,16 +105,25 @@ export async function runComponentGenerator(options: ComponentOptions = {}): Pro
   const staging = await createStagingDir(target)
   try {
     if (existsSync(target)) await cp(target, staging, { recursive: true })
-    for (const name of added)
-      await cp(join(templateRoot, name), join(staging, name), { recursive: true })
+    for (const name of added) {
+      const componentFiles = Object.entries(solidComponentTemplates).filter(([path]) =>
+        path.startsWith(`${name}/`),
+      )
+      for (const [path, template] of componentFiles) {
+        const targetPath = join(staging, path)
+        await mkdir(dirname(targetPath), { recursive: true })
+        await writeFile(targetPath, renderEta(template, { scope }))
+      }
+    }
     const themePath = join(staging, 'theme.css')
     if (existsSync(themePath)) {
       const existingTheme = await readFile(themePath, 'utf8')
       if (!existingTheme.includes('--fui-surface'))
         throw new Error(`Existing ${join(target, 'theme.css')} is not a Flowup UI component theme.`)
     } else {
-      const theme = await readFile(join(templateRoot, 'theme.css'), 'utf8')
-      await writeFile(themePath, theme.replaceAll('__FLOWUP_SCOPE__', scope))
+      const theme = solidComponentTemplates['theme.css']
+      if (!theme) throw new Error('The SolidJS component theme template is missing.')
+      await writeFile(themePath, renderEta(theme, { scope }))
     }
     const indexPath = join(staging, 'index.ts')
     let index = existsSync(indexPath) ? await readFile(indexPath, 'utf8') : ''
@@ -161,23 +176,16 @@ export async function runComponentGenerator(options: ComponentOptions = {}): Pro
   )
 }
 
-function getTemplateRoot(framework: string): string {
-  const packageRoot = resolveCliPackageRoot()
-  if (!packageRoot) throw new Error('Cannot locate the Flowup CLI package.')
-  const directory = resolve(packageRoot, 'templates/components', framework)
-  if (!existsSync(directory)) throw new Error(`Component templates are missing: ${directory}`)
-  return directory
-}
-
-function resolveDependencies(selected: string[], root: string): string[] {
+function resolveDependencies(selected: string[]): string[] {
   const result = new Set<string>()
   function visit(name: string): void {
     if (result.has(name)) return
-    const directory = join(root, name)
-    if (!existsSync(directory)) throw new Error(`Missing component dependency: ${name}`)
+    const files = Object.entries(solidComponentTemplates).filter(([path]) =>
+      path.startsWith(`${name}/`),
+    )
+    if (!files.length) throw new Error(`Missing component dependency: ${name}`)
     result.add(name)
-    for (const file of componentSourceFiles(directory)) {
-      const source = readFileSync(file, 'utf8')
+    for (const [, source] of files) {
       for (const match of source.matchAll(
         /from\s+['"]\.\.\/\.\.\/([a-z][a-z0-9-]*)(?:\/[^'"]*)?['"]/g,
       ))
@@ -193,7 +201,7 @@ function componentSourceFiles(directory: string): string[] {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name)
     if (entry.isDirectory()) files.push(...componentSourceFiles(path))
-    else if (/\.(ts|tsx)$/.test(entry.name)) files.push(path)
+    else if (/\.(ts|tsx|js|jsx)$/.test(entry.name)) files.push(path)
   }
   return files
 }
@@ -214,11 +222,8 @@ function assertSolidUnoPackage(
   if (!dependencies['solid-js'] || !dependencies.unocss)
     throw new Error('Generate a SolidJS entry with --unocss and install its dependencies first.')
   if (!multi) {
-    if (!existsSync(resolve(root, 'client/App.tsx')))
-      throw new Error('Component installation requires a SolidJS client.')
-    const index = resolve(root, 'client/index.tsx')
-    if (!existsSync(index) || !readFileSync(index, 'utf8').includes('virtual:uno.css'))
-      throw new Error('The SolidJS client must import virtual:uno.css.')
+    if (!hasSolidUnoClient(resolve(root, 'client')))
+      throw new Error('The package must contain a SolidJS client configured with UnoCSS.')
   }
   if (multi) {
     const hasSolidUnoEntry = ['nodes', 'plugins'].some(group => {
@@ -226,18 +231,31 @@ function assertSolidUnoPackage(
       if (!existsSync(groupDir)) return false
       return readdirSync(groupDir, { withFileTypes: true }).some(entry => {
         if (!entry.isDirectory()) return false
-        const clientDir = resolve(groupDir, entry.name, 'client')
-        const index = resolve(clientDir, 'index.tsx')
-        return (
-          existsSync(resolve(clientDir, 'App.tsx')) &&
-          existsSync(index) &&
-          readFileSync(index, 'utf8').includes('virtual:uno.css')
-        )
+        return hasSolidUnoClient(resolve(groupDir, entry.name, 'client'))
       })
     })
     if (!hasSolidUnoEntry)
-      throw new Error('Add a SolidJS node or plugin with --unocss before installing components.')
+      throw new Error('The package must contain a SolidJS node or plugin configured with UnoCSS.')
   }
+}
+
+function hasSolidUnoClient(clientDir: string): boolean {
+  if (!existsSync(clientDir)) return false
+  const sourceFiles = componentSourceFiles(clientDir).filter(file =>
+    /\.(?:[jt]sx?|jsx?)$/.test(file),
+  )
+  if (!sourceFiles.length) return false
+  const sources = sourceFiles.map(file => readFileSync(file, 'utf8'))
+  const isSolidClient =
+    sources.some(source => /from\s+['"]solid-js(?:\/[^'"]*)?['"]/.test(source)) ||
+    (existsSync(resolve(clientDir, 'tsconfig.json')) &&
+      /jsxImportSource\s*:\s*['"]solid-js['"]/.test(
+        readFileSync(resolve(clientDir, 'tsconfig.json'), 'utf8'),
+      ))
+  const hasUnoImport = sources.some(source =>
+    /(?:virtual:uno\.css|flowup:unocss|flowup:uno\.css)/.test(source),
+  )
+  return isSolidClient && hasUnoImport
 }
 
 function prepareConfig(source: string, multi: boolean): string {

@@ -17,7 +17,7 @@ export function InputNumber(props: InputNumberProps) {
   }
 
   return (
-    <div class="max-w-[220px]">
+    <div class="w-full">
       <div
         data-fui-status={props.status}
         class={`flex h-(--fui-control-height) overflow-hidden rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) transition focus-within:border-(--fui-interactive) focus-within:ring-1 focus-within:ring-(--fui-focus) hover:border-(--fui-text-subtle) has-[:disabled]:border-(--fui-border-soft) has-[:disabled]:bg-(--fui-surface-muted)`}

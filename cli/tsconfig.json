@@ -17,5 +17,6 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "bin/**/*", "tsdown.config.ts"]
+  "include": ["src/**/*", "bin/**/*", "tsdown.config.ts"],
+  "exclude": ["src/templates/files/components/solid/**/*"]
 }

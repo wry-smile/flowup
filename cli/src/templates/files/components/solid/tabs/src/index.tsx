@@ -7,7 +7,7 @@ export function Tabs(props: TabsProps) {
   )
   const current = () => props.value ?? active()
   return (
-    <div class={`max-w-[620px] ${props.class ?? ''}`}>
+    <div class={`w-full ${props.class ?? ''}`}>
       <div
         role="tablist"
         class="flex items-end gap-1 border-b-2 border-(--fui-border-soft) bg-(--fui-surface-soft) pt-1 pr-1"

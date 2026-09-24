@@ -55,7 +55,7 @@ export function MultiSelect(props: MultiSelectProps) {
   }
 
   return (
-    <div ref={element => (container = element)} id={props.id} class="relative max-w-[520px]">
+    <div ref={element => (container = element)} id={props.id} class="relative w-full">
       <div
         role="combobox"
         data-fui-status={props.status}

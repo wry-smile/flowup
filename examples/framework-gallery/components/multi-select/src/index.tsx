@@ -8,9 +8,13 @@ const popupClass =
 function closeOnOutside(ref: () => HTMLElement | undefined, close: () => void) {
   onMount(() => {
     const controller = new AbortController()
-    document.addEventListener('pointerdown', (event: PointerEvent) => {
-      if (!ref()?.contains(event.target as Node)) close()
-    }, { signal: controller.signal })
+    document.addEventListener(
+      'pointerdown',
+      (event: PointerEvent) => {
+        if (!ref()?.contains(event.target as Node)) close()
+      },
+      { signal: controller.signal },
+    )
     onCleanup(() => controller.abort())
   })
 }
@@ -51,7 +55,7 @@ export function MultiSelect(props: MultiSelectProps) {
   }
 
   return (
-    <div ref={element => (container = element)} id={props.id} class="relative max-w-[520px]">
+    <div ref={element => (container = element)} id={props.id} class="relative w-full">
       <div
         role="combobox"
         data-fui-status={props.status}

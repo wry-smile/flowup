@@ -58,8 +58,7 @@
   "files": [
     "README.md",
     "dist",
-    "skills",
-    "templates"
+    "skills"
   ],
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
@@ -73,7 +72,7 @@
     "test:e2e": "node --test test/e2e/*.test.mjs",
     "test:integration": "node --test test/node-red-integration.test.mjs",
     "test:unit": "node --test test/assemble-boundaries.test.mjs test/build-assemble-failure-safety.test.mjs test/build-assemble-safety.test.mjs test/gen-safety.test.mjs test/framework-generation.test.mjs test/component-generation.test.mjs",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p templates/components/solid/tsconfig.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/templates/files/components/solid/tsconfig.json"
   },
   "peerDependencies": {
     "@preact/signals": ">=2.0.0",

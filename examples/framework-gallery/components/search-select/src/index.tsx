@@ -14,9 +14,13 @@ const optionClass =
 function closeOnOutside(ref: () => HTMLElement | undefined, close: () => void) {
   onMount(() => {
     const controller = new AbortController()
-    document.addEventListener('pointerdown', (event: PointerEvent) => {
-      if (!ref()?.contains(event.target as Node)) close()
-    }, { signal: controller.signal })
+    document.addEventListener(
+      'pointerdown',
+      (event: PointerEvent) => {
+        if (!ref()?.contains(event.target as Node)) close()
+      },
+      { signal: controller.signal },
+    )
     onCleanup(() => controller.abort())
   })
 }
@@ -52,7 +56,7 @@ export function SearchSelect(props: SearchSelectProps) {
   }
 
   return (
-    <div ref={element => (container = element)} id={props.id} class="relative max-w-[420px]">
+    <div ref={element => (container = element)} id={props.id} class="relative w-full">
       <button
         type="button"
         aria-haspopup="listbox"

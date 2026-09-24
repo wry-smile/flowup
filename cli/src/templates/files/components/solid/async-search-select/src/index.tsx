@@ -113,7 +113,7 @@ export function AsyncSearchSelect(props: AsyncSearchSelectProps) {
   })
 
   return (
-    <div ref={element => (container = element)} id={props.id} class="relative max-w-[420px]">
+    <div ref={element => (container = element)} id={props.id} class="relative w-full">
       <button
         type="button"
         aria-haspopup="listbox"

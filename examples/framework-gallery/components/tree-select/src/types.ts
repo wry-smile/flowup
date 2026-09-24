@@ -18,6 +18,7 @@ export interface TreeSelectProps {
   emptyLabel?: string
   onChange?: (value: OptionValue) => void
   expandMode?: 'multiple' | 'accordion'
+  allowBranchSelection?: boolean
   renderOption?: (option: TreeOption, selected: boolean, path: string) => JSX.Element
   status?: 'warning' | 'error'
 }

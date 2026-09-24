@@ -2,7 +2,7 @@ import type { TextInputProps } from './types'
 
 export function TextInput(props: TextInputProps) {
   return (
-    <div class={`max-w-[520px] ${props.class ?? ''}`}>
+    <div class={`w-full ${props.class ?? ''}`}>
       <input
         id={props.id}
         data-fui-status={props.status}

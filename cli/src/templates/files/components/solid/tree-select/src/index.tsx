@@ -33,7 +33,7 @@ function findPathByValue(
 ): string | undefined {
   for (const option of options) {
     const path = parent ? `${parent} / ${option.label}` : option.label
-    if (!option.children?.length && (option.value ?? path) === value) return path
+    if ((option.value ?? path) === value) return path
     const childPath = findPathByValue(option.children ?? [], value, path)
     if (childPath) return childPath
   }
@@ -65,6 +65,7 @@ function TreeBranch(props: {
   expandedPaths: () => string[]
   toggleExpand: (path: string, parentPath: string, expand: boolean) => void
   onSelect: (path: string) => void
+  allowBranchSelection: boolean
   renderOption?: TreeSelectProps['renderOption']
 }) {
   const path = () =>
@@ -78,6 +79,25 @@ function TreeBranch(props: {
     props.selectedPath().startsWith(`${path()} / `) ||
     !!props.query()
   const depth = () => props.parentPath.split(' / ').filter(Boolean).length
+  const optionContent = () =>
+    props.renderOption ? (
+      props.renderOption(props.option, selected(), path())
+    ) : (
+      <>
+        <span class="flex-1">{props.option.label}</span>
+        <Show when={selected()}>
+          <svg
+            class="size-3.5 text-(--fui-text-muted)"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+          >
+            <path d="m4 10 4 4 8-8" />
+          </svg>
+        </Show>
+      </>
+    )
   return (
     <Show when={visible()}>
       <div>
@@ -93,43 +113,60 @@ function TreeBranch(props: {
               class={`${optionClass} ${selected() ? 'bg-(--fui-surface-selected)' : ''} disabled:opacity-50`}
               style={{ 'padding-left': `${8 + depth() * 16}px`, 'padding-right': '8px' }}
             >
-              {props.renderOption ? (
-                props.renderOption(props.option, selected(), path())
-              ) : (
-                <>
-                  <span class="flex-1">{props.option.label}</span>
-                  <Show when={selected()}>
-                    <svg
-                      class="size-3.5 text-(--fui-text-muted)"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.2"
-                    >
-                      <path d="m4 10 4 4 8-8" />
-                    </svg>
-                  </Show>
-                </>
-              )}
+              {optionContent()}
             </button>
           }
         >
-          <button
-            type="button"
-            aria-expanded={expanded()}
-            onClick={() => props.toggleExpand(path(), props.parentPath, !expanded())}
-            class="flex h-[30px] w-full items-center px-1.5 text-left hover:bg-(--fui-surface-hover)"
-            style={{ 'padding-left': `${6 + depth() * 16}px` }}
+          <Show
+            when={props.allowBranchSelection}
+            fallback={
+              <button
+                type="button"
+                aria-expanded={expanded()}
+                onClick={() => props.toggleExpand(path(), props.parentPath, !expanded())}
+                class="flex h-[30px] w-full items-center px-1.5 text-left hover:bg-(--fui-surface-hover)"
+                style={{ 'padding-left': `${6 + depth() * 16}px` }}
+              >
+                <svg
+                  class={`mr-0.5 size-4 text-(--fui-interactive) transition-transform ${expanded() ? 'rotate-90' : ''}`}
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M7 5l6 5-6 5V5z" />
+                </svg>
+                <span class={depth() === 0 ? 'font-medium' : ''}>{props.option.label}</span>
+              </button>
+            }
           >
-            <svg
-              class={`mr-0.5 size-4 text-(--fui-interactive) transition-transform ${expanded() ? 'rotate-90' : ''}`}
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path d="M7 5l6 5-6 5V5z" />
-            </svg>
-            <span class={depth() === 0 ? 'font-medium' : ''}>{props.option.label}</span>
-          </button>
+            <div class="flex w-full items-stretch">
+              <button
+                type="button"
+                role="treeitem"
+                aria-selected={selected()}
+                disabled={props.option.disabled}
+                onClick={() => props.onSelect(path())}
+                class={`${optionClass} flex-1 ${selected() ? 'bg-(--fui-surface-selected)' : ''} disabled:opacity-50`}
+                style={{ 'padding-left': `${8 + depth() * 16}px`, 'padding-right': '8px' }}
+              >
+                {optionContent()}
+              </button>
+              <button
+                type="button"
+                aria-label={`${expanded() ? 'Collapse' : 'Expand'} ${props.option.label}`}
+                aria-expanded={expanded()}
+                onClick={() => props.toggleExpand(path(), props.parentPath, !expanded())}
+                class="inline-flex h-[31px] w-8 shrink-0 items-center justify-center hover:bg-(--fui-surface-hover)"
+              >
+                <svg
+                  class={`size-4 text-(--fui-interactive) transition-transform ${expanded() ? 'rotate-90' : ''}`}
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M7 5l6 5-6 5V5z" />
+                </svg>
+              </button>
+            </div>
+          </Show>
           <Show when={expanded()}>
             <div>
               <For each={props.option.children}>
@@ -142,6 +179,7 @@ function TreeBranch(props: {
                     expandedPaths={props.expandedPaths}
                     toggleExpand={props.toggleExpand}
                     onSelect={props.onSelect}
+                    allowBranchSelection={props.allowBranchSelection}
                     renderOption={props.renderOption}
                   />
                 )}
@@ -197,7 +235,7 @@ export function TreeSelect(props: TreeSelectProps) {
     setQuery('')
   }
   return (
-    <div ref={element => (container = element)} id={props.id} class="relative max-w-[520px]">
+    <div ref={element => (container = element)} id={props.id} class="relative w-full">
       <button
         type="button"
         aria-haspopup="tree"
@@ -255,6 +293,7 @@ export function TreeSelect(props: TreeSelectProps) {
                   expandedPaths={expandedPaths}
                   toggleExpand={toggleExpand}
                   onSelect={choose}
+                  allowBranchSelection={props.allowBranchSelection ?? true}
                   renderOption={props.renderOption}
                 />
               )}
