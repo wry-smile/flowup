@@ -74,10 +74,7 @@ function TreeBranch(props: {
   const hasChildren = () => !!props.option.children?.length
   const visible = () =>
     !props.query() || treeHasMatch(props.option, props.parentPath, props.query())
-  const expanded = () =>
-    props.expandedPaths().includes(path()) ||
-    props.selectedPath().startsWith(`${path()} / `) ||
-    !!props.query()
+  const expanded = () => props.expandedPaths().includes(path()) || !!props.query()
   const depth = () => props.parentPath.split(' / ').filter(Boolean).length
   const optionContent = () =>
     props.renderOption ? (
@@ -104,17 +101,24 @@ function TreeBranch(props: {
         <Show
           when={hasChildren()}
           fallback={
-            <button
-              type="button"
-              role="treeitem"
-              aria-selected={selected()}
-              disabled={props.option.disabled}
-              onClick={() => props.onSelect(path())}
-              class={`${optionClass} ${selected() ? 'bg-(--fui-surface-selected)' : ''} disabled:opacity-50`}
-              style={{ 'padding-left': `${8 + depth() * 16}px`, 'padding-right': '8px' }}
-            >
-              {optionContent()}
-            </button>
+            <div class="flex w-full items-stretch">
+              <span
+                aria-hidden="true"
+                class="inline-flex h-[31px] w-8 shrink-0"
+                style={{ 'margin-left': `${6 + depth() * 16}px` }}
+              />
+              <button
+                type="button"
+                role="treeitem"
+                aria-selected={selected()}
+                disabled={props.option.disabled}
+                onClick={() => props.onSelect(path())}
+                class={`${optionClass} min-w-0 flex-1 ${selected() ? 'bg-(--fui-surface-selected)' : ''} disabled:opacity-50`}
+                style={{ 'padding-left': '8px', 'padding-right': '8px' }}
+              >
+                {optionContent()}
+              </button>
+            </div>
           }
         >
           <Show
@@ -141,21 +145,11 @@ function TreeBranch(props: {
             <div class="flex w-full items-stretch">
               <button
                 type="button"
-                role="treeitem"
-                aria-selected={selected()}
-                disabled={props.option.disabled}
-                onClick={() => props.onSelect(path())}
-                class={`${optionClass} flex-1 ${selected() ? 'bg-(--fui-surface-selected)' : ''} disabled:opacity-50`}
-                style={{ 'padding-left': `${8 + depth() * 16}px`, 'padding-right': '8px' }}
-              >
-                {optionContent()}
-              </button>
-              <button
-                type="button"
                 aria-label={`${expanded() ? 'Collapse' : 'Expand'} ${props.option.label}`}
                 aria-expanded={expanded()}
                 onClick={() => props.toggleExpand(path(), props.parentPath, !expanded())}
                 class="inline-flex h-[31px] w-8 shrink-0 items-center justify-center hover:bg-(--fui-surface-hover)"
+                style={{ 'margin-left': `${6 + depth() * 16}px` }}
               >
                 <svg
                   class={`size-4 text-(--fui-interactive) transition-transform ${expanded() ? 'rotate-90' : ''}`}
@@ -164,6 +158,17 @@ function TreeBranch(props: {
                 >
                   <path d="M7 5l6 5-6 5V5z" />
                 </svg>
+              </button>
+              <button
+                type="button"
+                role="treeitem"
+                aria-selected={selected()}
+                disabled={props.option.disabled}
+                onClick={() => props.onSelect(path())}
+                class={`${optionClass} min-w-0 flex-1 ${selected() ? 'bg-(--fui-surface-selected)' : ''} disabled:opacity-50`}
+                style={{ 'padding-left': '8px', 'padding-right': '8px' }}
+              >
+                {optionContent()}
               </button>
             </div>
           </Show>
