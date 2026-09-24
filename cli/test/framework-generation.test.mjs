@@ -64,7 +64,10 @@ for (const framework of ['preact', 'solid']) {
       assert.match(hydrate, /export const DEFAULT_HYDRATE_STATE/)
       await assert.rejects(readFile(join(dir, 'client/i18n.ts'), 'utf8'))
       assert.ok(packageJson.devDependencies[framework === 'solid' ? 'vite-plugin-solid' : 'preact'])
-      assert.match(await readFile(join(dir, 'flowup.config.ts'), 'utf8'), /presetFlowupWind4\(\{ scope \}\)/)
+      assert.match(
+        await readFile(join(dir, 'flowup.config.ts'), 'utf8'),
+        /presetFlowupWind4\(\{ scope \}\)/,
+      )
       if (framework === 'preact') assert.ok(packageJson.devDependencies['@preact/preset-vite'])
     }
   })
@@ -113,8 +116,8 @@ test('mixed multi-entry package keeps config explicit and gives setup instructio
   }
   const config = await readFile(join(dir, 'flowup.config.ts'), 'utf8')
   assert.doesNotMatch(config, /readdirSync|readFileSync/)
-  assert.match(config, /preact\(\{ include:/)
-  assert.match(config, /solid\(\{ include:/)
+  assert.match(config, /preact\(\{\s*include:/)
+  assert.match(config, /solid\(\{\s*include:/)
   assert.match(config, /presetFlowupWind4\(\{ scope \}\)/)
   assert.match(config, /@shared/)
   assert.match(packageJson.scripts.typecheck, /nodes\/preact-node\/tsconfig\.json/)

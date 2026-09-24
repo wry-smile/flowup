@@ -31,6 +31,12 @@
       ],
       "@runtime-shared/*": [
         "./runtime-shared/*"
+      ],
+      "@ui": [
+        "./components/index.ts"
+      ],
+      "@ui/*": [
+        "./components/*"
       ]
     }
   },
@@ -52,6 +58,7 @@
   "exclude": [
     "nodes/preact-node/client/**/*.tsx",
     "nodes/solid-node/client/**/*.tsx",
-    "plugins/gallery-plugin/client/**/*.tsx"
+    "plugins/gallery-plugin/client/**/*.tsx",
+    "components/**/*"
   ]
 }

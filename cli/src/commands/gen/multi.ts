@@ -72,6 +72,7 @@ function renderMultiPackageConfig(scope: string, entries: GeneratedEntries = {})
   const solidEntries = list
     .filter(([, entry]) => entry.framework === 'solid')
     .map(([path]) => `          '**/${path}/client/**/*.{jsx,tsx}',`)
+  if (solidEntries.length) solidEntries.push("          '**/components/**/*.{jsx,tsx}',")
   const preactEntries = list
     .filter(([, entry]) => entry.framework === 'preact')
     .map(([path]) => `          '**/${path}/client/**/*.{jsx,tsx}',`)
@@ -92,6 +93,7 @@ function renderMultiPackageConfig(scope: string, entries: GeneratedEntries = {})
   '@': fileURLToPath(new URL('.', import.meta.url)),
   '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
   '@client-shared': fileURLToPath(new URL('./client-shared', import.meta.url)),
+  '@ui': fileURLToPath(new URL('./components', import.meta.url)),
   '@runtime-shared': fileURLToPath(new URL('./runtime-shared', import.meta.url)),
 }`
   return `${imports.join('\n')}
@@ -157,8 +159,18 @@ function renderLegacyMultiPackageConfig(scope: string): string {
   return `import { defineConfig } from '@wry-smile/flowup'\n\nexport default defineConfig({\n  scope: '${scope}',\n})\n`
 }
 
+function normalizeGeneratedConfig(source: string): string {
+  return source
+    .replace(
+      /^\s*'@ui': fileURLToPath\(new URL\('\.\/components', import\.meta\.url\)\),?\s*$/gm,
+      '',
+    )
+    .replace(/^\s*'\*\*\/components\/\*\*\/\*\.\{jsx,tsx\}',?\s*$/gm, '')
+    .replace(/\s+/g, '')
+}
+
 function sameGeneratedConfig(actual: string, expected: string): boolean {
-  return actual.replace(/\s+/g, '') === expected.replace(/\s+/g, '')
+  return normalizeGeneratedConfig(actual) === normalizeGeneratedConfig(expected)
 }
 
 export async function generateMultiPackage(name: string): Promise<string> {
@@ -215,6 +227,8 @@ export async function generateMultiPackage(name: string): Promise<string> {
           '@/*': ['./*'],
           '@shared/*': ['./shared/*'],
           '@client-shared/*': ['./client-shared/*'],
+          '@ui': ['./components/index.ts'],
+          '@ui/*': ['./components/*'],
           '@runtime-shared/*': ['./runtime-shared/*'],
         },
       },

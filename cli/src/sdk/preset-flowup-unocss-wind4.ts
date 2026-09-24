@@ -36,6 +36,17 @@ export function presetFlowupWind4({ scope }: FlowupWind4Options) {
   return {
     ...wind,
     name: 'flowup-wind4',
+    variants: [
+      ...(wind.variants ?? []),
+      {
+        name: 'flowup-css-variable',
+        match(matcher: string) {
+          const match = matcher.match(/^([a-z][\w-]*)-\((--[\w-]+)\)(\/\d+)?$/)
+          if (!match) return
+          return { matcher: `${match[1]}-[var(${match[2]})]${match[3] ?? ''}` }
+        },
+      },
+    ],
     preflights: [
       ...(wind.preflights ?? []).map(preflight =>
         preflight.layer === 'theme'

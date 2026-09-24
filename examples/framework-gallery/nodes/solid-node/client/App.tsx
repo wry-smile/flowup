@@ -5,6 +5,7 @@ import BehaviorPanel from './components/BehaviorPanel'
 import ConfigurationPanel from './components/ConfigurationPanel'
 import IntegrationPanel from './components/IntegrationPanel'
 import LifecyclePanel from './components/LifecyclePanel'
+import { ComponentShowcase } from '@ui'
 
 export default function App() {
   const [state, setState] = createStore(store.getSnapshot() as FrameworkGallerySolidNodeProperties)
@@ -32,6 +33,8 @@ export default function App() {
           {JSON.stringify(state, null, 2)}
         </pre>
       </details>
+
+      <ComponentShowcase />
     </main>
   )
 }

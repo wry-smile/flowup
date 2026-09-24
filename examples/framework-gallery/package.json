@@ -10,7 +10,7 @@
   "scripts": {
     "build": "flowup build",
     "dev": "flowup dev",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p nodes/preact-node/tsconfig.json && tsc --noEmit -p nodes/solid-node/tsconfig.json && tsc --noEmit -p plugins/gallery-plugin/tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p nodes/preact-node/tsconfig.json && tsc --noEmit -p nodes/solid-node/tsconfig.json && tsc --noEmit -p plugins/gallery-plugin/tsconfig.json && tsc --noEmit -p components/tsconfig.json"
   },
   "node-red": {
     "scope": "framework-gallery",

@@ -8,6 +8,7 @@ import vue from '@vitejs/plugin-vue'
 
 const scope = 'framework-gallery'
 const sharedAlias = {
+  '@ui': fileURLToPath(new URL('./components', import.meta.url)),
   '@': fileURLToPath(new URL('.', import.meta.url)),
   '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
   '@client-shared': fileURLToPath(new URL('./client-shared', import.meta.url)),
@@ -35,7 +36,7 @@ export default defineConfig({
       vue(),
       svelte(),
       solid({
-        include: ['**/nodes/solid-node/client/**/*.{jsx,tsx}'],
+        include: ['**/components/**/*.{jsx,tsx}', '**/nodes/solid-node/client/**/*.{jsx,tsx}'],
       }),
     ],
   },

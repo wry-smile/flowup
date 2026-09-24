@@ -2,11 +2,29 @@ import type { Command } from 'commander'
 import type { GenOptions } from './impl'
 import process from 'node:process'
 import { hasArgvFlag, parseBool, parseCsvList, stripQuotes } from '../../share/paths'
+import { runComponentGenerator } from './component'
 import { runGenerator } from './impl'
 import { addMultiEntry, runAddEntryGenerator, runMultiPackageGenerator } from './multi'
 
 export function registerGenCommand(program: Command): void {
   const gen = program.command('gen')
+  gen
+    .command('component [names...]')
+    .description('Install editable editor components into a generated package')
+    .option('--framework <framework>', 'Component framework (currently solid)')
+    .action(async (names: string[], options: { framework?: string }, command: Command) => {
+      try {
+        const parentOptions = command.parent?.opts() ?? {}
+        await runComponentGenerator({
+          names,
+          framework: (parentOptions.framework as string | undefined) ?? options.framework,
+        })
+      } catch (error) {
+        console.error(`Generator failed: ${error instanceof Error ? error.message : String(error)}`)
+        process.exitCode = 1
+      }
+    })
+
   gen
     .command('package [name]')
     .description('Create a package for multiple nodes and plugins')

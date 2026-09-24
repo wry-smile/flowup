@@ -15,25 +15,35 @@ export function resolveCliVersion(): string {
 }
 
 export function readCliPackageJson(): CliPackageJson {
-  const here = dirname(fileURLToPath(import.meta.url))
-  const candidates = [
-    resolve(here, '..', 'package.json'),
-    resolve(here, '..', '..', 'package.json'),
-  ]
+  const root = resolveCliPackageRoot()
+  if (!root) return { name: CLI_PKG_NAME, version: FALLBACK_VERSION }
+  try {
+    const raw = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf-8')) as {
+      name?: string
+      version?: string
+    }
+    return { name: raw.name, version: raw.version ?? FALLBACK_VERSION }
+  } catch {
+    return { name: CLI_PKG_NAME, version: FALLBACK_VERSION }
+  }
+}
 
-  for (const candidate of candidates) {
+export function resolveCliPackageRoot(): string | undefined {
+  const here = dirname(fileURLToPath(import.meta.url))
+  const candidates = [resolve(here, '..'), resolve(here, '..', '..')]
+
+  for (const root of candidates) {
+    const candidate = resolve(root, 'package.json')
     if (!existsSync(candidate)) continue
     try {
       const raw = JSON.parse(readFileSync(candidate, 'utf-8')) as {
         name?: string
-        version?: string
       }
-      if (raw.name === CLI_PKG_NAME)
-        return { name: raw.name, version: raw.version ?? FALLBACK_VERSION }
+      if (raw.name === CLI_PKG_NAME) return root
     } catch {
       continue
     }
   }
 
-  return { name: CLI_PKG_NAME, version: FALLBACK_VERSION }
+  return undefined
 }

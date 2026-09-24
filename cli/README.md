@@ -49,13 +49,33 @@ Each group shares one runtime entry and editor HTML. See [Multi-entry packages](
 
 `flowup gen package` prompts for a package name and offers to add child entries. `flowup gen add` prompts for entry type, name, framework, UnoCSS, and locales. Fully specified commands above remain non-interactive.
 
+### `flowup gen component`
+
+Install editable Node-RED editor components into a generated package. The command first selects a framework, then lets you select multiple components. SolidJS components are currently available and require a SolidJS entry with scoped UnoCSS.
+
+```bash
+flowup gen component
+# or skip the prompts:
+flowup gen component button search-select dialog --framework solid
+```
+
+Single-entry packages install source in `client/components/`. Multi-entry packages install it in the root `components/` directory, alongside `nodes/` and `plugins/`, so SolidJS entries in either group can share it. Import installed components through `@ui`:
+
+```tsx
+import { Button, SearchSelect } from '@ui'
+```
+
+The installer includes components required by your selection, adds the scoped `theme.css` once, and updates `components/index.ts` when you install more components later. Existing component source files are preserved. The generated barrel imports the theme; components only enter an editor bundle when imported. For multi-entry packages, the installer adds `components/` to the Solid plugin's TSX include list and creates a separate SolidJS typecheck config for the shared source.
+
+The theme defines 24 `--fui-*` tokens for surfaces, text, borders, states, and control sizes. Override them under your package's `data-flowup-scope` root. Set `data-fui-theme="dark"` on the same root to opt into the included dark palette. Portaled dialogs and drawers copy the scope from their own editor root.
+
 ### Multi-entry packages
 
 Flowup discovers `nodes/*/` and `plugins/*/` automatically. No entries manifest or explicit `entries` list is needed. Child entries use the same `runtime/`, `client/`, `constant/`, `types/`, `icons/`, `resources/`, and `locales/` directories as single-entry packages. Both node and plugin entries include `client/editor.html`; each group's templates are combined into its generated HTML alongside the bundled client script. Node-RED loads that HTML next to the same-named runtime JS file.
 
 Flowup reports a missing `client/editor.html` during the editor build.
 
-`gen add` updates Node-RED mappings, framework dependencies, and the generated `flowup.config.ts` after each entry. If you customized the config, Flowup preserves it and prints a suggested configuration. Run `pnpm install` after adding an entry. The generated config uses entry directory lists for Preact and Solid and sets aliases for `@` (package root), `@shared`, `@client-shared`, and `@runtime-shared`; the root `tsconfig.json` uses matching paths. Same-group entries share an editor build, so modules and UnoCSS output used by multiple entries in that group can be deduplicated there. Nodes and plugins are separate builds, so code, framework runtimes, and utility CSS used by both groups can appear in both HTML outputs. Flowup does not extract a shared browser script or stylesheet across Node-RED groups. Node types and plugin IDs use `<scope>-<entry-name>`, so entry names must be distinct across `nodes/` and `plugins/`. TSX entries use `client/index.tsx` and a child `tsconfig.json` with their `jsxImportSource`. Preact TSX uses an explicit `preact({ include: [...] })` plugin. The generated package declares `@preact/preset-vite`; the package manager resolves its Babel peer dependency.
+`gen add` updates Node-RED mappings, framework dependencies, and the generated `flowup.config.ts` after each entry. If you customized the config, Flowup preserves it and prints a suggested configuration. Run `pnpm install` after adding an entry. The generated config uses entry directory lists for Preact and Solid and sets aliases for `@` (package root), `@ui` (shared components), `@shared`, `@client-shared`, and `@runtime-shared`; the root `tsconfig.json` uses matching paths. Same-group entries share an editor build, so modules and UnoCSS output used by multiple entries in that group can be deduplicated there. Nodes and plugins are separate builds, so code, framework runtimes, and utility CSS used by both groups can appear in both HTML outputs. Flowup does not extract a shared browser script or stylesheet across Node-RED groups. Node types and plugin IDs use `<scope>-<entry-name>`, so entry names must be distinct across `nodes/` and `plugins/`. TSX entries use `client/index.tsx` and a child `tsconfig.json` with their `jsxImportSource`. Preact TSX uses an explicit `preact({ include: [...] })` plugin. The generated package declares `@preact/preset-vite`; the package manager resolves its Babel peer dependency.
 
 See [framework-gallery](../examples/framework-gallery/README.md) for a generated package with all five node frameworks, a Preact plugin, shared code, i18n, icons, resources, and scoped UnoCSS.
 
@@ -259,6 +279,10 @@ put the same attribute on the overlay root:
 Keep utility names statically discoverable in source, or add dynamic names to
 the UnoCSS safelist. The preset covers its generated CSS; package-authored
 global CSS, including `@font-face`, needs its own isolation strategy.
+The Flowup preset also accepts CSS-variable utility names such as
+`bg-(--fui-surface)`, `rounded-(--fui-radius)`, and
+`hover:text-(--fui-accent)`. It converts them to Wind4 arbitrary values while
+keeping the original class selectors and package scope.
 For focused setup guidance, see the packaged
 [Flowup UnoCSS skill](./skills/flowup-unocss/SKILL.md).
 

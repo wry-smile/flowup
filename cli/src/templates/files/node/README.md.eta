@@ -59,6 +59,12 @@ pnpm dev
 
 Flowup builds the package and starts Node-RED with `nodesDir` pointing at `dist/`. Source changes trigger a rebuild and one restart after the final successful build. Configure the preview with `nodeRed` in `flowup.config.ts`.
 
+<% if (it.ctx.solid && it.ctx.unocss) { %>
+## Editor Components
+
+Run `flowup gen component` to select editable SolidJS controls. Flowup installs them in `client/components/`; import them from `@ui`. The installed `theme.css` uses this package's `data-flowup-scope` value.
+<% } %>
+
 Produces `dist/<%= it.ctx.name %>.js`, `dist/<%= it.ctx.name %>.html`, locales, icons, resources, and `flowup.manifest.json`.
 
 ## Package

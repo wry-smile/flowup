@@ -14,9 +14,7 @@ export type SvelteHydrateStore<T extends object> = {
   patch<K extends keyof T>(key: K, value: T[K]): void
 }
 
-export function createSvelteHydrateStore<T extends object>(
-  defaults: T,
-): SvelteHydrateStore<T> {
+export function createSvelteHydrateStore<T extends object>(defaults: T): SvelteHydrateStore<T> {
   const refs = createHydrateRefs<T, HydrateRefs<T>>(defaults, (_key, value) => ({ value }))
   const core = new HydrateCore<T>(defaults, refs)
   const state = writable(core.getSnapshot())

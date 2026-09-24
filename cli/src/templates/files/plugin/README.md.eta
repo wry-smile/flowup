@@ -52,4 +52,10 @@ npm pack --dry-run
 
 Run `pnpm dev` to build and preview this plugin in Node-RED. Source changes rebuild the package and restart Node-RED. The preview uses `dist/` as `nodesDir`; configure it with `nodeRed` in `flowup.config.ts`.
 
+<% if (it.ctx.solid && it.ctx.unocss) { %>
+## Editor Components
+
+Run `flowup gen component` to select editable SolidJS controls. Flowup installs them in `client/components/`; import them from `@ui`. The installed `theme.css` uses this package's `data-flowup-scope` value.
+<% } %>
+
 A full build generates `dist/flowup.manifest.json` for `flowup assemble`.

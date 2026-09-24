@@ -11,7 +11,7 @@
 <% if (it.jsxImportSource) { -%>
     "jsxImportSource": "<%= it.jsxImportSource %>",
 <% } -%>
-    "paths": { "@/*": ["./*"] },
+    "paths": { "@/*": ["./*"], "@ui": ["./client/components/index.ts"], "@ui/*": ["./client/components/*"] },
     "types": ["vite/client", "jquery"],
     "strict": true,
     "isolatedModules": true,

@@ -27,7 +27,10 @@ import { defineConfig<%= it.ctx.unocss ? ', presetFlowupWind4' : '' %> } from '@
 import { fileURLToPath } from 'node:url'
 
 const scope = '<%= it.ctx.name %>'
-const sharedAlias = { '@': fileURLToPath(new URL('.', import.meta.url)) }
+const sharedAlias = {
+  '@': fileURLToPath(new URL('.', import.meta.url)),
+  '@ui': fileURLToPath(new URL('./client/components', import.meta.url)),
+}
 
 export default defineConfig({
   scope,

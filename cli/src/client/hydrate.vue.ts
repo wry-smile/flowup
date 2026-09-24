@@ -3,7 +3,7 @@ import { shallowRef } from 'vue'
 
 import { createHydrateRefs, HydrateCore } from './hydrate.core'
 
-import type { HydrateRefs, HydrateStore } from './hydrate.core'
+import type { HydrateStore } from './hydrate.core'
 
 export type VueHydrateRefs<T extends object> = {
   [K in keyof T]-?: Ref<T[K]>
