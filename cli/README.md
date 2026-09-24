@@ -55,7 +55,7 @@ Flowup discovers `nodes/*/` and `plugins/*/` automatically. No entries manifest 
 
 Flowup reports a missing `client/editor.html` during the editor build.
 
-`gen add` updates Node-RED mappings, framework dependencies, and the generated `flowup.config.ts` after each entry. If you customized the config, Flowup preserves it and prints a suggested configuration. Run `pnpm install` after adding an entry. The generated config uses entry directory lists for Preact and Solid and sets aliases for `@` (package root), `@shared`, `@client-shared`, and `@runtime-shared`; the root `tsconfig.json` uses matching paths. Same-group framework and shared browser code is bundled once. Modules used by both groups may appear in both bundles. Node types and plugin IDs use `<scope>-<entry-name>`, so entry names must be distinct across `nodes/` and `plugins/`. TSX entries use `client/index.tsx` and a child `tsconfig.json` with their `jsxImportSource`. Preact TSX uses an explicit `preact({ include: [...] })` plugin. The generated package declares `@preact/preset-vite`; the package manager resolves its Babel peer dependency.
+`gen add` updates Node-RED mappings, framework dependencies, and the generated `flowup.config.ts` after each entry. If you customized the config, Flowup preserves it and prints a suggested configuration. Run `pnpm install` after adding an entry. The generated config uses entry directory lists for Preact and Solid and sets aliases for `@` (package root), `@shared`, `@client-shared`, and `@runtime-shared`; the root `tsconfig.json` uses matching paths. Same-group framework code and UnoCSS output share one editor build, so identical modules and utility rules are deduplicated within that group. Nodes and plugins are separate builds, so code and utility rules used by both groups can appear in both outputs. Node types and plugin IDs use `<scope>-<entry-name>`, so entry names must be distinct across `nodes/` and `plugins/`. TSX entries use `client/index.tsx` and a child `tsconfig.json` with their `jsxImportSource`. Preact TSX uses an explicit `preact({ include: [...] })` plugin. The generated package declares `@preact/preset-vite`; the package manager resolves its Babel peer dependency.
 
 See [framework-gallery](../examples/framework-gallery/README.md) for a generated package with all five node frameworks, a Preact plugin, shared code, i18n, icons, resources, and scoped UnoCSS.
 
@@ -93,6 +93,8 @@ The default `all` mode runs the runtime and editor builds as one transaction.
 It writes to a temporary sibling directory and replaces `dist/` only after the
 runtime, editor, package metadata, and artifact manifest have all been
 validated.
+
+Runtime dependencies imported by the node code are bundled into the runtime. Generated configs set `runtime.config.ssr.noExternal: true`; Flowup also applies this default when loading existing Flowup configs.
 
 ```bash
 flowup build --mode all

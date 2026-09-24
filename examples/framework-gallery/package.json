@@ -21,34 +21,6 @@
       "framework-gallery-plugins": "dist/framework-gallery-plugins.js"
     }
   },
-  "flowup": {
-    "entries": {
-      "nodes/vue-node": {
-        "framework": "vue",
-        "unocss": true
-      },
-      "nodes/preact-node": {
-        "framework": "preact",
-        "unocss": true
-      },
-      "nodes/solid-node": {
-        "framework": "solid",
-        "unocss": true
-      },
-      "nodes/svelte-node": {
-        "framework": "svelte",
-        "unocss": true
-      },
-      "nodes/vanilla-node": {
-        "framework": "vanilla",
-        "unocss": false
-      },
-      "plugins/gallery-plugin": {
-        "framework": "preact",
-        "unocss": true
-      }
-    }
-  },
   "devDependencies": {
     "@preact/signals": "^2.3.1",
     "@types/jquery": "catalog:",

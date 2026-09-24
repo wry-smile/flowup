@@ -181,6 +181,9 @@ export function resolveFlowupViteConfig(
               },
             },
           },
+          ssr: {
+            noExternal: true,
+          },
           plugins: [
             ...(group ? [flowupGroupEntryPlugin('runtime', group, groupEntries)] : []),
             ...runtimePlugins,

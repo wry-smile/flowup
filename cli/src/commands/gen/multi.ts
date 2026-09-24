@@ -1,6 +1,6 @@
 import type { ClientFramework, FileMap } from './context'
 import type { LocaleCode } from './locale'
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
@@ -80,16 +80,12 @@ function renderMultiPackageConfig(scope: string, entries: GeneratedEntries = {})
       ? ['      UnoCSS({ presets: [presetFlowupWind4({ scope })] }),']
       : []),
     ...(preactEntries.length
-      ? [
-          `      preact({\n        include: [\n${preactEntries.join('\n')}\n        ],\n      }),`,
-        ]
+      ? [`      preact({\n        include: [\n${preactEntries.join('\n')}\n        ],\n      }),`]
       : []),
     ...(frameworks.has('vue') ? ['      vue(),'] : []),
     ...(frameworks.has('svelte') ? ['      svelte(),'] : []),
     ...(solidEntries.length
-      ? [
-          `      solid({\n        include: [\n${solidEntries.join('\n')}\n        ],\n      }),`,
-        ]
+      ? [`      solid({\n        include: [\n${solidEntries.join('\n')}\n        ],\n      }),`]
       : []),
   ]
   const alias = `{
@@ -105,12 +101,56 @@ const sharedAlias = ${alias}
 
 export default defineConfig({
   scope,
-  runtime: { config: { resolve: { alias: sharedAlias } } },
+  runtime: { config: { ssr: { noExternal: true }, resolve: { alias: sharedAlias } } },
   client: {
 ${plugins.length ? `    plugins: [\n${plugins.join('\n')}\n    ],\n` : ''}    config: { resolve: { alias: sharedAlias } },
   },
 })
 `
+}
+
+function discoverGeneratedEntries(root: string, legacy: GeneratedEntries = {}): GeneratedEntries {
+  const entries: GeneratedEntries = {}
+  const packageJson = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8')) as {
+    devDependencies?: Record<string, string>
+    dependencies?: Record<string, string>
+  }
+  const unocss = !!(packageJson.devDependencies?.unocss || packageJson.dependencies?.unocss)
+  for (const group of ['nodes', 'plugins'] as const) {
+    const directory = resolve(root, group)
+    if (!existsSync(directory)) continue
+    for (const item of readdirSync(directory, { withFileTypes: true })) {
+      if (!item.isDirectory() || !/^[a-z][a-z0-9-]*$/.test(item.name)) continue
+      const key = `${group}/${item.name}`
+      const child = resolve(directory, item.name)
+      const tsconfigPath = resolve(child, 'tsconfig.json')
+      const jsxImportSource = existsSync(tsconfigPath)
+        ? (
+            JSON.parse(readFileSync(tsconfigPath, 'utf8')) as {
+              compilerOptions?: { jsxImportSource?: string }
+            }
+          ).compilerOptions?.jsxImportSource
+        : undefined
+      const framework = existsSync(resolve(child, 'client/App.vue'))
+        ? 'vue'
+        : existsSync(resolve(child, 'client/App.svelte'))
+          ? 'svelte'
+          : jsxImportSource === 'preact'
+            ? 'preact'
+            : jsxImportSource === 'solid-js'
+              ? 'solid'
+              : (legacy[key]?.framework ?? 'vanilla')
+      const hasUnoImport = ['client/index.ts', 'client/index.tsx'].some(entry => {
+        const entryPath = resolve(child, entry)
+        return existsSync(entryPath) && readFileSync(entryPath, 'utf8').includes('virtual:uno.css')
+      })
+      entries[key] = {
+        framework,
+        unocss: legacy[key]?.unocss ?? (unocss && hasUnoImport),
+      }
+    }
+  }
+  return entries
 }
 
 function renderLegacyMultiPackageConfig(scope: string): string {
@@ -143,7 +183,6 @@ export async function generateMultiPackage(name: string): Promise<string> {
       typecheck: 'tsc --noEmit -p tsconfig.json',
     },
     'node-red': { scope: name, nodes: {}, plugins: {} },
-    flowup: { entries: {} as GeneratedEntries },
     devDependencies: {
       '@types/jquery': dependencies['@types/jquery'],
       '@types/node': dependencies['@types/node'],
@@ -309,7 +348,10 @@ export async function addMultiEntry(options: AddEntryOptions): Promise<void> {
   const scope = packageJson['node-red']?.scope as string | undefined
   if (!scope) throw new Error('Invalid multi-entry package metadata.')
   const group = type === 'node' ? 'nodes' : 'plugins'
-  const previousEntries = (packageJson.flowup?.entries ?? {}) as GeneratedEntries
+  const previousEntries = discoverGeneratedEntries(
+    root,
+    (packageJson.flowup?.entries ?? {}) as GeneratedEntries,
+  )
   const mayUpdateConfig =
     sameGeneratedConfig(originalConfig, renderMultiPackageConfig(scope, previousEntries)) ||
     (Object.keys(previousEntries).length === 0 &&
@@ -342,7 +384,10 @@ export async function addMultiEntry(options: AddEntryOptions): Promise<void> {
     ...previousEntries,
     [`${group}/${name}`]: { framework, unocss: !!options.unocss },
   }
-  packageJson.flowup = { ...packageJson.flowup, entries: nextEntries }
+  if (packageJson.flowup) {
+    delete packageJson.flowup.entries
+    if (!Object.keys(packageJson.flowup).length) delete packageJson.flowup
+  }
   const includes = tsconfig.include as string[]
   if (framework === 'preact' || framework === 'solid') {
     const entryPath = `${group}/${name}`

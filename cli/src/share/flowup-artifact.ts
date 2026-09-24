@@ -61,7 +61,7 @@ export async function writeFlowupArtifactManifest(
     },
     runtime: {
       format: 'commonjs',
-      externalDependencies: Object.keys(packageJson.dependencies ?? {}).sort(),
+      externalDependencies: [],
     },
   }
 

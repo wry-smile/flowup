@@ -32,7 +32,7 @@ const sharedAlias = { '@': fileURLToPath(new URL('.', import.meta.url)) }
 export default defineConfig({
   scope,
   type: 'plugins',
-  runtime: { config: { resolve: { alias: sharedAlias } } },
+  runtime: { config: { ssr: { noExternal: true }, resolve: { alias: sharedAlias } } },
   client: {
     plugins: [
 <%= plugins.map(plugin => '      ' + plugin).join(',\n') %><%= plugins.length ? ',' : '' %>
