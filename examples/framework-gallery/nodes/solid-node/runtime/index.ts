@@ -1,6 +1,5 @@
 import type { Node as RedNode, NodeAPI, NodeDef } from 'node-red'
 import { NODE_NAME } from '../constant'
-import { traceMessage } from '@runtime-shared/trace'
 
 export default function nodeInit(RED: NodeAPI): void {
   function FrameworkGallerySolidNodeNodeConstructor(this: RedNode, config: FrameworkGallerySolidNodeNodeDef): void {
@@ -24,16 +23,15 @@ export default function nodeInit(RED: NodeAPI): void {
       }
 
       node.status({ fill: 'green', shape: 'dot', text: settings.mode })
+      const payload = msg.payload && typeof msg.payload === 'object' ? msg.payload : {}
       msg.payload = {
-        ...traceMessage(msg.payload, settings.framework.toLowerCase()),
-        settings: {
-          framework: settings.framework,
-          mode: settings.mode,
-          price: settings.price,
-          quantity: settings.quantity,
-          total: settings.price * settings.quantity,
-          items: [...settings.items],
-        },
+        ...payload,
+        framework: settings.framework,
+        mode: settings.mode,
+        price: settings.price,
+        quantity: settings.quantity,
+        total: settings.price * settings.quantity,
+        items: [...settings.items],
       }
       send(msg)
       done()

@@ -14,9 +14,23 @@ export function FormRow(props: FormRowComponentProps) {
       <div
         class={`${vertical() ? 'min-h-0' : 'flex min-h-(--fui-control-height) items-center'} text-[13px] font-medium text-(--fui-text-muted) ${props.labelClass ?? ''}`}
       >
-        {props.label}
+        <span>
+          {props.label}
+          {props.required && (
+            <span class="ml-1 text-(--fui-danger)" aria-hidden="true">
+              *
+            </span>
+          )}
+        </span>
       </div>
-      <div class="min-w-0">{props.children}</div>
+      <div class="w-full min-w-0">
+        {props.children}
+        {props.error && (
+          <div class="mt-1 text-xs text-(--fui-danger)" role="alert">
+            {props.error}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

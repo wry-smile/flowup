@@ -58,7 +58,6 @@
   "exclude": [
     "nodes/preact-node/client/**/*.tsx",
     "nodes/solid-node/client/**/*.tsx",
-    "plugins/gallery-plugin/client/**/*.tsx",
-    "components/**/*"
+    "plugins/gallery-plugin/client/**/*.tsx"
   ]
 }

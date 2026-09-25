@@ -1,0 +1,50 @@
+{
+  "mqtt-subscriber-mqtt-subscribe": {
+    "label": { "name": "MQTT Subscribe" },
+    "editor": {
+      "name": "Name",
+      "product": "Product",
+      "organization": "Organization",
+      "device": "Device",
+      "productRequired": "Please select a product",
+      "organizationRequired": "Please select an organization",
+      "deviceRequired": "Please select a device",
+      "selectProduct": "Select a product...",
+      "selectOrganization": "Select an organization...",
+      "searchOrganization": "Search organizations...",
+      "noOrganizations": "No matching organizations",
+      "selectDevice": "Select a device...",
+      "namePlaceholder": "Optional node name",
+      "searchProducts": "Search products...",
+      "noProducts": "No matching products",
+      "searchDevices": "Search devices...",
+      "noDevices": "No matching devices",
+      "loadingProducts": "Loading products...",
+      "loadingOrganizations": "Loading organizations...",
+      "loadingDevices": "Loading devices..."
+    },
+    "options": {
+      "products": {
+        "environmentSensor": "Environment Sensor",
+        "edgeGateway": "Edge Gateway",
+        "waterMeter": "Water Meter"
+      },
+      "organizations": {
+        "headOffice": "Head Office",
+        "engineering": "Engineering",
+        "deviceLab": "Device Lab",
+        "integrationLab": "Integration Lab",
+        "operations": "Operations",
+        "manufacturing": "Manufacturing",
+        "northPlant": "North Plant",
+        "southPlant": "South Plant"
+      },
+      "devices": {
+        "environmentSensor001": "Environment Sensor 001",
+        "environmentSensor002": "Environment Sensor 002",
+        "edgeGateway001": "Edge Gateway 001",
+        "waterMeter001": "Water Meter 001"
+      }
+    }
+  }
+}

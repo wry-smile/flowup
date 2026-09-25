@@ -78,7 +78,7 @@ const treeOptions: TreeOption[] = [
 
 export function ComponentShowcase() {
   const [name, setName] = createSignal('HTTP Request')
-  const [timeout, setTimeoutValue] = createSignal<number | undefined>(10000)
+  const [timeout, setTimeoutValue] = createSignal(10000)
   const [method, setMethod] = createSignal<OptionValue>('GET')
   const [typedValue, setTypedValue] = createSignal<OptionValue>(false)
   const [typedChecks, setTypedChecks] = createSignal<OptionValue[]>([true, 3])
@@ -143,7 +143,6 @@ export function ComponentShowcase() {
         <div class="space-y-5 p-4">
           <FormRow label="Name">
             <TextInput
-              clearable
               value={name()}
               onInput={event => changed(setName)(event.currentTarget.value)}
               description="Optional display name for this node."
@@ -153,23 +152,20 @@ export function ComponentShowcase() {
           <FormRow label="Timeout">
             <InputNumber
               value={timeout()}
-              clearable
               min={0}
               step={1000}
               unit="milliseconds"
-              onClear={() => setTimeoutValue(undefined)}
               onChange={changed(setTimeoutValue)}
             />
           </FormRow>
 
           <FormRow label="Method">
-            <Select clearable options={methods} value={method()} onChange={changed(setMethod)} />
+            <Select options={methods} value={method()} onChange={changed(setMethod)} />
           </FormRow>
 
           <FormRow label="Typed Option Values" layout="vertical">
             <div class="space-y-3">
               <Select
-                clearable
                 options={typedOptions}
                 value={typedValue()}
                 onChange={changed(setTypedValue)}
@@ -195,7 +191,6 @@ export function ComponentShowcase() {
 
           <FormRow label="Search Select">
             <SearchSelect
-              clearable
               options={dataSources}
               value={source()}
               placeholder="Select data source..."
@@ -205,7 +200,6 @@ export function ComponentShowcase() {
 
           <FormRow label="Async Search Select">
             <AsyncSearchSelect
-              clearable
               value={asyncSource()}
               placeholder="Search remote data sources..."
               searchPlaceholder="Type to search..."
@@ -234,7 +228,6 @@ export function ComponentShowcase() {
 
           <FormRow label="Multi Select">
             <MultiSelect
-              clearable
               options={outputOptions}
               value={outputs()}
               placeholder="Select outputs..."
@@ -244,7 +237,6 @@ export function ComponentShowcase() {
 
           <FormRow label="Tree Select">
             <TreeSelect
-              clearable
               options={treeOptions}
               value={treeValue()}
               onChange={changed(setTreeValue)}
@@ -457,7 +449,7 @@ export function ComponentShowcase() {
             <TextInput value="https://example.com" />
           </FormRow>
           <FormRow label="Description">
-            <Textarea clearable rows={4} placeholder="Add a description" />
+            <Textarea rows={4} placeholder="Add a description" />
           </FormRow>
         </div>
       </Drawer>

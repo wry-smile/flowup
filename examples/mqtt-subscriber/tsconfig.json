@@ -1,0 +1,58 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "strict": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": [
+      "vite/client",
+      "node",
+      "jquery"
+    ],
+    "allowArbitraryExtensions": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@shared/*": [
+        "./shared/*"
+      ],
+      "@client-shared/*": [
+        "./client-shared/*"
+      ],
+      "@ui": [
+        "./components/index.ts"
+      ],
+      "@ui/*": [
+        "./components/*"
+      ],
+      "@runtime-shared/*": [
+        "./runtime-shared/*"
+      ]
+    }
+  },
+  "include": [
+    "flowup.config.ts",
+    "nodes/**/*.ts",
+    "nodes/**/*.tsx",
+    "plugins/**/*.ts",
+    "plugins/**/*.tsx",
+    "client-shared/**/*",
+    "runtime-shared/**/*",
+    "shared/**/*",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "nodes/mqtt-subscribe/client/**/*.tsx",
+    "components/**/*"
+  ]
+}

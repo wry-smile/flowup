@@ -1,0 +1,50 @@
+{
+  "mqtt-subscriber-mqtt-subscribe": {
+    "label": { "name": "MQTT 订阅" },
+    "editor": {
+      "name": "名称",
+      "product": "产品",
+      "organization": "组织",
+      "device": "设备",
+      "productRequired": "请选择产品",
+      "organizationRequired": "请选择组织",
+      "deviceRequired": "请选择设备",
+      "selectProduct": "选择产品...",
+      "selectOrganization": "选择组织...",
+      "searchOrganization": "搜索组织...",
+      "noOrganizations": "没有匹配的组织",
+      "selectDevice": "选择设备...",
+      "namePlaceholder": "可选节点名称",
+      "searchProducts": "搜索产品...",
+      "noProducts": "没有匹配的产品",
+      "searchDevices": "搜索设备...",
+      "noDevices": "没有匹配的设备",
+      "loadingProducts": "正在加载产品...",
+      "loadingOrganizations": "正在加载组织...",
+      "loadingDevices": "正在加载设备..."
+    },
+    "options": {
+      "products": {
+        "environmentSensor": "环境传感器",
+        "edgeGateway": "边缘网关",
+        "waterMeter": "水表"
+      },
+      "organizations": {
+        "headOffice": "总部",
+        "engineering": "工程部",
+        "deviceLab": "设备实验室",
+        "integrationLab": "集成实验室",
+        "operations": "运营部",
+        "manufacturing": "制造部",
+        "northPlant": "北厂区",
+        "southPlant": "南厂区"
+      },
+      "devices": {
+        "environmentSensor001": "环境传感器 001",
+        "environmentSensor002": "环境传感器 002",
+        "edgeGateway001": "边缘网关 001",
+        "waterMeter001": "水表 001"
+      }
+    }
+  }
+}

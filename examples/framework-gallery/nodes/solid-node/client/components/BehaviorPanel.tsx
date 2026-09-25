@@ -3,7 +3,7 @@ import ChildValue from './ChildValue'
 
 interface Props {
   items: string[]
-  onPatchItems: (items: string[]) => void
+  onItemsChange: (items: string[]) => void
 }
 
 export default function BehaviorPanel(props: Props) {
@@ -66,7 +66,7 @@ export default function BehaviorPanel(props: Props) {
             <button
               class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 transition hover:bg-slate-50 active:scale-[0.98]"
               type="button"
-              onClick={() => props.onPatchItems([...props.items, `Item ${props.items.length + 1}`])}
+              onClick={() => props.onItemsChange([...props.items, `Item ${props.items.length + 1}`])}
             >
               + Add
             </button>
@@ -82,7 +82,7 @@ export default function BehaviorPanel(props: Props) {
                     type="button"
                     aria-label={`Remove ${item}`}
                     onClick={() =>
-                      props.onPatchItems(
+                      props.onItemsChange(
                         props.items.filter((_, itemIndex) => itemIndex !== index()),
                       )
                     }

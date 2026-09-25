@@ -1,26 +1,17 @@
-import { createStore } from 'solid-js/store'
 import type { FrameworkGallerySolidNodeProperties } from '../types'
 import { store, $t } from './hydrate'
 import BehaviorPanel from './components/BehaviorPanel'
 import ConfigurationPanel from './components/ConfigurationPanel'
 import IntegrationPanel from './components/IntegrationPanel'
 import LifecyclePanel from './components/LifecyclePanel'
-import { ComponentShowcase } from '@ui'
 
 export default function App() {
-  const [state, setState] = createStore(store.getSnapshot() as FrameworkGallerySolidNodeProperties)
-  function patch<K extends keyof FrameworkGallerySolidNodeProperties>(
-    key: K,
-    value: FrameworkGallerySolidNodeProperties[K],
-  ) {
-    store.patch(key, value)
-    setState(key, value)
-  }
+  const [items, setItems] = store.refs.items
 
   return (
     <main class="grid gap-3 bg-slate-50 p-3" data-flowup-scope="framework-gallery">
-      <ConfigurationPanel state={state} onPatch={patch} />
-      <BehaviorPanel items={state.items} onPatchItems={items => patch('items', items)} />
+      <ConfigurationPanel refs={store.refs} />
+      <BehaviorPanel items={items()} onItemsChange={setItems} />
       <LifecyclePanel />
       <IntegrationPanel />
       <details class="overflow-hidden rounded-xl border border-dashed border-slate-300 bg-white">
@@ -30,11 +21,9 @@ export default function App() {
         </summary>
         <p class="mt-0.5 text-[10px] text-slate-500">{$t('panel.doneAndDeploy')}</p>
         <pre class="max-h-44 overflow-auto border-t border-slate-200 p-3 text-[9px] leading-4 whitespace-pre-wrap text-slate-500">
-          {JSON.stringify(state, null, 2)}
+          {JSON.stringify(store.getSnapshot() as FrameworkGallerySolidNodeProperties, null, 2)}
         </pre>
       </details>
-
-      <ComponentShowcase />
     </main>
   )
 }
