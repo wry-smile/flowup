@@ -13,35 +13,40 @@ function destroyApp() {
   dispose = undefined
 }
 
-RED.nodes.registerType<MqttSubscriberMqttSubscribeClientNodeProperties>(NODE_NAME, {
+const nodeDefinition = {
   category: 'function',
-  color: '#a6bbcf',
+  color: '#80cbc4',
   icon: 'mqtt-subscribe-icon.svg',
   defaults: {
     name: { value: DEFAULT_HYDRATE_STATE.name },
     productId: {
       value: DEFAULT_HYDRATE_STATE.productId,
       required: true,
-      validate: value => typeof value === 'string' && value.trim().length > 0,
+      validate: (value: string) => typeof value === 'string' && value.trim().length > 0,
     },
     organizationId: {
       value: DEFAULT_HYDRATE_STATE.organizationId,
       required: true,
-      validate: value => typeof value === 'string' && value.trim().length > 0,
+      validate: (value: string) => typeof value === 'string' && value.trim().length > 0,
     },
     deviceId: {
       value: DEFAULT_HYDRATE_STATE.deviceId,
       required: true,
-      validate: value => typeof value === 'string' && value.trim().length > 0,
+      validate: (value: string) => typeof value === 'string' && value.trim().length > 0,
     },
+    deviceType: { value: DEFAULT_HYDRATE_STATE.deviceType },
+  },
+  credentials: {
+    username: { type: 'text' },
+    password: { type: 'password' },
   },
   inputs: 1,
   outputs: 1,
   paletteLabel: NODE_PALETTE_LABEL,
-  label() {
+  label(this: MqttSubscriberMqttSubscribeClientNodeProperties) {
     return this.name || NODE_NAME
   },
-  oneditprepare() {
+  oneditprepare(this: MqttSubscriberMqttSubscribeClientNodeProperties) {
     destroyApp()
     store.hydrate(this)
     const target = document.querySelector(
@@ -49,11 +54,18 @@ RED.nodes.registerType<MqttSubscriberMqttSubscribeClientNodeProperties>(NODE_NAM
     )
     if (target) dispose = render(() => <App />, target)
   },
-  oneditsave() {
+  oneditsave(this: MqttSubscriberMqttSubscribeClientNodeProperties) {
     store.commit(this)
     destroyApp()
   },
-  oneditcancel() {
+  oneditcancel(this: MqttSubscriberMqttSubscribeClientNodeProperties) {
     destroyApp()
   },
-})
+}
+
+RED.nodes.registerType<MqttSubscriberMqttSubscribeClientNodeProperties>(
+  NODE_NAME,
+  nodeDefinition as unknown as Parameters<
+    typeof RED.nodes.registerType<MqttSubscriberMqttSubscribeClientNodeProperties>
+  >[1],
+)

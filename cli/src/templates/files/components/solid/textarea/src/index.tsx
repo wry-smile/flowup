@@ -27,7 +27,7 @@ export function Textarea(props: TextareaProps) {
         ref={element => (textarea = element)}
         {...textareaProps}
         data-fui-status={props.status}
-        class={`w-full resize-y rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) px-2.5 py-2 pr-8 text-[13px] leading-5 outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-focus) disabled:bg-(--fui-surface-soft) ${status === 'error' ? 'border-(--fui-danger) focus:border-(--fui-danger) focus:ring-(--fui-danger)/20' : status === 'warning' ? 'border-(--fui-warning) focus:border-(--fui-warning) focus:ring-(--fui-warning)/30' : 'border-(--fui-border)'}`}
+        class={`w-full resize-y rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) px-2.5 py-2 pr-8 text-[13px] leading-5 outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100 hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-focus) disabled:bg-(--fui-surface-soft) ${status === 'error' ? 'border-(--fui-danger) focus:border-(--fui-danger) focus:ring-(--fui-danger)/20' : status === 'warning' ? 'border-(--fui-warning) focus:border-(--fui-warning) focus:ring-(--fui-warning)/30' : 'border-(--fui-border)'}`}
       />
       {clearable && hasValue() && !textareaProps.disabled && (
         <button

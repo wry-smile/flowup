@@ -28,7 +28,7 @@ export function TextInput(props: TextInputProps) {
           setHasValue(!!event.currentTarget.value)
           props.onInput?.(event)
         }}
-        class={`h-(--fui-control-height) w-full rounded-(--fui-radius) border bg-(--fui-surface) px-2.5 pr-8 text-[14px] transition outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-text-subtle)/30 disabled:cursor-not-allowed disabled:border-(--fui-border-soft) disabled:bg-(--fui-surface-muted) disabled:text-(--fui-text-disabled)`}
+        class={`h-(--fui-control-height) w-full rounded-(--fui-radius) border bg-(--fui-surface) px-2.5 pr-8 text-[14px] transition outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100 hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-text-subtle)/30 disabled:cursor-not-allowed disabled:border-(--fui-border-soft) disabled:bg-(--fui-surface-muted) disabled:text-(--fui-text-disabled)`}
       />
       {props.clearable && hasValue() && !props.disabled && (
         <button

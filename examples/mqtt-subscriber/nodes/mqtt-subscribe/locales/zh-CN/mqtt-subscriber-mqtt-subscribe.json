@@ -1,6 +1,27 @@
 {
   "mqtt-subscriber-mqtt-subscribe": {
     "label": { "name": "MQTT 订阅" },
+    "status": {
+      "connecting": "正在连接 MQTT 代理...",
+      "connected": "已连接",
+      "offline": "MQTT 代理已离线",
+      "connectionError": "MQTT 连接失败",
+      "authenticationRejected": "MQTT 认证被代理拒绝",
+      "configurationError": "MQTT 配置错误",
+      "missingUsername": "缺少设备 MQTT 用户名"
+    },
+    "errors": {
+      "connection": "MQTT 连接失败",
+      "authenticationRejected": "MQTT 代理拒绝认证，请检查设备用户名和密码",
+      "configuration": "MQTT 配置错误",
+      "missingUsername": "所选设备缺少 MQTT 用户名凭据，请重新选择设备以加载凭据",
+      "missingBrokerAddress": "未配置 MQTT broker URL 或 host",
+      "invalidBrokerUrl": "MQTT broker URL 无效",
+      "invalidPort": "MQTT broker 端口无效",
+      "invalidSecure": "FLOWUP_MQTT_SECURE 必须为 true 或 false",
+      "notConnected": "MQTT 代理尚未连接。",
+      "publish": "MQTT 发布失败"
+    },
     "editor": {
       "name": "名称",
       "product": "产品",
@@ -21,30 +42,9 @@
       "noDevices": "没有匹配的设备",
       "loadingProducts": "正在加载产品...",
       "loadingOrganizations": "正在加载组织...",
-      "loadingDevices": "正在加载设备..."
-    },
-    "options": {
-      "products": {
-        "environmentSensor": "环境传感器",
-        "edgeGateway": "边缘网关",
-        "waterMeter": "水表"
-      },
-      "organizations": {
-        "headOffice": "总部",
-        "engineering": "工程部",
-        "deviceLab": "设备实验室",
-        "integrationLab": "集成实验室",
-        "operations": "运营部",
-        "manufacturing": "制造部",
-        "northPlant": "北厂区",
-        "southPlant": "南厂区"
-      },
-      "devices": {
-        "environmentSensor001": "环境传感器 001",
-        "environmentSensor002": "环境传感器 002",
-        "edgeGateway001": "边缘网关 001",
-        "waterMeter001": "水表 001"
-      }
+      "loadingDevices": "正在加载设备...",
+      "loadingCredentials": "正在加载设备 MQTT 凭据...",
+      "credentialsUnavailable": "无法加载设备 MQTT 凭据，请检查设备权限后重试。"
     }
   }
 }

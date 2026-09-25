@@ -1,15 +1,34 @@
+import { joinURL } from '@wry-smile/utils'
+
 export type FetchMessageType = 'none' | 'message' | 'notify'
 export type FetchMethod = 'DELETE' | 'GET' | 'HEAD' | 'PATCH' | 'POST' | 'PUT'
+export type FetchRequestType = 'json' | 'text' | 'formData' | 'urlencoded' | 'raw'
+export type FetchResponseType = 'auto' | 'json' | 'text' | 'blob' | 'arrayBuffer' | 'formData'
 export type FetchParamValue = string | number | boolean | null | undefined
 export type FetchParams =
   | URLSearchParams
   | Record<string, FetchParamValue | readonly FetchParamValue[]>
+export type FetchToken =
+  | string
+  | (() => string | null | undefined | Promise<string | null | undefined>)
+
+export interface FetchAuthConfig {
+  /** Token value or a callback for reading the latest token before each request. */
+  token: FetchToken
+  /** Header used for the token. Defaults to `Authorization`. */
+  header?: string
+  /** Prefix prepended to the token. Defaults to `Bearer`; use an empty string to disable. */
+  prefix?: string
+}
 
 export interface FetchRequestConfig extends Omit<RequestInit, 'body' | 'method'> {
+  auth?: FetchAuthConfig | false
   baseURL?: string
   data?: unknown
   messageType?: FetchMessageType
   params?: FetchParams
+  requestType?: FetchRequestType
+  responseType?: FetchResponseType
   timeout?: number
   method?: FetchMethod | (string & {})
 }
@@ -139,7 +158,16 @@ export function createFetchClient(defaults: FetchClientConfig = {}): FetchClient
         config.params,
       )
       const headers = new Headers(defaults.headers)
+      const auth = config.auth ?? defaults.auth
+      if (auth) {
+        const token = typeof auth.token === 'function' ? await auth.token() : auth.token
+        if (token) {
+          const prefix = auth.prefix ?? 'Bearer'
+          headers.set(auth.header ?? 'Authorization', prefix ? `${prefix} ${token}` : token)
+        }
+      }
       new Headers(config.headers).forEach((value, key) => headers.set(key, value))
+      const requestType = config.requestType ?? defaults.requestType ?? 'json'
       const init: RequestInit = {
         ...defaults,
         ...config,
@@ -148,22 +176,23 @@ export function createFetchClient(defaults: FetchClientConfig = {}): FetchClient
         signal: controller.signal,
       }
       delete (init as FetchRequestConfig).baseURL
+      delete (init as FetchRequestConfig).auth
       delete (init as FetchRequestConfig).data
       delete (init as FetchRequestConfig).params
+      delete (init as FetchRequestConfig).requestType
+      delete (init as FetchRequestConfig).responseType
       delete (init as FetchRequestConfig).timeout
       delete (init as FetchRequestConfig).messageType
 
       if (config.data !== undefined) {
-        if (isBodyInit(config.data)) {
-          init.body = config.data
-        } else {
-          init.body = JSON.stringify(config.data)
-          if (!headers.has('content-type')) headers.set('content-type', 'application/json')
-        }
+        init.body = serializeRequestBody(config.data, requestType, headers)
       }
 
       const response = await fetcher(finalUrl, init)
-      let data: unknown = await parseResponse(response)
+      let data: unknown = await parseResponse(
+        response,
+        config.responseType ?? defaults.responseType ?? 'auto',
+      )
       for (const interceptor of responseInterceptors)
         data = await interceptor(data, response, context)
 
@@ -227,7 +256,7 @@ function removeInterceptor<T>(interceptors: T[], interceptor: T) {
 
 function combineBaseUrl(baseURL: string | undefined, url: string) {
   if (!baseURL || /^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('//')) return url
-  return `${baseURL.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`
+  return joinURL(baseURL, url)
 }
 
 function appendParams(url: string, params?: FetchParams) {
@@ -255,21 +284,87 @@ function appendParams(url: string, params?: FetchParams) {
   return `${path}${query ? `?${query}` : ''}${hash}`
 }
 
-async function parseResponse(response: Response): Promise<unknown> {
+async function parseResponse(response: Response, responseType: FetchResponseType): Promise<unknown> {
   if (response.status === 204 || response.status === 205) return undefined
+
+  if (responseType === 'blob') return response.blob()
+  if (responseType === 'arrayBuffer') return response.arrayBuffer()
+  if (responseType === 'formData') return response.formData()
 
   const text = await response.text()
   if (!text) return undefined
 
-  if (response.headers.get('content-type')?.toLowerCase().includes('json')) {
+  if (responseType === 'text') return text
+  if (
+    responseType === 'json' ||
+    response.headers.get('content-type')?.toLowerCase().includes('json')
+  ) {
     try {
       return JSON.parse(text)
     } catch {
+      if (responseType === 'json') throw new SyntaxError('Response body is not valid JSON.')
       return text
     }
   }
 
   return text
+}
+
+function serializeRequestBody(data: unknown, requestType: FetchRequestType, headers: Headers): BodyInit {
+  if (requestType === 'raw') {
+    if (isBodyInit(data)) return data
+    throw new TypeError('requestType "raw" requires a BodyInit value.')
+  }
+
+  if (requestType === 'formData') {
+    if (data instanceof FormData) return data
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new TypeError('requestType "formData" requires FormData or an object.')
+    }
+
+    const formData = new FormData()
+    appendObjectEntries(formData, data as Record<string, unknown>)
+    return formData
+  }
+
+  if (requestType === 'urlencoded') {
+    if (data instanceof URLSearchParams) return data
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new TypeError('requestType "urlencoded" requires URLSearchParams or an object.')
+    }
+
+    const params = new URLSearchParams()
+    appendObjectEntries(params, data as Record<string, unknown>)
+    if (!headers.has('content-type')) {
+      headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8')
+    }
+    return params
+  }
+
+  if (requestType === 'text') {
+    if (typeof data !== 'string' && !isBodyInit(data)) {
+      throw new TypeError('requestType "text" requires a string or BodyInit value.')
+    }
+    if (typeof data === 'string' && !headers.has('content-type')) {
+      headers.set('content-type', 'text/plain;charset=UTF-8')
+    }
+    return data as BodyInit
+  }
+
+  if (isBodyInit(data)) return data
+  if (!headers.has('content-type')) headers.set('content-type', 'application/json')
+  return JSON.stringify(data)
+}
+
+function appendObjectEntries(target: FormData | URLSearchParams, data: Record<string, unknown>) {
+  for (const [key, value] of Object.entries(data)) {
+    const values = Array.isArray(value) ? value : [value]
+    for (const item of values) {
+      if (item === null || item === undefined) continue
+      if (target instanceof FormData && item instanceof Blob) target.append(key, item)
+      else target.append(key, String(item))
+    }
+  }
 }
 
 function isBodyInit(value: unknown): value is BodyInit {

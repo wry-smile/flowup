@@ -5,6 +5,12 @@ export interface MqttSubscriberMqttSubscribeProperties {
   productId: string
   organizationId: string
   deviceId: string
+  deviceType?: string
+}
+
+export interface MqttSubscriberMqttSubscribeCredentials {
+  username?: string
+  password?: string
 }
 
 export type MqttSubscriberMqttSubscribeClientNodeProperties = Omit<
@@ -19,11 +25,13 @@ declare global {
     productId: string
     organizationId: string
     deviceId: string
+    deviceType?: string
   }
 
   type MqttSubscriberMqttSubscribeNodeDef = NodeDef & MqttSubscriberMqttSubscribeProperties
 
-  type MqttSubscriberMqttSubscribeNode = Node & MqttSubscriberMqttSubscribeProperties
+  type MqttSubscriberMqttSubscribeNode = Node<MqttSubscriberMqttSubscribeCredentials> &
+    MqttSubscriberMqttSubscribeProperties
 
   type MqttSubscriberMqttSubscribeClientNodeProperties = Omit<
     EditorNodeProperties,

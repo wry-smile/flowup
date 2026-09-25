@@ -10,5 +10,6 @@ export const DEFAULT_HYDRATE_STATE: MqttSubscriberMqttSubscribeProperties = {
   productId: '',
   organizationId: '',
   deviceId: '',
+  deviceType: '',
 }
 export const store = createSolidHydrateStore(DEFAULT_HYDRATE_STATE)

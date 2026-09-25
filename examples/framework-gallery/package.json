@@ -22,23 +22,23 @@
     }
   },
   "devDependencies": {
-    "@preact/signals": "^2.3.1",
+    "@preact/preset-vite": "^2.10.6",
+    "@preact/signals": "^2.11.2",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/jquery": "catalog:",
     "@types/node": "catalog:",
     "@types/node-red": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
     "@wry-smile/flowup": "catalog:",
     "node-red": "catalog:",
-    "typescript": "catalog:",
-    "vite": "catalog:",
-    "@vitejs/plugin-vue": "catalog:",
-    "vue": "catalog:",
-    "unocss": "catalog:",
-    "@preact/preset-vite": "^2.10.6",
     "preact": "^10.29.8",
     "solid-js": "^1.9.15",
+    "svelte": "^5.57.1",
+    "typescript": "catalog:",
+    "unocss": "catalog:",
+    "vite": "catalog:",
     "vite-plugin-solid": "^2.11.14",
-    "@sveltejs/vite-plugin-svelte": "^7.2.0",
-    "svelte": "^5.56.4"
+    "vue": "catalog:"
   },
   "dependencies": {
     "date-fns": "^4.4.0",

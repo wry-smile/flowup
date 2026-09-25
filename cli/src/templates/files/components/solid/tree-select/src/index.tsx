@@ -252,7 +252,9 @@ export function TreeSelect(props: TreeSelectProps) {
         class={`flex h-(--fui-control-height) w-full items-center rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) px-2.5 text-[14px] outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-focus) disabled:cursor-not-allowed disabled:opacity-60`}
       >
         <span class="min-w-0 flex-1 truncate text-left">
-          {selectedPath() || props.placeholder || 'Select...'}
+          <span class={hasValue() ? '' : 'text-(--fui-text-subtle)'}>
+            {selectedPath() || props.placeholder || 'Select...'}
+          </span>
         </span>
         <Show
           when={props.loading}
@@ -281,7 +283,7 @@ export function TreeSelect(props: TreeSelectProps) {
                 value={query()}
                 onInput={event => setQuery(event.currentTarget.value.toLowerCase().trim())}
                 placeholder={props.filterPlaceholder ?? 'Filter...'}
-                class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-disabled)"
+                class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100"
               />
             </div>
           </div>

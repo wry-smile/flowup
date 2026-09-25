@@ -178,7 +178,7 @@ export function AsyncSearchSelect(props: AsyncSearchSelectProps) {
                 }}
                 placeholder={props.searchPlaceholder ?? 'Search...'}
                 aria-label={props.searchPlaceholder ?? 'Search options'}
-                class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-disabled)"
+                class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100"
               />
             </div>
           </div>

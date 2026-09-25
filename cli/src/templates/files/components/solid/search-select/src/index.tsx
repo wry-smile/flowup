@@ -109,7 +109,7 @@ export function SearchSelect(props: SearchSelectProps) {
                 value={query()}
                 onInput={event => setQuery(event.currentTarget.value)}
                 placeholder={props.searchPlaceholder ?? 'Search...'}
-                class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-disabled)"
+                class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100"
               />
             </div>
           </div>

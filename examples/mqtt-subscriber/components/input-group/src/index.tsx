@@ -11,7 +11,7 @@ export function InputGroup(props: InputGroupProps) {
       <input
         {...inputProps}
         data-fui-status={props.status}
-        class={`h-(--fui-control-height) min-w-0 flex-1 border border-(--fui-border) px-2.5 text-[14px] outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) ${status === 'error' ? 'border-(--fui-danger) focus:border-(--fui-danger)' : status === 'warning' ? 'border-(--fui-warning) focus:border-(--fui-warning)' : 'border-(--fui-border)'} ${prefix != null ? 'rounded-r-[3px]' : 'rounded-(--fui-radius)'}`}
+        class={`h-(--fui-control-height) min-w-0 flex-1 border border-(--fui-border) px-2.5 text-[14px] outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100 hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) ${status === 'error' ? 'border-(--fui-danger) focus:border-(--fui-danger)' : status === 'warning' ? 'border-(--fui-warning) focus:border-(--fui-warning)' : 'border-(--fui-border)'} ${prefix != null ? 'rounded-r-[3px]' : 'rounded-(--fui-radius)'}`}
       />
       {suffix != null && (
         <span class="flex h-(--fui-control-height) items-center rounded-r-[3px] border border-l-0 border-(--fui-border) bg-(--fui-surface-muted) px-2.5 text-[12px] text-(--fui-text-muted)">

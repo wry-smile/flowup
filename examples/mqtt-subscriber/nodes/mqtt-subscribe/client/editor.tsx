@@ -1,121 +1,97 @@
 import { FormRow, SearchSelect, TextInput, TreeSelect } from '@ui'
 import type { OptionValue, SelectOption, TreeOption } from '@ui'
+import { isArray, isObject } from '@wry-smile/utils'
 import { createSignal, onCleanup, onMount } from 'solid-js'
+import {
+  getDeviceCredentials,
+  listDeviceProfiles,
+  listDevices,
+  listOrganizations,
+} from '@client-shared/api/request'
+import type {
+  ApiListResponse,
+  DeviceCredentials,
+  DeviceProfile,
+  Organization,
+} from '@client-shared/api/types'
 
 import { $t, store } from './hydrate'
-import { useNodeRedSubmitValidation } from './use-node-red-submit-validation'
-
-const products: SelectOption[] = [
-  { value: 'product-environment-sensor', label: $t('options.products.environmentSensor') },
-  { value: 'product-edge-gateway', label: $t('options.products.edgeGateway') },
-  { value: 'product-water-meter', label: $t('options.products.waterMeter') },
-]
-
-const organizations: TreeOption[] = [
-  {
-    label: $t('options.organizations.headOffice'),
-    children: [
-      {
-        label: $t('options.organizations.engineering'),
-        children: [
-          { label: $t('options.organizations.deviceLab'), value: 'organization-device-lab' },
-          {
-            label: $t('options.organizations.integrationLab'),
-            value: 'organization-integration-lab',
-          },
-        ],
-      },
-      { label: $t('options.organizations.operations'), value: 'organization-operations' },
-    ],
-  },
-  {
-    label: $t('options.organizations.manufacturing'),
-    children: [
-      { label: $t('options.organizations.northPlant'), value: 'organization-north-plant' },
-      { label: $t('options.organizations.southPlant'), value: 'organization-south-plant' },
-    ],
-  },
-]
-
-const devices = [
-  {
-    value: 'device-env-001',
-    label: $t('options.devices.environmentSensor001'),
-    productId: 'product-environment-sensor',
-    organizationId: 'organization-device-lab',
-  },
-  {
-    value: 'device-env-002',
-    label: $t('options.devices.environmentSensor002'),
-    productId: 'product-environment-sensor',
-    organizationId: 'organization-integration-lab',
-  },
-  {
-    value: 'device-gateway-001',
-    label: $t('options.devices.edgeGateway001'),
-    productId: 'product-edge-gateway',
-    organizationId: 'organization-north-plant',
-  },
-  {
-    value: 'device-meter-001',
-    label: $t('options.devices.waterMeter001'),
-    productId: 'product-water-meter',
-    organizationId: 'organization-south-plant',
-  },
-]
-
-function loadFixture<T>(options: T[], signal: AbortSignal, delay = 450): Promise<T[]> {
-  return new Promise((resolve, reject) => {
-    if (signal.aborted) {
-      reject(new Error('Request aborted'))
-      return
-    }
-
-    const timer = setTimeout(() => {
-      signal.removeEventListener('abort', abort)
-      resolve(options)
-    }, delay)
-    const abort = () => {
-      clearTimeout(timer)
-      reject(new Error('Request aborted'))
-    }
-    signal.addEventListener('abort', abort, { once: true })
-  })
-}
+import { useFormValidation } from './use-form-validation'
+import { useNodeRedDialogSubmitGuard } from './use-node-red-dialog-submit-guard'
 
 export function MqttSubscribeEditor() {
   const [name, setName] = store.refs.name
   const [productId, setProductId] = store.refs.productId
   const [organizationId, setOrganizationId] = store.refs.organizationId
   const [deviceId, setDeviceId] = store.refs.deviceId
-  const [submitAttempted, setSubmitAttempted] = createSignal(false)
-  const [errors, setErrors] = createSignal({ productId: '', organizationId: '', deviceId: '' })
+  const [, setDeviceType] = store.refs.deviceType
+  const validation = useFormValidation({
+    getValues: store.getSnapshot,
+    schema: {
+      productId: { required: $t('editor.productRequired') },
+      organizationId: { required: $t('editor.organizationRequired') },
+      deviceId: { required: $t('editor.deviceRequired') },
+    },
+  })
+  const productField = validation.field('productId')
+  const organizationField = validation.field('organizationId')
+  const deviceField = validation.field('deviceId')
   const [productOptions, setProductOptions] = createSignal<SelectOption[]>([])
   const [organizationOptions, setOrganizationOptions] = createSignal<TreeOption[]>([])
   const [deviceOptions, setDeviceOptions] = createSignal<SelectOption[]>([])
   const [productsLoading, setProductsLoading] = createSignal(true)
   const [organizationsLoading, setOrganizationsLoading] = createSignal(true)
   const [devicesLoading, setDevicesLoading] = createSignal(false)
+  const [credentialsStatus, setCredentialsStatus] = createSignal<
+    'loading' | 'error' | 'ready' | ''
+  >('')
   let activeDeviceRequest: AbortController | undefined
+  let activeCredentialsRequest: AbortController | undefined
+  let deviceTypes = new Map<string, string | undefined>()
 
-  function validate(values = store.getSnapshot()) {
-    const nextErrors = {
-      productId: values.productId.trim() ? '' : $t('editor.productRequired'),
-      organizationId: values.organizationId.trim() ? '' : $t('editor.organizationRequired'),
-      deviceId: values.deviceId.trim() ? '' : $t('editor.deviceRequired'),
+  function clearCredentials() {
+    $('#node-input-username').val('')
+    $('#node-input-password').val('')
+    setCredentialsStatus('')
+  }
+
+  async function loadDeviceCredentials(id: string) {
+    activeCredentialsRequest?.abort()
+    clearCredentials()
+    if (!id) return
+
+    const controller = new AbortController()
+    activeCredentialsRequest = controller
+    setCredentialsStatus('loading')
+    try {
+      const response = await getDeviceCredentials<DeviceCredentials>(id, {
+        signal: controller.signal,
+      })
+      if (controller.signal.aborted) return
+      const credentials = unwrapCredentials(response)
+      const username =
+        credentials.username ??
+        credentials.credentialsId ??
+        credentials.token ??
+        credentials.accessToken
+      const password = credentials.password ?? credentials.credentialsValue
+      if (!username) {
+        setCredentialsStatus('error')
+        return
+      }
+      $('#node-input-username').val(username)
+      $('#node-input-password').val(password ?? '')
+      setCredentialsStatus('ready')
+    } catch {
+      if (!controller.signal.aborted) setCredentialsStatus('error')
     }
-    setErrors(nextErrors)
-    return Object.values(nextErrors).every(error => !error)
   }
 
-  function revalidateAfterChange() {
-    if (submitAttempted()) validate()
-  }
-
-  useNodeRedSubmitValidation({
-    onAttempt: () => setSubmitAttempted(true),
-    validate: () => validate(),
-    getMessage: () => Object.values(errors()).filter(Boolean),
+  useNodeRedDialogSubmitGuard({
+    canSubmit: () => {
+      const valid = validation.validate()
+      return valid && credentialsStatus() === 'ready'
+    },
   })
 
   async function refreshDeviceOptions(productId: string, organizationId: string) {
@@ -133,12 +109,15 @@ export function MqttSubscribeEditor() {
     setDevicesLoading(true)
 
     try {
-      const matchingDevices = devices
-        .filter(device => device.productId === productId)
-        .filter(device => device.organizationId === organizationId)
-        .map(({ value, label }) => ({ value, label }))
-      const result = await loadFixture(matchingDevices, controller.signal, 550)
-      if (!controller.signal.aborted) setDeviceOptions(result)
+      const response = await listDevices(
+        { organizationId, deviceProfileId: productId },
+        { signal: controller.signal },
+      )
+      if (!controller.signal.aborted) {
+        const devices = readList(response)
+        deviceTypes = new Map(devices.map(device => [device.id, device.deviceType]))
+        setDeviceOptions(devices.map(device => ({ value: device.id, label: device.name })))
+      }
     } catch {
       if (!controller.signal.aborted) setDeviceOptions([])
     } finally {
@@ -148,31 +127,28 @@ export function MqttSubscribeEditor() {
 
   onMount(() => {
     const optionsController = new AbortController()
-    void loadFixture(products, optionsController.signal, 350)
-      .then(setProductOptions)
+    void listDeviceProfiles({ signal: optionsController.signal })
+      .then(response =>
+        setProductOptions(
+          readList(response).map(profile => ({ value: profile.id, label: profile.name })),
+        ),
+      )
       .catch(() => {})
       .finally(() => setProductsLoading(false))
-    void loadFixture(organizations, optionsController.signal, 500)
-      .then(setOrganizationOptions)
+    void listOrganizations({ signal: optionsController.signal })
+      .then(response => setOrganizationOptions(readList(response).map(toTreeOption)))
       .catch(() => {})
       .finally(() => setOrganizationsLoading(false))
 
     const currentProductId = productId()
     const currentOrganizationId = organizationId()
-    const currentDeviceId = deviceId()
-    const validDevice = devices.some(
-      device =>
-        device.value === currentDeviceId &&
-        device.productId === currentProductId &&
-        device.organizationId === currentOrganizationId,
-    )
-
-    if (currentDeviceId && !validDevice) setDeviceId('')
     void refreshDeviceOptions(currentProductId, currentOrganizationId)
+    void loadDeviceCredentials(deviceId())
 
     onCleanup(() => {
       optionsController.abort()
       activeDeviceRequest?.abort()
+      activeCredentialsRequest?.abort()
     })
   })
 
@@ -180,22 +156,28 @@ export function MqttSubscribeEditor() {
     if (typeof value !== 'string') return
     setProductId(value)
     setDeviceId('')
+    setDeviceType('')
+    clearCredentials()
     void refreshDeviceOptions(value, organizationId())
-    revalidateAfterChange()
+    validation.revalidate()
   }
 
   function updateOrganization(value: OptionValue) {
     if (typeof value !== 'string') return
     setOrganizationId(value)
     setDeviceId('')
+    setDeviceType('')
+    clearCredentials()
     void refreshDeviceOptions(productId(), value)
-    revalidateAfterChange()
+    validation.revalidate()
   }
 
   function updateDevice(value: OptionValue) {
     if (typeof value === 'string') {
       setDeviceId(value)
-      revalidateAfterChange()
+      setDeviceType(deviceTypes.get(value) ?? '')
+      void loadDeviceCredentials(value)
+      validation.revalidate()
     }
   }
 
@@ -210,12 +192,7 @@ export function MqttSubscribeEditor() {
         />
       </FormRow>
 
-      <FormRow
-        label={$t('editor.product')}
-        layout="vertical"
-        required
-        error={submitAttempted() ? errors().productId : ''}
-      >
+      <FormRow label={$t('editor.product')} layout="vertical" required error={productField.error()}>
         <SearchSelect
           id="mqtt-subscribe-product"
           options={productOptions()}
@@ -225,7 +202,7 @@ export function MqttSubscribeEditor() {
           placeholder={$t('editor.selectProduct')}
           searchPlaceholder={$t('editor.searchProducts')}
           emptyLabel={$t('editor.noProducts')}
-          status={submitAttempted() && errors().productId ? 'error' : undefined}
+          status={productField.status()}
           onChange={updateProduct}
         />
       </FormRow>
@@ -234,7 +211,7 @@ export function MqttSubscribeEditor() {
         label={$t('editor.organization')}
         layout="vertical"
         required
-        error={submitAttempted() ? errors().organizationId : ''}
+        error={organizationField.error()}
       >
         <TreeSelect
           id="mqtt-subscribe-organization"
@@ -245,17 +222,12 @@ export function MqttSubscribeEditor() {
           placeholder={$t('editor.selectOrganization')}
           filterPlaceholder={$t('editor.searchOrganization')}
           emptyLabel={$t('editor.noOrganizations')}
-          status={submitAttempted() && errors().organizationId ? 'error' : undefined}
+          status={organizationField.status()}
           onChange={updateOrganization}
         />
       </FormRow>
 
-      <FormRow
-        label={$t('editor.device')}
-        layout="vertical"
-        required
-        error={submitAttempted() ? errors().deviceId : ''}
-      >
+      <FormRow label={$t('editor.device')} layout="vertical" required error={deviceField.error()}>
         <SearchSelect
           id="mqtt-subscribe-device"
           options={deviceOptions()}
@@ -266,10 +238,47 @@ export function MqttSubscribeEditor() {
           placeholder={$t('editor.selectDevice')}
           searchPlaceholder={$t('editor.searchDevices')}
           emptyLabel={$t('editor.noDevices')}
-          status={submitAttempted() && errors().deviceId ? 'error' : undefined}
+          status={deviceField.status()}
           onChange={updateDevice}
         />
       </FormRow>
+      <p class="text-xs text-slate-500" aria-live="polite">
+        {credentialsStatus() === 'loading'
+          ? $t('editor.loadingCredentials')
+          : credentialsStatus() === 'error'
+            ? $t('editor.credentialsUnavailable')
+            : ''}
+      </p>
     </div>
   )
+}
+
+function unwrapCredentials(value: DeviceCredentials): DeviceCredentials {
+  if (value.data) return unwrapCredentials(value.data)
+  if (value.result) return unwrapCredentials(value.result)
+  return value
+}
+
+function readList<T>(response: ApiListResponse<T>): T[] {
+  if (isArray(response)) return response as T[]
+  if (!isObject(response)) throw new TypeError('Expected the API response to contain a list.')
+
+  const payload = response as Record<string, unknown>
+  for (const key of ['list', 'items', 'records', 'rows']) {
+    const items = payload[key]
+    if (isArray(items)) return items as T[]
+  }
+  if (payload.data !== undefined) return readList(payload.data as ApiListResponse<T>)
+  if (payload.result !== undefined) return readList(payload.result as ApiListResponse<T>)
+  throw new TypeError('Expected the API response to contain a list.')
+}
+
+function toTreeOption(organization: Organization): TreeOption {
+  return {
+    label: organization.name,
+    value: organization.id,
+    ...(organization.children?.length
+      ? { children: organization.children.map(child => toTreeOption(child)) }
+      : {}),
+  }
 }

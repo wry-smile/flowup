@@ -63,7 +63,11 @@ export function Select(props: SelectProps) {
         onClick={() => setOpen(value => !value)}
         class={`${triggerClass} disabled:cursor-not-allowed disabled:opacity-60`}
       >
-        <span class="min-w-0 flex-1 truncate text-left">{selectedLabel()}</span>
+        <span
+          class={`min-w-0 flex-1 truncate text-left ${hasValue() ? '' : 'text-(--fui-text-subtle)'}`}
+        >
+          {selectedLabel()}
+        </span>
         <Show
           when={props.loading}
           fallback={<Icon name="chevron-down" class="size-4 shrink-0 text-(--fui-interactive)" />}
