@@ -107,6 +107,7 @@
     "vite": "catalog:"
   },
   "devDependencies": {
+    "@floating-ui/dom": "catalog:",
     "@preact/signals": "^2.3.1",
     "bumpp": "catalog:",
     "tsdown": "catalog:",

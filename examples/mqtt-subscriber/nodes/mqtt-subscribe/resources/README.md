@@ -1,1 +1,1 @@
-Resources for mqtt-subscriber-mqtt-subscribe. After build they are served from resources/<package-name>/mqtt-subscribe/<file>.
+Resources shared by the MQTT In and MQTT Out node types. After build they are served from resources/<package-name>/mqtt-subscribe/<file>.

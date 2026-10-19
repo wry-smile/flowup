@@ -1,6 +1,6 @@
 # MQTT subscriber multi-entry example
 
-This package was scaffolded with `flowup gen package`, then given one SolidJS node named `mqtt-subscribe`. All SolidJS components were installed with `flowup gen component all` into the package-level `components/` directory and are available through `@ui`.
+This package was scaffolded with `flowup gen package`, then given a SolidJS `mqtt-subscribe` node entry. That entry exposes separate MQTT In, MQTT Out, and MQTT Event Node-RED types through their scoped client and runtime entry modules. All SolidJS components were installed with `flowup gen component all` into the package-level `components/` directory and are available through `@ui`.
 
 To recreate it from the repository root:
 
@@ -15,7 +15,7 @@ pnpm install
 
 The editor demonstrates dependent selections: changing the product or organization clears the selected device and reloads the device options. It loads profiles, organizations, and devices through the shared API modules in `client-shared/api/`. Request functions and response types live in separate files. The Done button is intercepted when required values are missing; validation errors are stored by the form validator and shown beside their fields.
 
-The `mqtt-subscribe` runtime node uses a shared MQTT connection pool keyed by the fixed broker connection configuration. Multiple flow nodes share the same connection and subscribe to the topic selected from the configured device type. Broker messages become Node-RED messages with `msg.topic`, parsed JSON (or the original text) in `msg.payload`, and `msg.deviceId`. A message injected into the node publishes its `msg.payload` to that device type's telemetry topic. Connections are released when nodes are closed or redeployed.
+The MQTT In, MQTT Out, and MQTT Event runtime nodes use a shared MQTT connection pool keyed by the fixed broker connection configuration. MQTT In subscribes to the topic selected from the configured device type. Broker messages become Node-RED messages with `msg.topic`, parsed JSON (or the original text) in `msg.payload`, and `msg.deviceId`. MQTT Out publishes its incoming `msg.payload` to that device type's telemetry topic. MQTT Event publishes to the fixed `v1/devices/event/{entityId}/{identifier}` topic; `entityId` comes from the selected device and `identifier` is configured in the node editor. Each node type has its own editor state store; connections are released when nodes are closed or redeployed.
 
 Configure the fixed MQTT connection in Node-RED's `settings.js`:
 

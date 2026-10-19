@@ -3,18 +3,24 @@ import { createSignal } from 'solid-js'
 import { Alert } from '../../alert'
 import { AsyncSearchSelect } from '../../async-search-select'
 import { Button } from '../../button'
+import { CodeEditor } from '../../code-editor'
 import { Checkbox } from '../../checkbox'
 import { CheckboxGroup } from '../../checkbox-group'
 import { Collapse } from '../../collapse'
 import { Dialog } from '../../dialog'
 import { Drawer } from '../../drawer'
+import { DateTimePicker, type DateTimeValue } from '../../date-time-picker'
+import { EditableList, type EditableListItemProps } from '../../editable-list'
 import { FormRow } from '../../form-row'
 import { IconButton } from '../../icon-button'
+import { Icon } from '../../icons'
 import { TextInput } from '../../input'
 import { InputGroup } from '../../input-group'
 import { InputNumber } from '../../input-number'
 import { Loading } from '../../loading'
 import { MultiSelect } from '../../multi-select'
+import { Popover } from '../../popover'
+import { RangeInput } from '../../range-input'
 import { Radio } from '../../radio'
 import { RadioGroup } from '../../radio-group'
 import { SearchSelect } from '../../search-select'
@@ -24,7 +30,9 @@ import { Switch } from '../../switch'
 import { Tabs } from '../../tabs'
 import { Tag } from '../../tag'
 import { Textarea } from '../../textarea'
+import { Tooltip } from '../../tooltip'
 import { TreeSelect, type TreeOption } from '../../tree-select'
+import { TypedInput, type TypedInputType, type TypedInputValue } from '../../typed-input'
 
 const methods = [
   { value: 'GET', label: 'GET' },
@@ -76,6 +84,22 @@ const treeOptions: TreeOption[] = [
   { label: 'Node', children: [{ label: 'id' }, { label: 'name' }] },
 ]
 
+interface EditableMapping {
+  property: string
+  payloadKey: string
+}
+
+const iconNames = [
+  'check',
+  'chevron-down',
+  'chevron-right',
+  'close',
+  'search',
+  'spinner',
+  'caret-down',
+  'caret-up',
+] as const
+
 export function ComponentShowcase() {
   const [name, setName] = createSignal('HTTP Request')
   const [timeout, setTimeoutValue] = createSignal(10000)
@@ -97,6 +121,25 @@ export function ComponentShowcase() {
   const [saved, setSaved] = createSignal(false)
   const [dialogOpen, setDialogOpen] = createSignal(false)
   const [drawerOpen, setDrawerOpen] = createSignal(false)
+  const [mappings, setMappings] = createSignal<EditableMapping[]>([
+    { property: 'temperature', payloadKey: 'temperature' },
+    { property: 'enabled', payloadKey: 'status.enabled' },
+  ])
+  const [typedInputType, setTypedInputType] = createSignal<TypedInputType>('str')
+  const [typedInputValue, setTypedInputValue] = createSignal<TypedInputValue>('payload')
+  const [code, setCode] = createSignal('return msg.payload;')
+  const [runAt, setRunAt] = createSignal('2026-10-19 09:30:15')
+  const [runTime, setRunTime] = createSignal('09:30:15')
+  const [dateRange, setDateRange] = createSignal<DateTimeValue>({
+    start: '2026-10-01',
+    end: '2026-10-19',
+  })
+  const [scheduleRange, setScheduleRange] = createSignal<DateTimeValue>({
+    start: '2026-10-01 09:00:00',
+    end: '2026-10-19 17:30:00',
+  })
+  const [threshold, setThreshold] = createSignal(65)
+  const [popoverOpen, setPopoverOpen] = createSignal(false)
 
   function reset() {
     setName('HTTP Request')
@@ -117,6 +160,18 @@ export function ComponentShowcase() {
     setRetry(true)
     setFollowRedirects(false)
     setSaved(false)
+    setMappings([
+      { property: 'temperature', payloadKey: 'temperature' },
+      { property: 'enabled', payloadKey: 'status.enabled' },
+    ])
+    setTypedInputType('str')
+    setTypedInputValue('payload')
+    setCode('return msg.payload;')
+    setRunAt('2026-10-19 09:30:15')
+    setDateRange({ start: '2026-10-01', end: '2026-10-19' })
+    setScheduleRange({ start: '2026-10-01 09:00:00', end: '2026-10-19 17:30:00' })
+    setThreshold(65)
+    setPopoverOpen(false)
   }
 
   function changed<T>(setter: (value: T) => void) {
@@ -243,6 +298,18 @@ export function ComponentShowcase() {
             />
           </FormRow>
 
+          <FormRow label="Typed Input">
+            <TypedInput
+              value={typedInputValue()}
+              type={typedInputType()}
+              onChange={(value, type) => {
+                setTypedInputValue(value)
+                setTypedInputType(type)
+              }}
+              placeholder="Enter a value"
+            />
+          </FormRow>
+
           <FormRow label="Trigger" labelClass="min-h-(--fui-button-height)">
             <Segmented
               options={['Manual', 'Interval', 'Cron']}
@@ -326,6 +393,129 @@ export function ComponentShowcase() {
                   <IconButton label="Add">+</IconButton>
                   <IconButton label="Edit">✎</IconButton>
                   <IconButton label="More">⋯</IconButton>
+                </div>
+              </FormRow>
+              <FormRow label="Editable List">
+                <div class="w-full max-w-[680px] space-y-2">
+                  <p class="m-0 text-[12px] text-(--fui-text-muted)">
+                    Edit MQTT property mappings, add rows, remove rows, or drag the handle to
+                    reorder.
+                  </p>
+                  <EditableList<EditableMapping>
+                    items={mappings()}
+                    sortable
+                    addButton="Add mapping"
+                    createItem={() => ({ property: '', payloadKey: '' })}
+                    onChange={setMappings}
+                    header={
+                      <div class="grid grid-cols-2 gap-2 px-3 py-2">
+                        <span>Device property</span>
+                        <span>Payload JSON key</span>
+                      </div>
+                    }
+                    renderItem={({ item, onChange }: EditableListItemProps<EditableMapping>) => (
+                      <div class="grid grid-cols-2 gap-2">
+                        <TextInput
+                          value={item().property}
+                          placeholder="e.g. temperature"
+                          onInput={event =>
+                            onChange({ ...item(), property: event.currentTarget.value })
+                          }
+                        />
+                        <TextInput
+                          value={item().payloadKey}
+                          placeholder="e.g. sensor.temp"
+                          onInput={event =>
+                            onChange({ ...item(), payloadKey: event.currentTarget.value })
+                          }
+                        />
+                      </div>
+                    )}
+                  />
+                  <p class="m-0 text-[12px] text-(--fui-text-muted)">
+                    {mappings().length} mapping{mappings().length === 1 ? '' : 's'}
+                  </p>
+                </div>
+              </FormRow>
+              <FormRow label="Code Editor">
+                <div class="w-full max-w-[680px]">
+                  <CodeEditor
+                    language="javascript"
+                    value={code()}
+                    onChange={changed(setCode)}
+                    height={220}
+                  />
+                </div>
+              </FormRow>
+              <FormRow label="Date & Time">
+                <div class="grid max-w-[680px] gap-2 sm:grid-cols-3">
+                  <DateTimePicker mode="date" value="2026-10-19" />
+                  <DateTimePicker
+                    mode="time"
+                    value={runTime()}
+                    onChange={value => changed(setRunTime)(String(value))}
+                  />
+                  <DateTimePicker
+                    mode="datetime"
+                    value={runAt()}
+                    onChange={value => changed(setRunAt)(String(value))}
+                  />
+                </div>
+              </FormRow>
+              <FormRow label="Date Range">
+                <div class="grid max-w-[680px] gap-2 sm:grid-cols-2">
+                  <DateTimePicker
+                    mode="date-range"
+                    value={dateRange()}
+                    onChange={changed(setDateRange)}
+                  />
+                  <DateTimePicker
+                    mode="datetime-range"
+                    value={scheduleRange()}
+                    onChange={changed(setScheduleRange)}
+                  />
+                </div>
+              </FormRow>
+              <FormRow label="Range Input">
+                <div class="max-w-[520px]">
+                  <RangeInput
+                    value={threshold()}
+                    min={0}
+                    max={100}
+                    step={5}
+                    unit="%"
+                    onChange={changed(setThreshold)}
+                  />
+                </div>
+              </FormRow>
+              <FormRow label="Tooltip">
+                <Tooltip content="Set a threshold from 0 to 100 percent." placement="top">
+                  <Button variant="default">Hover or focus for help</Button>
+                </Tooltip>
+              </FormRow>
+              <FormRow label="Popover">
+                <Popover
+                  trigger="Advanced details"
+                  open={popoverOpen()}
+                  onOpenChange={setPopoverOpen}
+                >
+                  <div class="w-64 space-y-2 text-[13px]">
+                    <p class="m-0 font-semibold">Advanced settings</p>
+                    <p class="m-0 text-(--fui-text-muted)">
+                      This panel is positioned independently of the surrounding form overflow.
+                    </p>
+                    <Button onClick={() => setPopoverOpen(false)}>Close</Button>
+                  </div>
+                </Popover>
+              </FormRow>
+              <FormRow label="Icons">
+                <div class="flex flex-wrap gap-3">
+                  {iconNames.map(name => (
+                    <span class="inline-flex items-center gap-1.5 rounded border border-(--fui-border-soft) px-2 py-1 text-[12px]">
+                      <Icon name={name} class="size-4 text-(--fui-interactive)" />
+                      {name}
+                    </span>
+                  ))}
                 </div>
               </FormRow>
               <FormRow label="Textarea">

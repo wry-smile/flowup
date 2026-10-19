@@ -1,4 +1,5 @@
 export const TEMPLATE_DEPENDENCY_VERSIONS = {
+  '@floating-ui/dom': '^1.8.0',
   '@types/jquery': '^4.0.1',
   '@types/node': '^26.0.1',
   '@types/node-red': '^1.3.5',

@@ -3,6 +3,7 @@ export type IconName =
   | 'chevron-down'
   | 'chevron-right'
   | 'close'
+  | 'edit'
   | 'search'
   | 'spinner'
   | 'caret-down'

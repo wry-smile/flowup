@@ -22,4 +22,5 @@ export interface MultiSelectProps {
   clearable?: boolean
   emptyLabel?: string
   selectedCountText?: (count: number) => string
+  mountTo?: HTMLElement | string
 }

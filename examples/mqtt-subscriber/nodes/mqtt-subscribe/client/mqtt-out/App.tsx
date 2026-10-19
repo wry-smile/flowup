@@ -1,0 +1,352 @@
+import { EditableList, FormRow, SearchSelect, Select, TextInput, TreeSelect } from '@ui'
+import type { OptionValue, SelectOption, TreeOption } from '@ui'
+import { isArray, isObject } from '@wry-smile/utils'
+import { createSignal, onCleanup, onMount } from 'solid-js'
+import type { SolidHydrateStore } from '@wry-smile/flowup/client/solid'
+import type { MqttSubscriberMqttOutProperties } from '../../types'
+import {
+  getDeviceCredentials,
+  listDeviceProfiles,
+  listDevices,
+  listOrganizations,
+} from '@client-shared/api/request'
+import type { ApiListResponse, DeviceCredentials, Organization } from '@client-shared/api/types'
+
+import { useFormValidation } from '../shared/use-form-validation'
+import type { FormValidationSchema } from '../shared/use-form-validation'
+import { useNodeRedDialogSubmitGuard } from '../shared/use-node-red-dialog-submit-guard'
+
+type MqttSubscribeEditorStore = Pick<
+  SolidHydrateStore<MqttSubscriberMqttOutProperties>,
+  'refs' | 'getSnapshot'
+>
+
+type MqttSubscribeEditorValues = MqttSubscriberMqttOutProperties
+
+interface MqttSubscribeEditorProps {
+  store: MqttSubscribeEditorStore
+  t: (key: string) => string
+  idPrefix: string
+}
+
+export default function App(props: MqttSubscribeEditorProps) {
+  const store = props.store
+  const t = props.t
+  const idPrefix = props.idPrefix
+  const [name, setName] = store.refs.name
+  const [productId, setProductId] = store.refs.productId
+  const [organizationId, setOrganizationId] = store.refs.organizationId
+  const [deviceId, setDeviceId] = store.refs.deviceId
+  const [, setDeviceType] = store.refs.deviceType
+  const [mappings, setMappings] = store.refs.mappings
+  const schema: FormValidationSchema<MqttSubscribeEditorValues> = {
+    productId: { required: t('editor.productRequired') },
+    organizationId: { required: t('editor.organizationRequired') },
+    deviceId: { required: t('editor.deviceRequired') },
+  }
+  const validation = useFormValidation<MqttSubscribeEditorValues>({
+    getValues: () => store.getSnapshot(),
+    schema,
+  })
+  const productField = validation.field('productId')
+  const organizationField = validation.field('organizationId')
+  const deviceField = validation.field('deviceId')
+  const mappingOptions = [
+    'temperature',
+    'humidity',
+    'pressure',
+    'voltage',
+    'current',
+    'power',
+    'status',
+    'battery',
+  ].map(value => ({ value, label: t(`editor.attributes.${value}`) }))
+  const [productOptions, setProductOptions] = createSignal<SelectOption[]>([])
+  const [organizationOptions, setOrganizationOptions] = createSignal<TreeOption[]>([])
+  const [deviceOptions, setDeviceOptions] = createSignal<SelectOption[]>([])
+  const [productsLoading, setProductsLoading] = createSignal(true)
+  const [organizationsLoading, setOrganizationsLoading] = createSignal(true)
+  const [devicesLoading, setDevicesLoading] = createSignal(false)
+  const [credentialsStatus, setCredentialsStatus] = createSignal<
+    'loading' | 'error' | 'ready' | ''
+  >('')
+  let activeDeviceRequest: AbortController | undefined
+  let activeCredentialsRequest: AbortController | undefined
+  let deviceTypes = new Map<string, string | undefined>()
+
+  function clearCredentials() {
+    $('#node-input-username').val('')
+    $('#node-input-password').val('')
+    setCredentialsStatus('')
+  }
+
+  async function loadDeviceCredentials(id: string) {
+    activeCredentialsRequest?.abort()
+    clearCredentials()
+    if (!id) return
+
+    const controller = new AbortController()
+    activeCredentialsRequest = controller
+    setCredentialsStatus('loading')
+    try {
+      const response = await getDeviceCredentials<DeviceCredentials>(id, {
+        signal: controller.signal,
+      })
+      if (controller.signal.aborted) return
+      const credentials = unwrapCredentials(response)
+      const username =
+        credentials.username ??
+        credentials.credentialsId ??
+        credentials.token ??
+        credentials.accessToken
+      const password = credentials.password ?? credentials.credentialsValue
+      if (!username) {
+        setCredentialsStatus('error')
+        return
+      }
+      $('#node-input-username').val(username)
+      $('#node-input-password').val(password ?? '')
+      setCredentialsStatus('ready')
+    } catch {
+      if (!controller.signal.aborted) setCredentialsStatus('error')
+    }
+  }
+
+  useNodeRedDialogSubmitGuard({
+    canSubmit: () => {
+      const valid = validation.validate()
+      return valid && credentialsStatus() === 'ready'
+    },
+  })
+
+  async function refreshDeviceOptions(productId: string, organizationId: string) {
+    activeDeviceRequest?.abort()
+
+    if (!productId || !organizationId) {
+      setDeviceOptions([])
+      setDevicesLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+    activeDeviceRequest = controller
+    setDeviceOptions([])
+    setDevicesLoading(true)
+
+    try {
+      const response = await listDevices(
+        { organizationId, deviceProfileId: productId },
+        { signal: controller.signal },
+      )
+      if (!controller.signal.aborted) {
+        const devices = readList(response)
+        deviceTypes = new Map(devices.map(device => [device.id, device.deviceType]))
+        setDeviceOptions(devices.map(device => ({ value: device.id, label: device.name })))
+      }
+    } catch {
+      if (!controller.signal.aborted) setDeviceOptions([])
+    } finally {
+      if (!controller.signal.aborted) setDevicesLoading(false)
+    }
+  }
+
+  onMount(() => {
+    const optionsController = new AbortController()
+    void listDeviceProfiles({ signal: optionsController.signal })
+      .then(response =>
+        setProductOptions(
+          readList(response).map(profile => ({ value: profile.id, label: profile.name })),
+        ),
+      )
+      .catch(() => {})
+      .finally(() => setProductsLoading(false))
+    void listOrganizations({ signal: optionsController.signal })
+      .then(response => setOrganizationOptions(readList(response).map(toTreeOption)))
+      .catch(() => {})
+      .finally(() => setOrganizationsLoading(false))
+
+    const currentProductId = productId()
+    const currentOrganizationId = organizationId()
+    void refreshDeviceOptions(currentProductId, currentOrganizationId)
+    void loadDeviceCredentials(deviceId())
+
+    onCleanup(() => {
+      optionsController.abort()
+      activeDeviceRequest?.abort()
+      activeCredentialsRequest?.abort()
+    })
+  })
+
+  function updateProduct(value: OptionValue) {
+    if (typeof value !== 'string') return
+    setProductId(value)
+    setDeviceId('')
+    setDeviceType('')
+    clearCredentials()
+    void refreshDeviceOptions(value, organizationId())
+    validation.revalidate()
+  }
+
+  function updateOrganization(value: OptionValue) {
+    if (typeof value !== 'string') return
+    setOrganizationId(value)
+    setDeviceId('')
+    setDeviceType('')
+    clearCredentials()
+    void refreshDeviceOptions(productId(), value)
+    validation.revalidate()
+  }
+
+  function updateDevice(value: OptionValue) {
+    if (typeof value === 'string') {
+      setDeviceId(value)
+      setDeviceType(deviceTypes.get(value) ?? '')
+      void loadDeviceCredentials(value)
+      validation.revalidate()
+    }
+  }
+
+  return (
+    <main class="grid gap-3 p-3" data-flowup-scope="mqtt-subscriber">
+      <div class="space-y-5 p-1">
+        <FormRow label={t('editor.name')} layout="vertical">
+          <TextInput
+            id={`${idPrefix}-name`}
+            value={name() ?? ''}
+            placeholder={t('editor.namePlaceholder')}
+            onInput={event => setName(event.currentTarget.value)}
+          />
+        </FormRow>
+
+        <FormRow
+          label={t('editor.product')}
+          layout="vertical"
+          required
+          error={productField.error()}
+        >
+          <SearchSelect
+            id={`${idPrefix}-product`}
+            options={productOptions()}
+            loading={productsLoading()}
+            loadingLabel={t('editor.loadingProducts')}
+            value={productId()}
+            placeholder={t('editor.selectProduct')}
+            searchPlaceholder={t('editor.searchProducts')}
+            emptyLabel={t('editor.noProducts')}
+            status={productField.status()}
+            onChange={updateProduct}
+          />
+        </FormRow>
+
+        <FormRow
+          label={t('editor.organization')}
+          layout="vertical"
+          required
+          error={organizationField.error()}
+        >
+          <TreeSelect
+            id={`${idPrefix}-organization`}
+            options={organizationOptions()}
+            loading={organizationsLoading()}
+            loadingLabel={t('editor.loadingOrganizations')}
+            value={organizationId()}
+            placeholder={t('editor.selectOrganization')}
+            filterPlaceholder={t('editor.searchOrganization')}
+            emptyLabel={t('editor.noOrganizations')}
+            status={organizationField.status()}
+            onChange={updateOrganization}
+          />
+        </FormRow>
+
+        <FormRow label={t('editor.device')} layout="vertical" required error={deviceField.error()}>
+          <SearchSelect
+            id={`${idPrefix}-device`}
+            options={deviceOptions()}
+            loading={devicesLoading()}
+            loadingLabel={t('editor.loadingDevices')}
+            disabled={!productId() || !organizationId()}
+            value={deviceId()}
+            placeholder={t('editor.selectDevice')}
+            searchPlaceholder={t('editor.searchDevices')}
+            emptyLabel={t('editor.noDevices')}
+            status={deviceField.status()}
+            onChange={updateDevice}
+          />
+        </FormRow>
+        <section class="space-y-2">
+          <h3 class="m-0 text-sm font-medium">{t('editor.mappings')}</h3>
+          <EditableList
+            items={mappings()}
+            createItem={() => ({ attribute: '', payloadKey: '' })}
+            addButton={t('editor.addMapping')}
+            sortable
+            onChange={items => setMappings(items)}
+            header={
+              <div class="grid w-full min-w-0 grid-cols-2 items-center gap-2 px-10 py-2">
+                <span>{t('editor.deviceAttribute')}</span>
+                <span>{t('editor.payloadJsonKey')}</span>
+              </div>
+            }
+            renderItem={({ item, index, onChange }) => (
+              <div class="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-2">
+                <Select
+                  id={`${idPrefix}-mapping-attribute-${index()}`}
+                  options={mappingOptions}
+                  value={item().attribute}
+                  placeholder={t('editor.selectAttribute')}
+                  onChange={value => {
+                    if (typeof value === 'string') onChange({ ...item(), attribute: value })
+                  }}
+                />
+                <TextInput
+                  id={`${idPrefix}-mapping-payload-key-${index()}`}
+                  value={item().payloadKey}
+                  placeholder={t('editor.payloadKeyPlaceholder')}
+                  onInput={event => onChange({ ...item(), payloadKey: event.currentTarget.value })}
+                />
+              </div>
+            )}
+          />
+          <p class="m-0 text-xs text-(--fui-text-subtle)">{t('editor.mappingHelp')}</p>
+        </section>
+        <p class="text-xs text-slate-500" aria-live="polite">
+          {credentialsStatus() === 'loading'
+            ? t('editor.loadingCredentials')
+            : credentialsStatus() === 'error'
+              ? t('editor.credentialsUnavailable')
+              : ''}
+        </p>
+      </div>
+    </main>
+  )
+}
+
+function unwrapCredentials(value: DeviceCredentials): DeviceCredentials {
+  if (value.data) return unwrapCredentials(value.data)
+  if (value.result) return unwrapCredentials(value.result)
+  return value
+}
+
+function readList<T>(response: ApiListResponse<T>): T[] {
+  if (isArray(response)) return response as T[]
+  if (!isObject(response)) throw new TypeError('Expected the API response to contain a list.')
+
+  const payload = response as Record<string, unknown>
+  for (const key of ['list', 'items', 'records', 'rows']) {
+    const items = payload[key]
+    if (isArray(items)) return items as T[]
+  }
+  if (payload.data !== undefined) return readList(payload.data as ApiListResponse<T>)
+  if (payload.result !== undefined) return readList(payload.result as ApiListResponse<T>)
+  throw new TypeError('Expected the API response to contain a list.')
+}
+
+function toTreeOption(organization: Organization): TreeOption {
+  return {
+    label: organization.name,
+    value: organization.id,
+    ...(organization.children?.length
+      ? { children: organization.children.map(child => toTreeOption(child)) }
+      : {}),
+  }
+}

@@ -1,14 +1,16 @@
-import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
+import { For, Show, createEffect, createSignal, onCleanup, onMount } from 'solid-js'
+import { Portal } from 'solid-js/web'
 
 import type { OptionValue } from '../../select/src/types'
 import type { AsyncSearchSelectProps, SelectOption } from './types'
+import { autoPositionPopup, createPopupPortalHost } from '../../select/src/floating'
 import { Icon } from '../../icons'
 
 const triggerClass =
   'flex h-(--fui-control-height) w-full items-center rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) px-2.5 text-[14px] outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-focus)'
 
 const popupClass =
-  'absolute left-0 right-0 top-[38px] z-40 overflow-hidden rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) shadow-[0_3px_10px_rgba(0,0,0,.16)]'
+  'fixed z-50 max-w-full overflow-auto rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) shadow-[0_3px_10px_rgba(0,0,0,.16)]'
 
 const optionClass =
   'flex h-[31px] w-full items-center px-2.5 text-left text-[13px] hover:bg-(--fui-surface-muted)'
@@ -22,6 +24,9 @@ export function AsyncSearchSelect(props: AsyncSearchSelectProps) {
   const [localValue, setLocalValue] = createSignal<OptionValue>(props.value ?? '')
   let searchInput!: HTMLInputElement
   let container!: HTMLDivElement
+  let popup: HTMLDivElement | undefined
+  const [portalHost, setPortalHost] = createSignal<HTMLElement>()
+  const [popupElement, setPopupElement] = createSignal<HTMLDivElement>()
   let timer: ReturnType<typeof setTimeout> | undefined
   let activeController: AbortController | undefined
   let requestId = 0
@@ -106,11 +111,24 @@ export function AsyncSearchSelect(props: AsyncSearchSelectProps) {
   }
 
   onMount(() => {
+    const host = createPopupPortalHost(container, props.mountTo)
+    setPortalHost(host)
+    onCleanup(() => host.remove())
+  })
+
+  createEffect(() => {
+    const floating = popupElement()
+    if (!open() || !floating) return
+    onCleanup(autoPositionPopup(container, floating, { matchWidth: true }))
+  })
+
+  onMount(() => {
     const controller = new AbortController()
     document.addEventListener(
       'pointerdown',
       (event: PointerEvent) => {
-        if (!container?.contains(event.target as Node)) close()
+        const target = event.target as Node
+        if (!container?.contains(target) && !popup?.contains(target)) close()
       },
       { signal: controller.signal },
     )
@@ -156,81 +174,92 @@ export function AsyncSearchSelect(props: AsyncSearchSelectProps) {
           <Icon name="close" class="size-3.5" />
         </button>
       </Show>
-      <Show when={open()}>
-        <div class={popupClass}>
-          <div class="border-b border-(--fui-border-soft) p-1.5">
-            <div class="flex h-[30px] items-center rounded-[2px] border border-(--fui-border) px-2 focus-within:border-(--fui-interactive)">
-              <Icon name="search" class="mr-1.5 size-3.5 shrink-0 text-(--fui-text-subtle)" />
-              <input
-                ref={element => (searchInput = element)}
-                value={query()}
-                onInput={event => {
-                  const nextQuery = event.currentTarget.value
-                  setQuery(nextQuery)
-                  scheduleRequest(nextQuery)
-                }}
-                onKeyDown={event => {
-                  if (event.key === 'Escape') close()
-                  if (event.key === 'Enter' && !loading()) {
-                    const firstEnabled = options().find(option => !option.disabled)
-                    if (firstEnabled) choose(firstEnabled)
-                  }
-                }}
-                placeholder={props.searchPlaceholder ?? 'Search...'}
-                aria-label={props.searchPlaceholder ?? 'Search options'}
-                class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100"
-              />
-            </div>
-          </div>
+      <Show when={open() && portalHost()}>
+        <Portal mount={portalHost()!}>
           <div
-            role="listbox"
-            aria-busy={loading()}
-            class="fui-scrollbar max-h-[220px] overflow-y-auto py-1"
+            ref={element => {
+              popup = element
+              setPopupElement(element)
+            }}
+            class={popupClass}
           >
-            <Show when={loading()}>
-              <div role="status" class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)">
-                {props.loadingLabel ?? 'Loading...'}
+            <div class="border-b border-(--fui-border-soft) p-1.5">
+              <div class="flex h-[30px] items-center rounded-[2px] border border-(--fui-border) px-2 focus-within:border-(--fui-interactive)">
+                <Icon name="search" class="mr-1.5 size-3.5 shrink-0 text-(--fui-text-subtle)" />
+                <input
+                  ref={element => (searchInput = element)}
+                  value={query()}
+                  onInput={event => {
+                    const nextQuery = event.currentTarget.value
+                    setQuery(nextQuery)
+                    scheduleRequest(nextQuery)
+                  }}
+                  onKeyDown={event => {
+                    if (event.key === 'Escape') close()
+                    if (event.key === 'Enter' && !loading()) {
+                      const firstEnabled = options().find(option => !option.disabled)
+                      if (firstEnabled) choose(firstEnabled)
+                    }
+                  }}
+                  placeholder={props.searchPlaceholder ?? 'Search...'}
+                  aria-label={props.searchPlaceholder ?? 'Search options'}
+                  class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100"
+                />
               </div>
-            </Show>
-            <Show when={failed()}>
-              <div class="px-3 py-4 text-center">
-                <p role="alert" class="mb-2 text-[12px] text-(--fui-danger)">
-                  {props.errorLabel ?? 'Could not load options'}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => scheduleRequest(query(), true)}
-                  class="rounded-[2px] border border-(--fui-border) px-2.5 py-1 text-[12px] hover:bg-(--fui-surface-muted)"
+            </div>
+            <div
+              role="listbox"
+              aria-busy={loading()}
+              class="fui-scrollbar max-h-[220px] overflow-y-auto py-1"
+            >
+              <Show when={loading()}>
+                <div
+                  role="status"
+                  class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)"
                 >
-                  {props.retryLabel ?? 'Try again'}
-                </button>
-              </div>
-            </Show>
-            <Show when={!loading() && !failed() && options().length > 0}>
-              <For each={options()}>
-                {option => (
+                  {props.loadingLabel ?? 'Loading...'}
+                </div>
+              </Show>
+              <Show when={failed()}>
+                <div class="px-3 py-4 text-center">
+                  <p role="alert" class="mb-2 text-[12px] text-(--fui-danger)">
+                    {props.errorLabel ?? 'Could not load options'}
+                  </p>
                   <button
                     type="button"
-                    role="option"
-                    aria-selected={selected() === option.value}
-                    disabled={option.disabled}
-                    onClick={() => choose(option)}
-                    class={`${optionClass} ${selected() === option.value ? 'bg-(--fui-surface-selected)' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
+                    onClick={() => scheduleRequest(query(), true)}
+                    class="rounded-[2px] border border-(--fui-border) px-2.5 py-1 text-[12px] hover:bg-(--fui-surface-muted)"
                   >
-                    {props.renderOption
-                      ? props.renderOption(option, selected() === option.value)
-                      : option.label}
+                    {props.retryLabel ?? 'Try again'}
                   </button>
-                )}
-              </For>
-            </Show>
-            <Show when={!loading() && !failed() && options().length === 0}>
-              <div class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)">
-                {props.emptyLabel ?? 'No matching options'}
-              </div>
-            </Show>
+                </div>
+              </Show>
+              <Show when={!loading() && !failed() && options().length > 0}>
+                <For each={options()}>
+                  {option => (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={selected() === option.value}
+                      disabled={option.disabled}
+                      onClick={() => choose(option)}
+                      class={`${optionClass} ${selected() === option.value ? 'bg-(--fui-surface-selected)' : ''} disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                      {props.renderOption
+                        ? props.renderOption(option, selected() === option.value)
+                        : option.label}
+                    </button>
+                  )}
+                </For>
+              </Show>
+              <Show when={!loading() && !failed() && options().length === 0}>
+                <div class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)">
+                  {props.emptyLabel ?? 'No matching options'}
+                </div>
+              </Show>
+            </div>
           </div>
-        </div>
+        </Portal>
       </Show>
     </div>
   )

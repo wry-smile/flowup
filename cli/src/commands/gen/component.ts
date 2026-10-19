@@ -6,6 +6,7 @@ import pc from 'picocolors'
 import { multiselectOrExit, selectOrExit } from '../../share/prompts'
 import { commitStagedDirectory, createStagingDir, isPathInside } from '../../share/safe-fs'
 import { renderEta } from '../../templates/renderers/eta'
+import { TEMPLATE_DEPENDENCY_VERSIONS } from '../../templates/renderers/dependency-versions'
 import {
   solidComponentNames,
   solidComponentTemplates,
@@ -16,6 +17,7 @@ import { showGenerationGuide } from './feedback'
 export interface ComponentOptions {
   framework?: string
   names?: string[]
+  overwrite?: boolean
   packageRoot?: string
 }
 
@@ -75,7 +77,24 @@ export async function runComponentGenerator(options: ComponentOptions = {}): Pro
         .map(entry => entry.name)
     : []
   const resolved = resolveDependencies(selected)
-  const added = resolved.filter(name => !existing.includes(name))
+  const requiresFloatingUi = resolved.some(name =>
+    [
+      'async-search-select',
+      'date-time-picker',
+      'multi-select',
+      'popover',
+      'search-select',
+      'select',
+      'tree-select',
+    ].includes(name),
+  )
+  if (requiresFloatingUi) {
+    packageJson.devDependencies ??= {}
+    if (!packageJson.dependencies?.['@floating-ui/dom'])
+      packageJson.devDependencies['@floating-ui/dom'] ??=
+        TEMPLATE_DEPENDENCY_VERSIONS['@floating-ui/dom']
+  }
+  const added = resolved.filter(name => options.overwrite || !existing.includes(name))
   const configSource = await readFile(configPath, 'utf8')
   const nextConfig = prepareConfig(configSource, multi)
   const tsconfigPath = resolve(root, multi ? 'tsconfig.json' : 'tsconfig.app.json')
@@ -165,14 +184,16 @@ export async function runComponentGenerator(options: ComponentOptions = {}): Pro
 
   const location = multi ? 'components/' : 'client/components/'
   const description = added.length
-    ? `Installed ${added.join(', ')}`
+    ? `${options.overwrite ? 'Updated' : 'Installed'} ${added.join(', ')}`
     : `Already installed: ${resolved.join(', ')}`
   showGenerationGuide(
     pc.green('SolidJS components ready'),
     [description, `Location: ${location}`, 'Import from @ui'],
-    multi
-      ? ['pnpm typecheck', 'pnpm build']
-      : ['pnpm exec tsc --noEmit -p tsconfig.app.json', 'pnpm build'],
+    [
+      ...(requiresFloatingUi ? ['pnpm install'] : []),
+      ...(multi ? ['pnpm typecheck'] : ['pnpm exec tsc --noEmit -p tsconfig.app.json']),
+      'pnpm build',
+    ],
   )
 }
 

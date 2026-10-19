@@ -81,6 +81,29 @@ import template78 from '../files/components/solid/tree-select/src/types.ts?raw'
 import template79 from '../files/components/solid/icons/index.ts?raw'
 import template80 from '../files/components/solid/icons/src/index.tsx?raw'
 import template81 from '../files/components/solid/icons/src/types.ts?raw'
+import template82 from '../files/components/solid/editable-list/index.ts?raw'
+import template83 from '../files/components/solid/editable-list/src/index.tsx?raw'
+import template84 from '../files/components/solid/editable-list/src/types.ts?raw'
+import template85 from '../files/components/solid/select/src/floating.ts?raw'
+import template86 from '../files/components/solid/code-editor/index.ts?raw'
+import template87 from '../files/components/solid/code-editor/src/index.tsx?raw'
+import template88 from '../files/components/solid/code-editor/src/types.ts?raw'
+import template89 from '../files/components/solid/date-time-picker/index.ts?raw'
+import template90 from '../files/components/solid/date-time-picker/src/index.tsx?raw'
+import template91 from '../files/components/solid/date-time-picker/src/types.ts?raw'
+import template92 from '../files/components/solid/popover/index.ts?raw'
+import template93 from '../files/components/solid/popover/src/index.tsx?raw'
+import template94 from '../files/components/solid/popover/src/types.ts?raw'
+import template95 from '../files/components/solid/range-input/index.ts?raw'
+import template96 from '../files/components/solid/range-input/src/index.tsx?raw'
+import template97 from '../files/components/solid/range-input/src/types.ts?raw'
+import template98 from '../files/components/solid/tooltip/index.ts?raw'
+import template99 from '../files/components/solid/tooltip/src/index.tsx?raw'
+import template100 from '../files/components/solid/tooltip/src/types.ts?raw'
+import template101 from '../files/components/solid/typed-input/index.ts?raw'
+import template102 from '../files/components/solid/typed-input/src/index.tsx?raw'
+import template103 from '../files/components/solid/typed-input/src/types.ts?raw'
+import template104 from '../files/components/solid/date-time-picker/src/types.ts?raw'
 
 export const solidComponentTemplates: Record<string, string> = {
   'alert/index.ts': template0,
@@ -101,6 +124,12 @@ export const solidComponentTemplates: Record<string, string> = {
   'collapse/index.ts': template15,
   'collapse/src/index.tsx': template16,
   'collapse/src/types.ts': template17,
+  'code-editor/index.ts': template86,
+  'code-editor/src/index.tsx': template87,
+  'code-editor/src/types.ts': template88,
+  'date-time-picker/index.ts': template89,
+  'date-time-picker/src/index.tsx': template90,
+  'date-time-picker/src/types.ts': template91,
   'dialog/index.ts': template18,
   'dialog/src/index.tsx': template19,
   'dialog/src/types.ts': template20,
@@ -116,6 +145,9 @@ export const solidComponentTemplates: Record<string, string> = {
   'icons/index.ts': template79,
   'icons/src/index.tsx': template80,
   'icons/src/types.ts': template81,
+  'editable-list/index.ts': template82,
+  'editable-list/src/index.tsx': template83,
+  'editable-list/src/types.ts': template84,
   'input-group/index.ts': template30,
   'input-group/src/index.tsx': template31,
   'input-group/src/types.ts': template32,
@@ -125,6 +157,12 @@ export const solidComponentTemplates: Record<string, string> = {
   'input/index.ts': template36,
   'input/src/index.tsx': template37,
   'input/src/types.ts': template38,
+  'popover/index.ts': template92,
+  'popover/src/index.tsx': template93,
+  'popover/src/types.ts': template94,
+  'range-input/index.ts': template95,
+  'range-input/src/index.tsx': template96,
+  'range-input/src/types.ts': template97,
   'loading/index.ts': template39,
   'loading/src/index.tsx': template40,
   'loading/src/types.ts': template41,
@@ -146,6 +184,7 @@ export const solidComponentTemplates: Record<string, string> = {
   'select/index.ts': template57,
   'select/src/index.tsx': template58,
   'select/src/types.ts': template59,
+  'select/src/floating.ts': template85,
   'showcase/index.ts': template60,
   'showcase/src/index.tsx': template61,
   'showcase/src/types.ts': template62,
@@ -165,6 +204,12 @@ export const solidComponentTemplates: Record<string, string> = {
   'tree-select/index.ts': template76,
   'tree-select/src/index.tsx': template77,
   'tree-select/src/types.ts': template78,
+  'tooltip/index.ts': template98,
+  'tooltip/src/index.tsx': template99,
+  'tooltip/src/types.ts': template100,
+  'typed-input/index.ts': template101,
+  'typed-input/src/index.tsx': template102,
+  'typed-input/src/types.ts': template103,
 }
 
 export const solidComponentNames = [
@@ -174,14 +219,19 @@ export const solidComponentNames = [
   'checkbox',
   'checkbox-group',
   'collapse',
+  'code-editor',
+  'date-time-picker',
   'dialog',
   'drawer',
+  'editable-list',
   'form-row',
   'icon-button',
   'icons',
   'input',
   'input-group',
   'input-number',
+  'popover',
+  'range-input',
   'loading',
   'multi-select',
   'radio',
@@ -194,5 +244,7 @@ export const solidComponentNames = [
   'tabs',
   'tag',
   'textarea',
+  'tooltip',
+  'typed-input',
   'tree-select',
 ]

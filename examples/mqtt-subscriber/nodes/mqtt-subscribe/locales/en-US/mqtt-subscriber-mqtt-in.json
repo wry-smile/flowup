@@ -1,0 +1,177 @@
+{
+  "mqtt-subscriber-mqtt-out": {
+    "label": {
+      "name": "MQTT Out"
+    },
+    "status": {
+      "connecting": "Connecting to MQTT broker...",
+      "connected": "Connected",
+      "offline": "MQTT broker offline",
+      "connectionError": "MQTT connection failed",
+      "authenticationRejected": "MQTT authentication rejected",
+      "configurationError": "MQTT configuration error",
+      "missingUsername": "Device MQTT username is missing"
+    },
+    "errors": {
+      "connection": "MQTT connection failed",
+      "authenticationRejected": "MQTT broker rejected authentication; check the device username and password",
+      "configuration": "MQTT configuration error",
+      "missingUsername": "Selected device MQTT username credential is missing. Re-select the device to reload its credentials",
+      "missingBrokerAddress": "MQTT broker URL or host is not configured",
+      "invalidBrokerUrl": "MQTT broker URL is invalid",
+      "invalidPort": "MQTT broker port is invalid",
+      "invalidSecure": "FLOWUP_MQTT_SECURE must be true or false",
+      "notConnected": "MQTT broker is not connected.",
+      "publish": "MQTT publish failed"
+    },
+    "editor": {
+      "name": "Name",
+      "product": "Product",
+      "organization": "Organization",
+      "device": "Device",
+      "productRequired": "Please select a product",
+      "organizationRequired": "Please select an organization",
+      "deviceRequired": "Please select a device",
+      "selectProduct": "Select a product...",
+      "selectOrganization": "Select an organization...",
+      "searchOrganization": "Search organizations...",
+      "noOrganizations": "No matching organizations",
+      "selectDevice": "Select a device...",
+      "namePlaceholder": "Optional node name",
+      "searchProducts": "Search products...",
+      "noProducts": "No matching products",
+      "searchDevices": "Search devices...",
+      "noDevices": "No matching devices",
+      "loadingProducts": "Loading products...",
+      "loadingOrganizations": "Loading organizations...",
+      "loadingDevices": "Loading devices...",
+      "loadingCredentials": "Loading device MQTT credentials...",
+      "credentialsUnavailable": "Could not load device MQTT credentials. Check device access and try again.",
+      "mappings": "Attribute mappings",
+      "addMapping": "Add mapping",
+      "deviceAttribute": "Device attribute",
+      "payloadJsonKey": "Payload JSON key",
+      "payloadKeyPlaceholder": "Enter a JSON key from the payload",
+      "removeMapping": "Remove mapping",
+      "mappingHelp": "Only configured attributes present in the payload are output.",
+      "selectAttribute": "Select a device attribute...",
+      "attributes": {
+        "temperature": "Temperature",
+        "humidity": "Humidity",
+        "pressure": "Pressure",
+        "voltage": "Voltage",
+        "current": "Current",
+        "power": "Power",
+        "status": "Status",
+        "battery": "Battery"
+      }
+    }
+  },
+  "mqtt-subscriber-mqtt-in": {
+    "label": {
+      "name": "MQTT Subscribe"
+    },
+    "status": {
+      "connecting": "Connecting to MQTT broker...",
+      "connected": "Connected",
+      "offline": "MQTT broker offline",
+      "connectionError": "MQTT connection failed",
+      "authenticationRejected": "MQTT authentication rejected",
+      "configurationError": "MQTT configuration error",
+      "missingUsername": "Device MQTT username is missing"
+    },
+    "errors": {
+      "connection": "MQTT connection failed",
+      "authenticationRejected": "MQTT broker rejected authentication; check the device username and password",
+      "configuration": "MQTT configuration error",
+      "missingUsername": "Selected device MQTT username credential is missing. Re-select the device to reload its credentials",
+      "missingBrokerAddress": "MQTT broker URL or host is not configured",
+      "invalidBrokerUrl": "MQTT broker URL is invalid",
+      "invalidPort": "MQTT broker port is invalid",
+      "invalidSecure": "FLOWUP_MQTT_SECURE must be true or false",
+      "notConnected": "MQTT broker is not connected.",
+      "publish": "MQTT publish failed"
+    },
+    "editor": {
+      "name": "Name",
+      "product": "Product",
+      "organization": "Organization",
+      "device": "Device",
+      "productRequired": "Please select a product",
+      "organizationRequired": "Please select an organization",
+      "deviceRequired": "Please select a device",
+      "selectProduct": "Select a product...",
+      "selectOrganization": "Select an organization...",
+      "searchOrganization": "Search organizations...",
+      "noOrganizations": "No matching organizations",
+      "selectDevice": "Select a device...",
+      "namePlaceholder": "Optional node name",
+      "searchProducts": "Search products...",
+      "noProducts": "No matching products",
+      "searchDevices": "Search devices...",
+      "noDevices": "No matching devices",
+      "loadingProducts": "Loading products...",
+      "loadingOrganizations": "Loading organizations...",
+      "loadingDevices": "Loading devices...",
+      "loadingCredentials": "Loading device MQTT credentials...",
+      "credentialsUnavailable": "Could not load device MQTT credentials. Check device access and try again."
+    }
+  },
+  "mqtt-subscriber-mqtt-event": {
+    "label": {
+      "name": "MQTT Event"
+    },
+    "status": {
+      "connecting": "Connecting to MQTT broker...",
+      "connected": "Connected",
+      "offline": "MQTT broker offline",
+      "connectionError": "MQTT connection failed",
+      "authenticationRejected": "MQTT authentication rejected",
+      "configurationError": "MQTT configuration error",
+      "missingUsername": "Device MQTT username is missing"
+    },
+    "errors": {
+      "connection": "MQTT connection failed",
+      "authenticationRejected": "MQTT broker rejected authentication; check the device username and password",
+      "configuration": "MQTT configuration error",
+      "missingUsername": "Selected device MQTT username credential is missing. Re-select the device to reload its credentials",
+      "missingBrokerAddress": "MQTT broker URL or host is not configured",
+      "invalidBrokerUrl": "MQTT broker URL is invalid",
+      "invalidPort": "MQTT broker port is invalid",
+      "invalidSecure": "FLOWUP_MQTT_SECURE must be true or false",
+      "notConnected": "MQTT broker is not connected.",
+      "publish": "MQTT publish failed",
+      "missingEntityId": "Select a device to set the event entity id",
+      "missingIdentifier": "Event identifier is required",
+      "invalidIdentifier": "Event identifier must not contain /, +, or #"
+    },
+    "editor": {
+      "name": "Name",
+      "product": "Product",
+      "organization": "Organization",
+      "device": "Device",
+      "productRequired": "Please select a product",
+      "organizationRequired": "Please select an organization",
+      "deviceRequired": "Please select a device",
+      "selectProduct": "Select a product...",
+      "selectOrganization": "Select an organization...",
+      "searchOrganization": "Search organizations...",
+      "noOrganizations": "No matching organizations",
+      "selectDevice": "Select a device...",
+      "namePlaceholder": "Optional node name",
+      "searchProducts": "Search products...",
+      "noProducts": "No matching products",
+      "searchDevices": "Search devices...",
+      "noDevices": "No matching devices",
+      "loadingProducts": "Loading products...",
+      "loadingOrganizations": "Loading organizations...",
+      "loadingDevices": "Loading devices...",
+      "loadingCredentials": "Loading device MQTT credentials...",
+      "credentialsUnavailable": "Could not load device MQTT credentials. Check device access and try again.",
+      "identifier": "Event identifier",
+      "identifierPlaceholder": "Enter the event identifier...",
+      "identifierRequired": "Please enter an event identifier",
+      "invalidIdentifier": "Do not use /, +, or # in the event identifier"
+    }
+  }
+}

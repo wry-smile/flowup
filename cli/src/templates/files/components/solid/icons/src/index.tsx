@@ -4,7 +4,10 @@ import type { IconProps } from './types'
 
 export function Icon(props: IconProps) {
   const strokeIcon = () =>
-    props.name === 'check' || props.name === 'close' || props.name === 'search'
+    props.name === 'check' ||
+    props.name === 'close' ||
+    props.name === 'edit' ||
+    props.name === 'search'
   const viewBox = () => (props.name === 'spinner' ? '0 0 24 24' : '0 0 20 20')
 
   return (
@@ -28,6 +31,9 @@ export function Icon(props: IconProps) {
         </Match>
         <Match when={props.name === 'close'}>
           <path d="m5 5 10 10M15 5 5 15" />
+        </Match>
+        <Match when={props.name === 'edit'}>
+          <path d="m13.5 4.5 2 2M4 16l3.5-.8 8.7-8.7a1.4 1.4 0 0 0-2-2l-8.7 8.7L4 16Z" />
         </Match>
         <Match when={props.name === 'search'}>
           <circle cx="8.5" cy="8.5" r="5.5" />

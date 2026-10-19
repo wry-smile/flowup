@@ -1,19 +1,26 @@
-import { For, Show, createSignal, onCleanup, onMount } from 'solid-js'
+import { For, Show, createEffect, createSignal, onCleanup, onMount } from 'solid-js'
+import { Portal } from 'solid-js/web'
 
 import type { OptionValue } from '../../select/src/types'
 import type { TreeOption, TreeSelectProps } from './types'
+import { autoPositionPopup, createPopupPortalHost } from '../../select/src/floating'
 import { Icon } from '../../icons'
 const popupClass =
-  'absolute left-0 right-0 top-[38px] z-50 overflow-hidden rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) shadow-[0_3px_10px_rgba(0,0,0,.16)]'
+  'fixed z-50 max-w-full overflow-auto rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) shadow-[0_3px_10px_rgba(0,0,0,.16)]'
 const optionClass =
   'flex h-[31px] w-full items-center px-2.5 text-left text-[13px] hover:bg-(--fui-surface-muted)'
-function closeOnOutside(ref: () => HTMLElement | undefined, close: () => void) {
+function closeOnOutside(
+  ref: () => HTMLElement | undefined,
+  popup: () => HTMLElement | undefined,
+  close: () => void,
+) {
   onMount(() => {
     const controller = new AbortController()
     document.addEventListener(
       'pointerdown',
       (event: PointerEvent) => {
-        if (!ref()?.contains(event.target as Node)) close()
+        const target = event.target as Node
+        if (!ref()?.contains(target) && !popup()?.contains(target)) close()
       },
       { signal: controller.signal },
     )
@@ -189,13 +196,13 @@ export function TreeSelect(props: TreeSelectProps) {
   const [localValue, setLocalValue] = createSignal<OptionValue>(props.value ?? '')
   let searchInput!: HTMLInputElement
   let container!: HTMLDivElement
+  let popup: HTMLDivElement | undefined
+  const [portalHost, setPortalHost] = createSignal<HTMLElement>()
+  const [popupElement, setPopupElement] = createSignal<HTMLDivElement>()
   const selected = () => props.value ?? localValue()
   const hasValue = () => selected() !== '' && selected() !== undefined
   const selectedPath = (): string => {
-    const path = findPathByValue(props.options, selected())
-    if (path) return path
-    const value = selected()
-    return typeof value === 'string' ? value : ''
+    return findPathByValue(props.options, selected()) ?? ''
   }
   const [expandedPaths, setExpandedPaths] = createSignal(
     collectExpanded(props.options, selectedPath()),
@@ -203,8 +210,21 @@ export function TreeSelect(props: TreeSelectProps) {
 
   closeOnOutside(
     () => container,
+    () => popup,
     () => setOpen(false),
   )
+
+  onMount(() => {
+    const host = createPopupPortalHost(container, props.mountTo)
+    setPortalHost(host)
+    onCleanup(() => host.remove())
+  })
+
+  createEffect(() => {
+    const floating = popupElement()
+    if (!open() || !floating) return
+    onCleanup(autoPositionPopup(container, floating, { matchWidth: true }))
+  })
   function toggleExpand(path: string, parentPath: string, expand: boolean) {
     setExpandedPaths(current => {
       const next = current.filter(item => item !== path)
@@ -252,7 +272,7 @@ export function TreeSelect(props: TreeSelectProps) {
         class={`flex h-(--fui-control-height) w-full items-center rounded-(--fui-radius) border border-(--fui-border) bg-(--fui-surface) px-2.5 text-[14px] outline-none hover:border-(--fui-text-subtle) focus:border-(--fui-interactive) focus:ring-1 focus:ring-(--fui-focus) disabled:cursor-not-allowed disabled:opacity-60`}
       >
         <span class="min-w-0 flex-1 truncate text-left">
-          <span class={hasValue() ? '' : 'text-(--fui-text-subtle)'}>
+          <span class={selectedPath() ? '' : 'text-(--fui-text-subtle)'}>
             {selectedPath() || props.placeholder || 'Select...'}
           </span>
         </span>
@@ -273,60 +293,69 @@ export function TreeSelect(props: TreeSelectProps) {
           <Icon name="close" class="size-3.5" />
         </button>
       </Show>
-      <Show when={open()}>
-        <div class={popupClass}>
-          <div class="border-b border-(--fui-border-soft) p-1.5">
-            <div class="flex h-[30px] items-center rounded-[2px] border border-(--fui-border) px-2 focus-within:border-(--fui-interactive)">
-              <Icon name="search" class="mr-1.5 size-3.5 shrink-0 text-(--fui-text-subtle)" />
-              <input
-                ref={element => (searchInput = element)}
-                value={query()}
-                onInput={event => setQuery(event.currentTarget.value.toLowerCase().trim())}
-                placeholder={props.filterPlaceholder ?? 'Filter...'}
-                class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100"
-              />
+      <Show when={open() && portalHost()}>
+        <Portal mount={portalHost()!}>
+          <div
+            ref={element => {
+              popup = element
+              setPopupElement(element)
+            }}
+            class={popupClass}
+          >
+            <div class="border-b border-(--fui-border-soft) p-1.5">
+              <div class="flex h-[30px] items-center rounded-[2px] border border-(--fui-border) px-2 focus-within:border-(--fui-interactive)">
+                <Icon name="search" class="mr-1.5 size-3.5 shrink-0 text-(--fui-text-subtle)" />
+                <input
+                  ref={element => (searchInput = element)}
+                  value={query()}
+                  onInput={event => setQuery(event.currentTarget.value.toLowerCase().trim())}
+                  placeholder={props.filterPlaceholder ?? 'Filter...'}
+                  class="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-(--fui-text-subtle) placeholder:opacity-100"
+                />
+              </div>
+            </div>
+            <div
+              role="tree"
+              aria-busy={props.loading}
+              class="fui-scrollbar max-h-[280px] overflow-y-auto py-1 text-[13px]"
+            >
+              <Show when={props.loading}>
+                <div
+                  role="status"
+                  class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)"
+                >
+                  {props.loadingLabel ?? 'Loading...'}
+                </div>
+              </Show>
+              <Show when={!props.loading}>
+                <For each={props.options}>
+                  {option => (
+                    <TreeBranch
+                      option={option}
+                      parentPath=""
+                      query={query}
+                      selectedPath={selectedPath}
+                      expandedPaths={expandedPaths}
+                      toggleExpand={toggleExpand}
+                      onSelect={choose}
+                      allowBranchSelection={props.allowBranchSelection ?? true}
+                      renderOption={props.renderOption}
+                    />
+                  )}
+                </For>
+              </Show>
+              <Show
+                when={
+                  !props.loading && !props.options.some(option => treeHasMatch(option, '', query()))
+                }
+              >
+                <div class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)">
+                  {props.emptyLabel ?? 'No matching options'}
+                </div>
+              </Show>
             </div>
           </div>
-          <div
-            role="tree"
-            aria-busy={props.loading}
-            class="fui-scrollbar max-h-[280px] overflow-y-auto py-1 text-[13px]"
-          >
-            <Show when={props.loading}>
-              <div role="status" class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)">
-                {props.loadingLabel ?? 'Loading...'}
-              </div>
-            </Show>
-            <Show when={!props.loading}>
-              <For each={props.options}>
-                {option => (
-                  <TreeBranch
-                    option={option}
-                    parentPath=""
-                    query={query}
-                    selectedPath={selectedPath}
-                    expandedPaths={expandedPaths}
-                    toggleExpand={toggleExpand}
-                    onSelect={choose}
-                    allowBranchSelection={props.allowBranchSelection ?? true}
-                    renderOption={props.renderOption}
-                  />
-                )}
-              </For>
-            </Show>
-            <Show
-              when={
-                !props.loading &&
-                query() &&
-                !props.options.some(option => treeHasMatch(option, '', query()))
-              }
-            >
-              <div class="px-3 py-5 text-center text-[12px] text-(--fui-text-subtle)">
-                {props.emptyLabel ?? 'No matching options'}
-              </div>
-            </Show>
-          </div>
-        </div>
+        </Portal>
       </Show>
     </div>
   )

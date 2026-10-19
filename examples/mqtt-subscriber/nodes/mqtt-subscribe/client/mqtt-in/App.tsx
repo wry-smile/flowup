@@ -2,6 +2,8 @@ import { FormRow, SearchSelect, TextInput, TreeSelect } from '@ui'
 import type { OptionValue, SelectOption, TreeOption } from '@ui'
 import { isArray, isObject } from '@wry-smile/utils'
 import { createSignal, onCleanup, onMount } from 'solid-js'
+import type { SolidHydrateStore } from '@wry-smile/flowup/client/solid'
+import type { MqttSubscriberMqttSubscribeProperties } from '../../types'
 import {
   getDeviceCredentials,
   listDeviceProfiles,
@@ -15,23 +17,40 @@ import type {
   Organization,
 } from '@client-shared/api/types'
 
-import { $t, store } from './hydrate'
-import { useFormValidation } from './use-form-validation'
-import { useNodeRedDialogSubmitGuard } from './use-node-red-dialog-submit-guard'
+import { useFormValidation } from '../shared/use-form-validation'
+import type { FormValidationSchema } from '../shared/use-form-validation'
+import { useNodeRedDialogSubmitGuard } from '../shared/use-node-red-dialog-submit-guard'
 
-export function MqttSubscribeEditor() {
+type MqttSubscribeEditorStore = Pick<
+  SolidHydrateStore<MqttSubscriberMqttSubscribeProperties>,
+  'refs' | 'getSnapshot'
+>
+
+type MqttSubscribeEditorValues = MqttSubscriberMqttSubscribeProperties
+
+interface MqttSubscribeEditorProps {
+  store: MqttSubscribeEditorStore
+  t: (key: string) => string
+  idPrefix: string
+}
+
+export default function App(props: MqttSubscribeEditorProps) {
+  const store = props.store
+  const t = props.t
+  const idPrefix = props.idPrefix
   const [name, setName] = store.refs.name
   const [productId, setProductId] = store.refs.productId
   const [organizationId, setOrganizationId] = store.refs.organizationId
   const [deviceId, setDeviceId] = store.refs.deviceId
   const [, setDeviceType] = store.refs.deviceType
-  const validation = useFormValidation({
-    getValues: store.getSnapshot,
-    schema: {
-      productId: { required: $t('editor.productRequired') },
-      organizationId: { required: $t('editor.organizationRequired') },
-      deviceId: { required: $t('editor.deviceRequired') },
-    },
+  const schema: FormValidationSchema<MqttSubscribeEditorValues> = {
+    productId: { required: t('editor.productRequired') },
+    organizationId: { required: t('editor.organizationRequired') },
+    deviceId: { required: t('editor.deviceRequired') },
+  }
+  const validation = useFormValidation<MqttSubscribeEditorValues>({
+    getValues: () => store.getSnapshot(),
+    schema,
   })
   const productField = validation.field('productId')
   const organizationField = validation.field('organizationId')
@@ -182,74 +201,81 @@ export function MqttSubscribeEditor() {
   }
 
   return (
-    <div class="space-y-5 p-1">
-      <FormRow label={$t('editor.name')} layout="vertical">
-        <TextInput
-          id="mqtt-subscribe-name"
-          value={name() ?? ''}
-          placeholder={$t('editor.namePlaceholder')}
-          onInput={event => setName(event.currentTarget.value)}
-        />
-      </FormRow>
+    <main class="grid gap-3 p-3" data-flowup-scope="mqtt-subscriber">
+      <div class="space-y-5 p-1">
+        <FormRow label={t('editor.name')} layout="vertical">
+          <TextInput
+            id={`${idPrefix}-name`}
+            value={name() ?? ''}
+            placeholder={t('editor.namePlaceholder')}
+            onInput={event => setName(event.currentTarget.value)}
+          />
+        </FormRow>
 
-      <FormRow label={$t('editor.product')} layout="vertical" required error={productField.error()}>
-        <SearchSelect
-          id="mqtt-subscribe-product"
-          options={productOptions()}
-          loading={productsLoading()}
-          loadingLabel={$t('editor.loadingProducts')}
-          value={productId()}
-          placeholder={$t('editor.selectProduct')}
-          searchPlaceholder={$t('editor.searchProducts')}
-          emptyLabel={$t('editor.noProducts')}
-          status={productField.status()}
-          onChange={updateProduct}
-        />
-      </FormRow>
+        <FormRow
+          label={t('editor.product')}
+          layout="vertical"
+          required
+          error={productField.error()}
+        >
+          <SearchSelect
+            id={`${idPrefix}-product`}
+            options={productOptions()}
+            loading={productsLoading()}
+            loadingLabel={t('editor.loadingProducts')}
+            value={productId()}
+            placeholder={t('editor.selectProduct')}
+            searchPlaceholder={t('editor.searchProducts')}
+            emptyLabel={t('editor.noProducts')}
+            status={productField.status()}
+            onChange={updateProduct}
+          />
+        </FormRow>
 
-      <FormRow
-        label={$t('editor.organization')}
-        layout="vertical"
-        required
-        error={organizationField.error()}
-      >
-        <TreeSelect
-          id="mqtt-subscribe-organization"
-          options={organizationOptions()}
-          loading={organizationsLoading()}
-          loadingLabel={$t('editor.loadingOrganizations')}
-          value={organizationId()}
-          placeholder={$t('editor.selectOrganization')}
-          filterPlaceholder={$t('editor.searchOrganization')}
-          emptyLabel={$t('editor.noOrganizations')}
-          status={organizationField.status()}
-          onChange={updateOrganization}
-        />
-      </FormRow>
+        <FormRow
+          label={t('editor.organization')}
+          layout="vertical"
+          required
+          error={organizationField.error()}
+        >
+          <TreeSelect
+            id={`${idPrefix}-organization`}
+            options={organizationOptions()}
+            loading={organizationsLoading()}
+            loadingLabel={t('editor.loadingOrganizations')}
+            value={organizationId()}
+            placeholder={t('editor.selectOrganization')}
+            filterPlaceholder={t('editor.searchOrganization')}
+            emptyLabel={t('editor.noOrganizations')}
+            status={organizationField.status()}
+            onChange={updateOrganization}
+          />
+        </FormRow>
 
-      <FormRow label={$t('editor.device')} layout="vertical" required error={deviceField.error()}>
-        <SearchSelect
-          id="mqtt-subscribe-device"
-          options={deviceOptions()}
-          loading={devicesLoading()}
-          loadingLabel={$t('editor.loadingDevices')}
-          disabled={!productId() || !organizationId()}
-          value={deviceId()}
-          placeholder={$t('editor.selectDevice')}
-          searchPlaceholder={$t('editor.searchDevices')}
-          emptyLabel={$t('editor.noDevices')}
-          status={deviceField.status()}
-          onChange={updateDevice}
-        />
-      </FormRow>
-      <p class="text-xs text-slate-500" aria-live="polite">
-        {credentialsStatus() === 'loading'
-          ? $t('editor.loadingCredentials')
-          : credentialsStatus() === 'error'
-            ? $t('editor.credentialsUnavailable')
-            : ''}
-      </p>
-    </div>
+        <FormRow label={t('editor.device')} layout="vertical" required error={deviceField.error()}>
+          <SearchSelect
+            id={`${idPrefix}-device`}
+            options={deviceOptions()}
+            loading={devicesLoading()}
+            loadingLabel={t('editor.loadingDevices')}
+            disabled={!productId() || !organizationId()}
+            value={deviceId()}
+            placeholder={t('editor.selectDevice')}
+            searchPlaceholder={t('editor.searchDevices')}
+            emptyLabel={t('editor.noDevices')}
+            status={deviceField.status()}
+            onChange={updateDevice}
+          />
+        </FormRow>
+        <p class="text-xs text-slate-500" aria-live="polite">
+          {credentialsStatus() === 'loading'
+            ? t('editor.loadingCredentials')
+            : credentialsStatus() === 'error'
+              ? t('editor.credentialsUnavailable')
+              : ''}
+        </p>
+      </div>
+    </main>
   )
 }
 

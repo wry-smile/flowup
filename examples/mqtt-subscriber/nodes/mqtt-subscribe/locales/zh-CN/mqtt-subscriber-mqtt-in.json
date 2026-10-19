@@ -1,0 +1,177 @@
+{
+  "mqtt-subscriber-mqtt-out": {
+    "label": {
+      "name": "MQTT 输出"
+    },
+    "status": {
+      "connecting": "正在连接 MQTT 代理...",
+      "connected": "已连接",
+      "offline": "MQTT 代理已离线",
+      "connectionError": "MQTT 连接失败",
+      "authenticationRejected": "MQTT 认证被代理拒绝",
+      "configurationError": "MQTT 配置错误",
+      "missingUsername": "缺少设备 MQTT 用户名"
+    },
+    "errors": {
+      "connection": "MQTT 连接失败",
+      "authenticationRejected": "MQTT 代理拒绝认证，请检查设备用户名和密码",
+      "configuration": "MQTT 配置错误",
+      "missingUsername": "所选设备缺少 MQTT 用户名凭据，请重新选择设备以加载凭据",
+      "missingBrokerAddress": "未配置 MQTT broker URL 或 host",
+      "invalidBrokerUrl": "MQTT broker URL 无效",
+      "invalidPort": "MQTT broker 端口无效",
+      "invalidSecure": "FLOWUP_MQTT_SECURE 必须为 true 或 false",
+      "notConnected": "MQTT 代理尚未连接。",
+      "publish": "MQTT 发布失败"
+    },
+    "editor": {
+      "name": "名称",
+      "product": "产品",
+      "organization": "组织",
+      "device": "设备",
+      "productRequired": "请选择产品",
+      "organizationRequired": "请选择组织",
+      "deviceRequired": "请选择设备",
+      "selectProduct": "选择产品...",
+      "selectOrganization": "选择组织...",
+      "searchOrganization": "搜索组织...",
+      "noOrganizations": "没有匹配的组织",
+      "selectDevice": "选择设备...",
+      "namePlaceholder": "可选节点名称",
+      "searchProducts": "搜索产品...",
+      "noProducts": "没有匹配的产品",
+      "searchDevices": "搜索设备...",
+      "noDevices": "没有匹配的设备",
+      "loadingProducts": "正在加载产品...",
+      "loadingOrganizations": "正在加载组织...",
+      "loadingDevices": "正在加载设备...",
+      "loadingCredentials": "正在加载设备 MQTT 凭据...",
+      "credentialsUnavailable": "无法加载设备 MQTT 凭据，请检查设备权限后重试。",
+      "mappings": "属性映射",
+      "addMapping": "添加映射",
+      "deviceAttribute": "设备属性",
+      "payloadJsonKey": "Payload JSON Key",
+      "payloadKeyPlaceholder": "输入 payload 中的 JSON key",
+      "removeMapping": "删除映射",
+      "mappingHelp": "仅输出已配置且在 payload 中存在的属性。",
+      "selectAttribute": "选择设备属性...",
+      "attributes": {
+        "temperature": "温度",
+        "humidity": "湿度",
+        "pressure": "压力",
+        "voltage": "电压",
+        "current": "电流",
+        "power": "功率",
+        "status": "状态",
+        "battery": "电量"
+      }
+    }
+  },
+  "mqtt-subscriber-mqtt-in": {
+    "label": {
+      "name": "MQTT 订阅"
+    },
+    "status": {
+      "connecting": "正在连接 MQTT 代理...",
+      "connected": "已连接",
+      "offline": "MQTT 代理已离线",
+      "connectionError": "MQTT 连接失败",
+      "authenticationRejected": "MQTT 认证被代理拒绝",
+      "configurationError": "MQTT 配置错误",
+      "missingUsername": "缺少设备 MQTT 用户名"
+    },
+    "errors": {
+      "connection": "MQTT 连接失败",
+      "authenticationRejected": "MQTT 代理拒绝认证，请检查设备用户名和密码",
+      "configuration": "MQTT 配置错误",
+      "missingUsername": "所选设备缺少 MQTT 用户名凭据，请重新选择设备以加载凭据",
+      "missingBrokerAddress": "未配置 MQTT broker URL 或 host",
+      "invalidBrokerUrl": "MQTT broker URL 无效",
+      "invalidPort": "MQTT broker 端口无效",
+      "invalidSecure": "FLOWUP_MQTT_SECURE 必须为 true 或 false",
+      "notConnected": "MQTT 代理尚未连接。",
+      "publish": "MQTT 发布失败"
+    },
+    "editor": {
+      "name": "名称",
+      "product": "产品",
+      "organization": "组织",
+      "device": "设备",
+      "productRequired": "请选择产品",
+      "organizationRequired": "请选择组织",
+      "deviceRequired": "请选择设备",
+      "selectProduct": "选择产品...",
+      "selectOrganization": "选择组织...",
+      "searchOrganization": "搜索组织...",
+      "noOrganizations": "没有匹配的组织",
+      "selectDevice": "选择设备...",
+      "namePlaceholder": "可选节点名称",
+      "searchProducts": "搜索产品...",
+      "noProducts": "没有匹配的产品",
+      "searchDevices": "搜索设备...",
+      "noDevices": "没有匹配的设备",
+      "loadingProducts": "正在加载产品...",
+      "loadingOrganizations": "正在加载组织...",
+      "loadingDevices": "正在加载设备...",
+      "loadingCredentials": "正在加载设备 MQTT 凭据...",
+      "credentialsUnavailable": "无法加载设备 MQTT 凭据，请检查设备权限后重试。"
+    }
+  },
+  "mqtt-subscriber-mqtt-event": {
+    "label": {
+      "name": "MQTT 事件上报"
+    },
+    "status": {
+      "connecting": "正在连接 MQTT 代理...",
+      "connected": "已连接",
+      "offline": "MQTT 代理已离线",
+      "connectionError": "MQTT 连接失败",
+      "authenticationRejected": "MQTT 认证被代理拒绝",
+      "configurationError": "MQTT 配置错误",
+      "missingUsername": "缺少设备 MQTT 用户名"
+    },
+    "errors": {
+      "connection": "MQTT 连接失败",
+      "authenticationRejected": "MQTT 代理拒绝认证，请检查设备用户名和密码",
+      "configuration": "MQTT 配置错误",
+      "missingUsername": "所选设备缺少 MQTT 用户名凭据，请重新选择设备以加载凭据",
+      "missingBrokerAddress": "未配置 MQTT broker URL 或 host",
+      "invalidBrokerUrl": "MQTT broker URL 无效",
+      "invalidPort": "MQTT broker 端口无效",
+      "invalidSecure": "FLOWUP_MQTT_SECURE 必须为 true 或 false",
+      "notConnected": "MQTT 代理尚未连接。",
+      "publish": "MQTT 发布失败",
+      "missingEntityId": "请选择设备以设置事件实体 ID",
+      "missingIdentifier": "事件标识符不能为空",
+      "invalidIdentifier": "事件标识符不能包含 /、+ 或 #"
+    },
+    "editor": {
+      "name": "名称",
+      "product": "产品",
+      "organization": "组织",
+      "device": "设备",
+      "productRequired": "请选择产品",
+      "organizationRequired": "请选择组织",
+      "deviceRequired": "请选择设备",
+      "selectProduct": "选择产品...",
+      "selectOrganization": "选择组织...",
+      "searchOrganization": "搜索组织...",
+      "noOrganizations": "没有匹配的组织",
+      "selectDevice": "选择设备...",
+      "namePlaceholder": "可选节点名称",
+      "searchProducts": "搜索产品...",
+      "noProducts": "没有匹配的产品",
+      "searchDevices": "搜索设备...",
+      "noDevices": "没有匹配的设备",
+      "loadingProducts": "正在加载产品...",
+      "loadingOrganizations": "正在加载组织...",
+      "loadingDevices": "正在加载设备...",
+      "loadingCredentials": "正在加载设备 MQTT 凭据...",
+      "credentialsUnavailable": "无法加载设备 MQTT 凭据，请检查设备权限后重试。",
+      "identifier": "事件标识符",
+      "identifierPlaceholder": "输入事件标识符...",
+      "identifierRequired": "请输入事件标识符",
+      "invalidIdentifier": "事件标识符不能包含 /、+ 或 #"
+    }
+  }
+}

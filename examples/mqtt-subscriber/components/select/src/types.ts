@@ -22,4 +22,5 @@ export interface SelectProps {
   onChange?: (value: OptionValue) => void
   renderOption?: (option: SelectOption, selected: boolean) => JSX.Element
   status?: 'warning' | 'error'
+  mountTo?: HTMLElement | string
 }

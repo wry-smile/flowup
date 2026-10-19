@@ -12,18 +12,28 @@ export function registerGenCommand(program: Command): void {
     .command('component [names...]')
     .description('Install editable editor components into a generated package')
     .option('--framework <framework>', 'Component framework (currently solid)')
-    .action(async (names: string[], options: { framework?: string }, command: Command) => {
-      try {
-        const parentOptions = command.parent?.opts() ?? {}
-        await runComponentGenerator({
-          names,
-          framework: (parentOptions.framework as string | undefined) ?? options.framework,
-        })
-      } catch (error) {
-        console.error(`Generator failed: ${error instanceof Error ? error.message : String(error)}`)
-        process.exitCode = 1
-      }
-    })
+    .option('--overwrite', 'Replace the selected components with the current templates')
+    .action(
+      async (
+        names: string[],
+        options: { framework?: string; overwrite?: boolean },
+        command: Command,
+      ) => {
+        try {
+          const parentOptions = command.parent?.opts() ?? {}
+          await runComponentGenerator({
+            names,
+            framework: (parentOptions.framework as string | undefined) ?? options.framework,
+            overwrite: options.overwrite,
+          })
+        } catch (error) {
+          console.error(
+            `Generator failed: ${error instanceof Error ? error.message : String(error)}`,
+          )
+          process.exitCode = 1
+        }
+      },
+    )
 
   gen
     .command('package [name]')

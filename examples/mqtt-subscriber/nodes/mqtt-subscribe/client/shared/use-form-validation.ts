@@ -1,8 +1,6 @@
 import { createSignal } from 'solid-js'
 
-export type FormValidationMessage<TValues> =
-  | string
-  | ((value: unknown, values: TValues) => string)
+export type FormValidationMessage<TValues> = string | ((value: unknown, values: TValues) => string)
 
 export interface FormValidationRule<TValues> {
   /** Return true when the value is valid. */
@@ -55,9 +53,7 @@ export function useFormValidation<TValues extends object>(
     } else {
       for (const rule of config.rules ?? []) {
         if (!rule.validate(value, values)) {
-          message = typeof rule.message === 'function'
-            ? rule.message(value, values)
-            : rule.message
+          message = typeof rule.message === 'function' ? rule.message(value, values) : rule.message
           break
         }
       }

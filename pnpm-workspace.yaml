@@ -13,6 +13,7 @@ overrides:
 allowBuilds:
   esbuild: false
 catalog:
+  '@floating-ui/dom': ^1.8.0
   '@clack/prompts': ^1.8.1
   '@types/jquery': ^4.0.1
   '@types/js-yaml': ^4.0.9

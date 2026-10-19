@@ -1,5 +1,7 @@
-# mqtt-subscribe
+# MQTT In and MQTT Out
 
-SolidJS Node-RED editor for selecting a product, organization, and dependent MQTT device. The product and organization selectors load asynchronously; changing either selection clears the device and refreshes the available options.
+This node entry registers separate MQTT In, MQTT Out, and MQTT Event types. Their SolidJS editors select a product, organization, and dependent MQTT device. Product and organization changes clear the selected device and refresh its available options. MQTT Event also configures the event identifier used in its fixed report topic.
 
-The multi-entry package installs its complete SolidJS component set in `../../components/`; this editor imports controls through `@ui`.
+Each type owns a separate hydrate store and definition under its `client/<scope>/` directory. The entry file registers each definition, while `runtime/index.ts` initializes all scoped runtime implementations. Shared MQTT connection code lives in `runtime/shared/`.
+
+The package installs its SolidJS component set in `../../components/`; these editors import controls through `@ui`.

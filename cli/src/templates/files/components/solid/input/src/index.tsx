@@ -15,7 +15,7 @@ export function TextInput(props: TextInputProps) {
   }
 
   return (
-    <div class={`group relative w-full ${props.class ?? ''}`}>
+    <div class={`group relative w-full max-w-full min-w-0 ${props.class ?? ''}`}>
       <input
         ref={element => (input = element)}
         id={props.id}

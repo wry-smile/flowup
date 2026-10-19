@@ -26,4 +26,5 @@ export interface TreeSelectProps {
   allowBranchSelection?: boolean
   renderOption?: (option: TreeOption, selected: boolean, path: string) => JSX.Element
   status?: 'warning' | 'error'
+  mountTo?: HTMLElement | string
 }
